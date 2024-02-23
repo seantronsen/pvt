@@ -55,9 +55,9 @@ def callback_interface_example(yar, yar2, **kwargs):
 
 # create test version (stateless)
 image_viewer = vwr.VisionViewer()
-trackbar = vwr.LabeledTrackbar("yar", 0, 10000, 2, 0)
+trackbar = vwr.LabeledTrackbar("yar", 0, 1000, 2, 0)
 trackbar2 = vwr.LabeledTrackbar("yar2", 0, 100, 2, 0)
-ip = vwr.GraphicsPane(img_test, callback_interface_example)
+ip = vwr.ImagePane(img_test, callback_interface_example)
 ip.attach_widget(trackbar)
 ip.attach_widget(trackbar2)
 ip.force_flush()
