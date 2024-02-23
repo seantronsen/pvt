@@ -1,0 +1,12 @@
+**.DS_Store
+**.tar
+**.tar.gz
+**.tgz
+**.gz
+*.so
+*.o
+*.a
+*.pyc
+dist/
+typings/
+**v*env/
