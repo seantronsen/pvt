@@ -36,7 +36,9 @@ when changes are detected.
 
 4. Attach all widgets to their corresponding panes.
 
-5. Execute the `run` method for the application instance.
+5. Attach all panes to the application instance (see step 01).
+
+6. Execute the `run` method for the application instance.
 
 ## A Note on the QT Viewer Callback Interface
 

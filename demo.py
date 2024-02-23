@@ -38,41 +38,9 @@ img_test = cv2.imread("checkboard_non_planar.png").astype(np.uint8)
 img_test = cv2.cvtColor(img_test, cv2.COLOR_BGR2GRAY)
 img_test = norm_uint8(img_test)  # extra cautious / dtype paranoia
 
-"""
-VISUALIZATION WORKFLOW:
 
-1. Create an application instance (e.g. `VisionViewer`) as QtApplication must
-exist before instantiating any widgets. Obscure errors may result if this
-requirement is not abided by.
-
-2. Create all modification / control widgets for a pane. Provide all such instances with
-both a key and initial value for their corresponding state assignment. Each
-widget should be responsible for a unique state element. Conceptually, these
-are just key value pairs in a python dictionary. Interacting with the widget
-and altering it's local state results in changes being bubbled up to the parent
-pane state.
-
-3. Create all data display panes (e.g. `ImagePane`). Each child class of
-StatefulPane requires that a callback function be passed to the instance
-constructor. Remember those keys from the key-value pairs in step 02? The
-parameters of the callback function need to have the same names as those keys.
-Order doesn't matter and extras are ignored if a `**kwargs` parameter is
-defined on the callback function. An example is provided below.
-
-4. Attach all widgets to their corresponding panes.
-
-5. Execute the `run` method for the application instance.
-
-
-QT Viewer Callback Interface
-Instances of the `StatefulPane` class intuitively hold references to a `State`
-object. For the sake of brevity, understand that an indirect chain of callback
-functions is used to communicate changes to the underlying state to the pane
-interface. Those who are more curious are welcome to review the implementation
-details in the source code.
-"""
-
-
+# define a callback with parameters that share names with the state keys
+# provided to widgets
 def callback_interface_example(yar, yar2, **kwargs):
     ratio = np.max([0.01, yar / 100])
     new_shape = np.array(img_test.shape[:2][::-1], dtype=np.uintp) * ratio
@@ -80,7 +48,7 @@ def callback_interface_example(yar, yar2, **kwargs):
     print(f"yarratio: {ratio} new shape: {new_shape}")
     resized = cv2.resize(img_test, new_shape, interpolation=cv2.INTER_LINEAR)
     if yar2 != 0:
-        noise = np.random.randn(*(resized.shape)).astype(np.int16) * yar2
+        noise = np.random.randn(*(resized.shape)).astype(np.int16) * yar2  # pyright: ignore
         resized = norm_uint8(resized.astype(np.int16) + noise)
     return resized
 

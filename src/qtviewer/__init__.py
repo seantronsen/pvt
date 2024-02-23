@@ -8,9 +8,13 @@ from qtviewer.state import *
 from qtviewer.widgets import *
 from qtviewer.panels import *
 
-pg.setConfigOption('imageAxisOrder', 'row-major')  # best performance
+pg.setConfigOption('imageAxisOrder', 'row-major')  # best performance 
 
 
 def run_pyqtgraph_examples():
+    """
+    A pre-defined function which exists only to save an import call and a
+    little typing.
+    """
     import pyqtgraph.examples
     pyqtgraph.examples.run()  # pyright: ignore
