@@ -1,6 +1,9 @@
 from typing import Optional
 from PySide6.QtWidgets import QWidget, QSlider, QLabel, QGridLayout
 from PySide6.QtCore import Qt
+
+# from qtpy.QtWidgets import QWidget, QSlider, QLabel, QGridLayout
+# from qtpy.QtCore import Qt
 from qtviewer.state import State
 
 
@@ -76,6 +79,7 @@ class LabeledTrackbar(StatefulWidget):
         s.setMinimum(start)
         s.setMaximum(stop)
         s.setSingleStep(step)
+        s.setValue(init)
         t.setText(f"{l}: {s.value()}")
         s.valueChanged.connect(self.on_change)
 

@@ -1,5 +1,6 @@
 from typing import Callable, Optional
 from PySide6.QtWidgets import QWidget, QGridLayout
+# from qtpy.QtWidgets import QWidget, QGridLayout
 from numpy.typing import NDArray
 import pyqtgraph as pg
 

@@ -2,13 +2,13 @@
 #
 # SPDX-License-Identifier: GPL-3.0
 
-import pyqtgraph as pg
 from qtviewer.apps import *
 from qtviewer.state import *
 from qtviewer.widgets import *
 from qtviewer.panels import *
+import pyqtgraph as pg
 
-pg.setConfigOption('imageAxisOrder', 'row-major')  # best performance 
+pg.setConfigOption('imageAxisOrder', 'row-major')  # best performance
 
 
 def run_pyqtgraph_examples():
