@@ -15,7 +15,7 @@ classifiers = [
 
 dependencies = [
   "numpy==1.*",
-  "opencv-contrib-python==4.9.*",
+  "opencv-contrib-python-headless==4.9.*",
   "pyqtgraph==0.13.*",
   "pyside6==6.6.*",
   "pyopengl==3.1.*",
