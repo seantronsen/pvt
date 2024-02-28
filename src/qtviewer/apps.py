@@ -1,4 +1,8 @@
+import signal
+import sys
+from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QVBoxLayout, QWidget, QApplication
+
 # from qtpy.QtWidgets import QVBoxLayout, QWidget, QApplication
 
 
@@ -14,10 +18,24 @@ class VisionViewer:
     def __init__(self, title="CV Image Viewer") -> None:
 
         self.app = QApplication([])
+        self.app.startTimer
         self.panel = QWidget()
         self.panel.setWindowTitle(title)
         layout = QVBoxLayout()
         self.panel.setLayout(layout)
+
+        # enable close on ctrl-c
+        signal.signal(signal.SIGINT, self.handler_sigint)
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.check_signal)
+        self.timer.start(100)
+
+    def check_signal(self, *args, **kwargs):
+        pass
+
+    def handler_sigint(self, signal, frame):
+        print("received interrupt signal")
+        self.app.quit()
 
     def add_pane(self, pane: QWidget):
         """
@@ -34,4 +52,4 @@ class VisionViewer:
         simultaneously.
         """
         self.panel.show()
-        self.app.exec()
+        sys.exit(self.app.exec())

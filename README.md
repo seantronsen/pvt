@@ -5,7 +5,8 @@ tuning efforts by utilizing technologies which allow for a fast render cycle
 when changes are detected.
 
 With this viewer, your code is the bottleneck to the rendering pipeline rather
-than the renderer (looking at you JupyterLab).
+than the renderer (looking at you JupyterLab). In other words, this will render 
+as quickly as your code can spit out the data.
 
 ## Installation
 

@@ -76,6 +76,7 @@ class LabeledTrackbar(StatefulWidget):
         self.s.setTickPosition(QSlider.TickPosition.TicksBelow)
         self.t = QLabel()
         l, s, t = self.label, self.s, self.t
+        s.setFocusPolicy(Qt.StrongFocus)
         s.setMinimum(start)
         s.setMaximum(stop)
         s.setSingleStep(step)

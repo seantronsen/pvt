@@ -16,6 +16,7 @@ from numpy.typing import NDArray
 import qtviewer as vwr
 import numpy as np
 import cv2
+import time
 
 
 def resize_by_ratio(image: NDArray, ratio: float):
@@ -71,24 +72,28 @@ img_test = norm_uint8(img_test)  # extra cautious / dtype paranoia
 # noise sigma parameter (resize performs more computation, making it slower in
 # comparison).
 img_test = resize_by_ratio(img_test, 10)
-noise_image = np.random.randn(*(img_test.shape)).astype(np.int16)  # pyright: ignore
+noise_image = np.random.randn(*(img_test.shape)).astype(np.int8)  # pyright: ignore
 
 
 # define a callback with parameters that share names with the state keys
 # provided to widgets
 def callback_interface_example(rho, sigma, **kwargs):
+    # global is not required, used to simplify example
+    start = time.time()
     global noise_image, var_2_prev
     ratio = np.max([0.01, rho / 100])
     resized = resize_by_ratio(img_test, ratio)
     noise_slice = noise_image[: resized.shape[0], : resized.shape[1]]
-    print(f"ratio: {ratio} new shape: {resized.shape}")
-    if sigma != 0:
-        return norm_uint8(resized.astype(np.int16) + (noise_slice * sigma))
-    return norm_uint8(resized.astype(np.int16) + noise_slice)
+    result = resized + (noise_slice * sigma)
+    elapsed = time.time() - start
+    print(
+        f"ratio: {ratio: 0.02f} new shape: ({resized.shape[0]:05d}, {resized.shape[1]:05d} render time: {elapsed: 0.06f}, Appr. FPS: {1 / elapsed: 05.06f}"
+    )
+    return result
 
 
 image_viewer = vwr.VisionViewer()
-trackbar_rho = vwr.LabeledTrackbar("rho", 0, 100, 2, 100)
+trackbar_rho = vwr.LabeledTrackbar("rho", 0, 100, 2, 50)
 trackbar_sigma = vwr.LabeledTrackbar("sigma", 0, 100, 2, 0)
 ip = vwr.ImagePane(img_test, callback_interface_example)
 ip.attach_widget(trackbar_rho)
