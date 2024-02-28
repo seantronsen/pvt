@@ -78,17 +78,13 @@ noise_image = np.random.randn(*(img_test.shape)).astype(np.int8)  # pyright: ign
 # define a callback with parameters that share names with the state keys
 # provided to widgets
 def callback_interface_example(rho, sigma, **kwargs):
-    # global is not required, used to simplify example
     start = time.time()
-    global noise_image, var_2_prev
     ratio = np.max([0.001, rho / 1000])
     resized = resize_by_ratio(img_test, ratio)
     noise_slice = noise_image[: resized.shape[0], : resized.shape[1]]
     result = resized + (noise_slice * sigma)
     elapsed = time.time() - start
-    print(
-        f"ratio: {ratio: 0.02f} new shape: ({resized.shape[0]:05d}, {resized.shape[1]:05d}) processing time: {elapsed: 0.06f} approx. fps: {1 / elapsed: 05.06f}"
-    )
+    print(f"resolution: ({result.shape[0]:05d}, {result.shape[1]:05d}) approx. fps: {1 / elapsed: 0.06f}")
     return result
 
 
