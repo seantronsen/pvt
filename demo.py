@@ -81,19 +81,19 @@ def callback_interface_example(rho, sigma, **kwargs):
     # global is not required, used to simplify example
     start = time.time()
     global noise_image, var_2_prev
-    ratio = np.max([0.01, rho / 100])
+    ratio = np.max([0.001, rho / 1000])
     resized = resize_by_ratio(img_test, ratio)
     noise_slice = noise_image[: resized.shape[0], : resized.shape[1]]
     result = resized + (noise_slice * sigma)
     elapsed = time.time() - start
     print(
-        f"ratio: {ratio: 0.02f} new shape: ({resized.shape[0]:05d}, {resized.shape[1]:05d} render time: {elapsed: 0.06f}, Appr. FPS: {1 / elapsed: 05.06f}"
+        f"ratio: {ratio: 0.02f} new shape: ({resized.shape[0]:05d}, {resized.shape[1]:05d}) processing time: {elapsed: 0.06f} approx. fps: {1 / elapsed: 05.06f}"
     )
     return result
 
 
 image_viewer = vwr.VisionViewer()
-trackbar_rho = vwr.LabeledTrackbar("rho", 0, 100, 2, 50)
+trackbar_rho = vwr.LabeledTrackbar("rho", 0, 1000, 1, 500)
 trackbar_sigma = vwr.LabeledTrackbar("sigma", 0, 100, 2, 0)
 ip = vwr.ImagePane(img_test, callback_interface_example)
 ip.attach_widget(trackbar_rho)

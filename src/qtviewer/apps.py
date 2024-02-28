@@ -3,10 +3,8 @@ import sys
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QVBoxLayout, QWidget, QApplication
 
-# from qtpy.QtWidgets import QVBoxLayout, QWidget, QApplication
 
-
-class VisionViewer:
+class AppViewer:
     """
     A wrapper around QApplication which provides several creature comforts.
     Serves as a root node for any qtviewer GUI.
@@ -14,15 +12,14 @@ class VisionViewer:
 
     app: QApplication
     panel: QWidget
+    timer: QTimer
 
-    def __init__(self, title="CV Image Viewer") -> None:
+    def __init__(self, title="") -> None:
 
         self.app = QApplication([])
-        self.app.startTimer
         self.panel = QWidget()
         self.panel.setWindowTitle(title)
-        layout = QVBoxLayout()
-        self.panel.setLayout(layout)
+        self.panel.setLayout(QVBoxLayout())
 
         # enable close on ctrl-c
         signal.signal(signal.SIGINT, self.handler_sigint)
@@ -31,6 +28,10 @@ class VisionViewer:
         self.timer.start(100)
 
     def check_signal(self, *args, **kwargs):
+        """
+        exists purely to return process control to the python layer, allowing
+        signals to be processed and actions to be taken accordingly.
+        """
         pass
 
     def handler_sigint(self, signal, frame):
@@ -53,3 +54,18 @@ class VisionViewer:
         """
         self.panel.show()
         sys.exit(self.app.exec())
+
+
+class VisionViewer(AppViewer):
+    """
+    An image data focused viewer. At the time of writing, there are no true
+    differences between this class and the parent. Instead, it exists for the
+    event more custom changes are needed, reducing future code duplication.
+    """
+
+    def __init__(self, title="CV Image Viewer") -> None:
+
+        super().__init__(title=title)
+
+    def add_pane(self, pane: QWidget):
+        super().add_pane(pane)
