@@ -12,13 +12,11 @@ from qtviewer.widgets import StatefulWidget
 class StatefulPane(QWidget):
 
     state: State
-    layout: QGridLayout
 
     def __init__(self, callback) -> None:
         super().__init__()
         self.state = State(callback)
-        self.layout = QGridLayout()
-        self.setLayout(self.layout)
+        self.setLayout(QGridLayout())
 
     def update(self, **_):
         """
@@ -62,7 +60,7 @@ class StatefulPane(QWidget):
         :param widget: [TODO:description]
         """
         self.enchain(widget)
-        self.layout.addWidget(widget)
+        self.layout().addWidget(widget)
 
 
 class ImagePane(StatefulPane):
@@ -90,9 +88,9 @@ class ImagePane(StatefulPane):
     def __init__(self, image: NDArray, calculate: Optional[Callable] = None) -> None:
         super().__init__(self.update)
         self.iv = pg.ImageView()
-        self.callback = calculate
+        self.callback = calculate if calculate is not None else lambda *a, **b: image
         self.set_image(image)
-        self.layout.addWidget(self.iv)
+        self.layout().addWidget(self.iv)
 
     def set_image(self, image: NDArray):
         """
@@ -101,7 +99,9 @@ class ImagePane(StatefulPane):
 
         :param image: a new image to render encoded as an ndarray
         """
-        self.iv.setImage(image, autoRange=True, autoLevels=True, autoHistogramRange=True)
+        self.iv.setImage(
+            image, autoRange=True, autoLevels=True, autoHistogramRange=True
+        )
 
     def update(self, **args):
         new_image = self.callback(**args)  # pyright: ignore
@@ -137,7 +137,7 @@ class GraphicsPane(StatefulPane):
     def __init__(self, image: NDArray, calculate: Optional[Callable] = None) -> None:
         super().__init__(self.update)
         self.gp = pg.GraphicsView()
-        self.layout.addWidget(self.gp)
+        self.layout().addWidget(self.gp)
         self.callback = calculate
         self.vb = pg.ViewBox()
         self.gp.setCentralWidget(self.vb)
