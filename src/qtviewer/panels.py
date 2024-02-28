@@ -1,5 +1,6 @@
 from typing import Callable, Optional
 from PySide6.QtWidgets import QWidget, QGridLayout
+
 # from qtpy.QtWidgets import QWidget, QGridLayout
 from numpy.typing import NDArray
 import pyqtgraph as pg
@@ -41,18 +42,26 @@ class StatefulPane(QWidget):
         """
         self.state.flush()
 
-    def attach_widget(self, widget: StatefulWidget):
+    def enchain(self, widget: StatefulWidget):
         """
         Bond a stateful widget with the pane state such that updates to this control
-        widget will affect the pane if configured properly. Ensure proper
+        widget will affect the pane when configured properly. Ensure proper
         configuration by naming a variable in the user specified call back
         function with the key value for the widget state component.
 
-        Attached widgets will appear beneath the main feature pane.
+        :param widget: [TODO:description]
+        """
+
+        widget.attach(self.state)
+
+    def attach_widget(self, widget: StatefulWidget):
+        """
+        Enchain the pane state with the specified widget and position it
+        beneath the main feature pane.
 
         :param widget: [TODO:description]
         """
-        widget.attach(self.state)
+        self.enchain(widget)
         self.layout.addWidget(widget)
 
 

@@ -1,7 +1,8 @@
 import signal
 import sys
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QVBoxLayout, QWidget, QApplication
+from PySide6.QtWidgets import QGridLayout, QLayout, QVBoxLayout, QWidget, QApplication
+from typing import Optional
 
 
 class AppViewer:
@@ -14,12 +15,13 @@ class AppViewer:
     panel: QWidget
     timer: QTimer
 
-    def __init__(self, title="") -> None:
+    def __init__(self, title="", layout: Optional[QLayout] = None) -> None:
 
         self.app = QApplication([])
         self.panel = QWidget()
         self.panel.setWindowTitle(title)
-        self.panel.setLayout(QVBoxLayout())
+        layout = QVBoxLayout() if layout is None else layout
+        self.panel.setLayout(layout)
 
         # enable close on ctrl-c
         signal.signal(signal.SIGINT, self.handler_sigint)
@@ -66,6 +68,3 @@ class VisionViewer(AppViewer):
     def __init__(self, title="CV Image Viewer") -> None:
 
         super().__init__(title=title)
-
-    def add_pane(self, pane: QWidget):
-        super().add_pane(pane)

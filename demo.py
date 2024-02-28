@@ -71,6 +71,7 @@ img_test = norm_uint8(img_test)  # extra cautious / dtype paranoia
 # when the resize slider is moved compared to when changes are specifed for the
 # noise sigma parameter (resize performs more computation, making it slower in
 # comparison).
+img_test_small = img_test.copy()
 img_test = resize_by_ratio(img_test, 10)
 noise_image = np.random.randn(*(img_test.shape)).astype(np.int8)  # pyright: ignore
 
@@ -88,12 +89,27 @@ def callback_interface_example(rho, sigma, **kwargs):
     return result
 
 
+def callback_interface_example_2(sigma, *args, **kwargs):
+    start = time.time()
+    noise_slice = noise_image[: img_test_small.shape[0], : img_test_small.shape[1]]
+    result = img_test_small + (noise_slice * sigma)
+    elapsed = time.time() - start
+    print(f"resolutionb: ({result.shape[0]:05d}, {result.shape[1]:05d}) approx. fps: {1 / elapsed: 0.06f}")
+    return result
+
+
 image_viewer = vwr.VisionViewer()
 trackbar_rho = vwr.LabeledTrackbar("rho", 0, 1000, 1, 500)
 trackbar_sigma = vwr.LabeledTrackbar("sigma", 0, 100, 2, 0)
 ip = vwr.ImagePane(img_test, callback_interface_example)
-ip.attach_widget(trackbar_rho)
-ip.attach_widget(trackbar_sigma)
+ip2 = vwr.ImagePane(img_test_small, callback_interface_example_2)
+ip.enchain(trackbar_rho)
+ip.enchain(trackbar_sigma)
+ip2.enchain(trackbar_sigma)
 ip.force_flush()
+ip2.force_flush()
 image_viewer.add_pane(ip)
+image_viewer.add_pane(ip2)
+image_viewer.add_pane(trackbar_rho)
+image_viewer.add_pane(trackbar_sigma)
 image_viewer.run()

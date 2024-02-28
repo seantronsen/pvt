@@ -1,34 +1,32 @@
-from typing import Optional
+from typing import List, Optional
 from PySide6.QtWidgets import QWidget, QSlider, QLabel, QGridLayout
 from PySide6.QtCore import Qt
 
-# from qtpy.QtWidgets import QWidget, QSlider, QLabel, QGridLayout
-# from qtpy.QtCore import Qt
 from qtviewer.state import State
 
 
 class StatefulWidget(QWidget):
 
-    state: Optional[State]
+    states: List[State]
     key: str
 
     def __init__(self, key, init) -> None:
         self.key = key
         self.init = init
-        self.state = None
+        self.states = []
         super().__init__()
 
     def attach(self, state: State):
         """
-        Attach the stateful widget to the parent StatefulPane instance and
+        Attach the stateful widget to a parent StatefulPane instance and
         immediately initialize the state. Flush is not called to avoid
         unneccessary extra renders at start up in the event many stateful
         widgets exist in the application. Hence the desire to be "detached".
 
         :param state: [TODO:description]
         """
-        self.state = state
-        self.state[self.key] = self.init
+        state[self.key] = self.init
+        self.states.append(state)
 
     def on_change(self, *_):
         """
@@ -44,8 +42,11 @@ class StatefulWidget(QWidget):
 
         :param value: [TODO:description]
         """
-        self.state[self.key] = value  # pyright: ignore
-        self.state.flush()  # pyright: ignore
+        for x in self.states:
+            x[self.key] = value
+
+        for x in self.states:
+            x.flush()
 
 
 class LabeledTrackbar(StatefulWidget):
@@ -76,7 +77,7 @@ class LabeledTrackbar(StatefulWidget):
         self.s.setTickPosition(QSlider.TickPosition.TicksBelow)
         self.t = QLabel()
         l, s, t = self.label, self.s, self.t
-        s.setFocusPolicy(Qt.StrongFocus)
+        s.setFocusPolicy(Qt.StrongFocus)  # pyright: ignore
         s.setMinimum(start)
         s.setMaximum(stop)
         s.setSingleStep(step)
@@ -87,7 +88,7 @@ class LabeledTrackbar(StatefulWidget):
         layout = QGridLayout()
         self.setLayout(layout)
         layout.addWidget(s, 0, 0)  # left
-        layout.addWidget(t, 0, 6)  # far-right
+        layout.addWidget(t, 0, 1)  # far-right (trackbar size pushes it luckily)
 
     def on_change(self, *_):
         """
