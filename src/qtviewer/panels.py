@@ -1,22 +1,31 @@
 from typing import Callable, Optional
-from PySide6.QtWidgets import QWidget, QGridLayout
-
-# from qtpy.QtWidgets import QWidget, QGridLayout
 from numpy.typing import NDArray
+from PySide6.QtWidgets import QWidget
 import pyqtgraph as pg
+from pyqtgraph import LayoutWidget
 
 from qtviewer.state import State
 from qtviewer.widgets import StatefulWidget
 
 
 class StatefulPane(QWidget):
+    """
+    A simple pane/panel class that holds some state used for event handling /
+    processing. Layouts are created vertically as this is the simplest scheme
+    to use for fast prototyping and allows for the maximal possible viewport
+    for data analysis. Override the methods related to layout if different
+    behavior is desired.
 
-    state: State
+    """
+
+    __state: State
+    __layout: LayoutWidget
 
     def __init__(self, callback) -> None:
         super().__init__()
-        self.state = State(callback)
-        self.setLayout(QGridLayout())
+        self.__state = State(callback)
+        self.__layout = LayoutWidget()
+        self.setLayout(self.__layout)
 
     def update(self, **_):
         """
@@ -38,7 +47,7 @@ class StatefulPane(QWidget):
         level of inheritance object oriented programming can aspire to.
 
         """
-        self.state.flush()
+        self.__state.flush()
 
     def enchain(self, widget: StatefulWidget):
         """
@@ -50,17 +59,19 @@ class StatefulPane(QWidget):
         :param widget: [TODO:description]
         """
 
-        widget.attach(self.state)
+        widget.attach(self.__state)
 
     def attach_widget(self, widget: StatefulWidget):
         """
         Enchain the pane state with the specified widget and position it
-        beneath the main feature pane.
+        beneath the main feature pane. Use this method when a control widget
+        should be directly associated with a specific data display pane.
 
         :param widget: [TODO:description]
         """
         self.enchain(widget)
-        self.layout().addWidget(widget)
+        self.__layout.addWidget(widget)
+        self.__layout.nextRow()
 
 
 class ImagePane(StatefulPane):
@@ -83,14 +94,16 @@ class ImagePane(StatefulPane):
     """
 
     iv: pg.ImageView
-    callback: Optional[Callable]
+    callback: Callable
 
     def __init__(self, image: NDArray, calculate: Optional[Callable] = None) -> None:
         super().__init__(self.update)
         self.iv = pg.ImageView()
         self.callback = calculate if calculate is not None else lambda *a, **b: image
+        self.__layout.addWidget(self.iv)
+
+        # prepare for data display
         self.set_image(image)
-        self.layout().addWidget(self.iv)
 
     def set_image(self, image: NDArray):
         """
@@ -99,12 +112,10 @@ class ImagePane(StatefulPane):
 
         :param image: a new image to render encoded as an ndarray
         """
-        self.iv.setImage(
-            image, autoRange=True, autoLevels=True, autoHistogramRange=True
-        )
+        self.iv.setImage(image, autoRange=True, autoLevels=True, autoHistogramRange=True)
 
     def update(self, **args):
-        new_image = self.callback(**args)  # pyright: ignore
+        new_image = self.callback(**args)
         self.set_image(new_image)
 
 
@@ -136,15 +147,22 @@ class GraphicsPane(StatefulPane):
 
     def __init__(self, image: NDArray, calculate: Optional[Callable] = None) -> None:
         super().__init__(self.update)
+
+        # set up graphics view
         self.gp = pg.GraphicsView()
-        self.layout().addWidget(self.gp)
+        self.__layout.addWidget(self.gp)
+        self.__layout.nextRow()
+
+        # set up mod image view
         self.callback = calculate
         self.vb = pg.ViewBox()
         self.gp.setCentralWidget(self.vb)
         self.img_item = pg.ImageItem()
-        self.set_image(image)
         self.vb.setAspectLocked()
         self.vb.addItem(self.img_item)
+
+        # prepare for data display
+        self.set_image(image)
 
     def set_image(self, image: NDArray):
         """

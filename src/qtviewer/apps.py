@@ -1,8 +1,8 @@
 import signal
 import sys
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QGridLayout, QLayout, QVBoxLayout, QWidget, QApplication
-from typing import Optional
+from PySide6.QtWidgets import QWidget, QApplication
+from pyqtgraph import LayoutWidget
 
 
 class AppViewer:
@@ -14,22 +14,23 @@ class AppViewer:
     app: QApplication
     panel: QWidget
     timer: QTimer
+    layout: LayoutWidget
 
-    def __init__(self, title="", layout: Optional[QLayout] = None) -> None:
+    def __init__(self, title="") -> None:
 
         self.app = QApplication([])
         self.panel = QWidget()
         self.panel.setWindowTitle(title)
-        layout = QVBoxLayout() if layout is None else layout
-        self.panel.setLayout(layout)
+        self.layout = LayoutWidget()
+        self.panel.setLayout(self.layout)
 
         # enable close on ctrl-c
         signal.signal(signal.SIGINT, self.handler_sigint)
         self.timer = QTimer()
-        self.timer.timeout.connect(self.check_signal)
+        self.timer.timeout.connect(self.squelch)
         self.timer.start(100)
 
-    def check_signal(self, *args, **kwargs):
+    def squelch(self, *args, **kwargs):
         """
         exists purely to return process control to the python layer, allowing
         signals to be processed and actions to be taken accordingly.
@@ -43,11 +44,12 @@ class AppViewer:
     def add_pane(self, pane: QWidget):
         """
         Add the provided pane to the GUI window layout.
+        Override in inheriting classes if different behavior is desired.
 
         :param pane: any instance of a QtWidget
         """
-
-        self.panel.layout().addWidget(pane)
+        self.layout.addWidget(pane)
+        self.layout.nextRow()
 
     def run(self):
         """
@@ -66,5 +68,4 @@ class VisionViewer(AppViewer):
     """
 
     def __init__(self, title="CV Image Viewer") -> None:
-
         super().__init__(title=title)

@@ -1,19 +1,22 @@
 from typing import List, Optional
-from PySide6.QtWidgets import QWidget, QSlider, QLabel, QGridLayout
+from PySide6.QtWidgets import QWidget, QSlider, QLabel
 from PySide6.QtCore import Qt
-
 from qtviewer.state import State
+from pyqtgraph import LayoutWidget
 
 
 class StatefulWidget(QWidget):
 
     states: List[State]
     key: str
+    __layout: LayoutWidget
 
     def __init__(self, key, init) -> None:
         self.key = key
         self.init = init
         self.states = []
+        self.__layout = LayoutWidget()
+        self.setLayout(self.__layout)
         super().__init__()
 
     def attach(self, state: State):
@@ -55,7 +58,9 @@ class LabeledTrackbar(StatefulWidget):
     t: QLabel
 
     # instantiated with a detached state for future integration ergonomics
-    def __init__(self, label: str, start: int, stop: int, step: int, init: int, key: Optional[str] = None) -> None:
+    def __init__(
+        self, label: str, start: int, stop: int, step: int, init: Optional[int] = None, key: Optional[str] = None
+    ) -> None:
         """
         Instantiate a new stateful trackbar widget in a detached state
         (relative to the parent pane). Due to the functional interface
@@ -69,9 +74,14 @@ class LabeledTrackbar(StatefulWidget):
         :param init: initial slider value / position
         :param key: optional key for the state. if not specified, the label is the key.
         """
-        assert init < stop + 1 and init > start - 1
+
+        # fill in the optionals
+        init = init if init is not None else start
         skey = key if key is not None else label
+        assert init <= stop and init >= start
         super().__init__(skey, init)
+
+        # set up the control
         self.label = label
         self.s = QSlider(Qt.Horizontal)  # pyright: ignore
         self.s.setTickPosition(QSlider.TickPosition.TicksBelow)
@@ -85,10 +95,8 @@ class LabeledTrackbar(StatefulWidget):
         t.setText(f"{l}: {s.value()}")
         s.valueChanged.connect(self.on_change)
 
-        layout = QGridLayout()
-        self.setLayout(layout)
-        layout.addWidget(s, 0, 0)  # left
-        layout.addWidget(t, 0, 1)  # far-right (trackbar size pushes it luckily)
+        self.__layout.addWidget(s, 0, 0)  # left
+        self.__layout.addWidget(t, 0, 1)  # far-right (trackbar size pushes it luckily)
 
     def on_change(self, *_):
         """

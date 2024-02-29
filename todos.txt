@@ -2,3 +2,8 @@
 - my current gripe with this software is that setting up the application
 	remains somewhat tedious. it's definitely better than it could be, but having
 	to enchain all items individually is a task.
+
+
+	what if we made it such that we can add panes to the app viewer 
+		for each new pane that's added, check it's type and see if it's inheriting from the stateful widget. 
+			if it is, then enchain that widget with all stateful panes.
