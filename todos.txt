@@ -1,7 +1,4 @@
-- make it such that stateful widgets can be added to multiple panes. no need to
-	de-duplicate the widgets such that only one appears, but make it such that a
-	state update for one causes the other to re-render appropriately. as for the
-	pane state, we can set it up such that the stateful pane still only keeps the
-	single widget state, but the stateful widget can keep the state of multiple
-	panes. when the widget calls the flush operation, it will do so for all
-	associated panes.
+
+- my current gripe with this software is that setting up the application
+	remains somewhat tedious. it's definitely better than it could be, but having
+	to enchain all items individually is a task.
