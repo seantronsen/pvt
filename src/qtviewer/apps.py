@@ -2,7 +2,7 @@ import signal
 import sys
 from typing import List
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QWidget, QApplication
+from PySide6.QtWidgets import QHBoxLayout, QWidget, QApplication
 from pyqtgraph import LayoutWidget
 from qtviewer.panels import StatefulPane
 from qtviewer.widgets import StatefulWidget
@@ -48,26 +48,20 @@ class AppViewer:
         print("received interrupt signal")
         self.app.quit()
 
-    def add_panes(self, *panes: List[QWidget]):
+    def add_panes(self, *panes: QWidget):
         """
-        A convenience wrapper function.
+        Add the provided pane to the GUI window layout.
+        Override in inheriting classes if different behavior is desired.
 
         :param panes: [TODO:description]
         """
 
         for x in panes:
-            self.add_pane(x)
+            self.panel.addWidget(x)
+            self.panel.nextRow()
+            self.link_with_global_state(x)
 
-    def add_pane(self, pane: QWidget):
-        """
-        Add the provided pane to the GUI window layout.
-        Override in inheriting classes if different behavior is desired.
-
-        :param pane: any instance of a QtWidget
-        """
-        self.panel.addWidget(pane)
-        self.panel.nextRow()
-
+    def link_with_global_state(self, pane: QWidget):
         pane_type = type(pane)
         if issubclass(pane_type, StatefulPane):
             s_pane: StatefulPane = pane  # pyright: ignore
@@ -80,6 +74,20 @@ class AppViewer:
             for x in self.data_displays:
                 x.enchain(s_widget)
             self.data_controls.append(s_widget)
+
+    def add_mosaic(self, mosaic: List[List[QWidget]]):
+        assert type(mosaic) == list
+        assert len(mosaic) != 0 and type(mosaic[0]) == list
+
+        for row in mosaic:
+            hbox = QHBoxLayout()
+            wrapper = QWidget()
+            wrapper.setLayout(hbox)
+            for element in row:
+                hbox.addWidget(element)
+                self.link_with_global_state(element)
+            self.panel.addWidget(wrapper)
+            self.panel.nextRow()
 
     def run(self):
         """
