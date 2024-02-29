@@ -10,3 +10,4 @@
 dist/
 typings/
 **v*env/
+**/__pycache__/
