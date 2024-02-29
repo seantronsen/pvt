@@ -48,7 +48,7 @@ class AppViewer:
         print("received interrupt signal")
         self.app.quit()
 
-    def add_panes(self, panes: List[QWidget]):
+    def add_panes(self, *panes: List[QWidget]):
         """
         A convenience wrapper function.
 
