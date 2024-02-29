@@ -61,24 +61,32 @@ def norm_uint8(ndarray: NDArray):
 # load the sample image and ensure data type
 img_test = cv2.imread("checkboard_non_planar.png").astype(np.uint8)
 img_test = cv2.cvtColor(img_test, cv2.COLOR_BGR2GRAY)
-img_test = norm_uint8(img_test)  # extra cautious / dtype paranoia
+img_test = norm_uint8(img_test)  # extra cautious / data type paranoia
 
-# expensive computations are completed prior. recall the purpose of this demo
-# is to illustrate the fast rendering speed made possible by using PyQtGraph
-# and PySide6 (along with several other packages). As such, realize slow
-# rendering times are simply the result of a bottleneck in the code written
-# into the callback interface. For an example, compare the rendering speed for
-# when the resize slider is moved compared to when changes are specifed for the
-# noise sigma parameter (resize performs more computation, making it slower in
-# comparison).
+# IMPORTANT: Expensive and avoidable computations should be completed prior for
+# best results. Slow rendering times result from a bottleneck in the code
+# written into a provided callback function.
+#
+# EXAMPLE: Compare the rendering speed for when the resize slider is moved
+# versus when the sigma parameter is updated (resize performs more
+# computation in this case, making it slower in comparison).
 img_test_small = img_test.copy()
 img_test = resize_by_ratio(img_test, 10)
 noise_image = np.random.randn(*(img_test.shape)).astype(np.int8)  # pyright: ignore
 
 
-# define a callback with parameters that share names with the state keys
-# provided to widgets
-def callback_interface_example(rho, sigma, **kwargs):
+# Define a callback with parameters whose names are a subset of the state keys
+# specified for the control widgets.
+#
+# IMPORTANT: Ensure both the args and kwargs parameters are specified, even if
+# they remain unused. Doing such allows the interface to remain generic and
+# simple for top level controls. More specifically, parameters associated with
+# global (top-level) control widgets are passed to the callbacks for all top
+# level data display panels, even if those panels make no use of the
+# parameters. Put most simply, specifying args and kwargs allows any display
+# pane to ignore extra parameters without crashing the program from failing to
+# adhere to the defined functional interface.
+def callback_example(rho, sigma, *args, **kwargs):
     start = time.time()
     ratio = np.max([0.001, rho / 1000])
     resized = resize_by_ratio(img_test, ratio)
@@ -89,7 +97,7 @@ def callback_interface_example(rho, sigma, **kwargs):
     return result
 
 
-def callback_interface_example_2(sigma, *args, **kwargs):
+def callback_example_2(sigma, *args, **kwargs):
     start = time.time()
     noise_slice = noise_image[: img_test_small.shape[0], : img_test_small.shape[1]]
     result = img_test_small + (noise_slice * sigma)
@@ -98,10 +106,12 @@ def callback_interface_example_2(sigma, *args, **kwargs):
     return result
 
 
+# define the viewer interface and run the application
+# happy tuning / visualizing!
 image_viewer = vwr.VisionViewer()
 trackbar_rho = vwr.LabeledTrackbar("rho", 0, 100, 1, 50)
 trackbar_sigma = vwr.LabeledTrackbar("sigma", 0, 100, 2, 0)
-ip = vwr.ImagePane(img_test, callback_interface_example)
-ip2 = vwr.ImagePane(img_test_small, callback_interface_example_2)
+ip = vwr.ImagePane(img_test, callback_example)
+ip2 = vwr.ImagePane(img_test_small, callback_example_2)
 image_viewer.add_panes([ip, ip2, trackbar_rho, trackbar_sigma])
 image_viewer.run()
