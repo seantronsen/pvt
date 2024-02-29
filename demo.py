@@ -99,15 +99,9 @@ def callback_interface_example_2(sigma, *args, **kwargs):
 
 
 image_viewer = vwr.VisionViewer()
-trackbar_rho = vwr.LabeledTrackbar("rho", 0, 1000, 1, 500)
+trackbar_rho = vwr.LabeledTrackbar("rho", 0, 100, 1, 50)
 trackbar_sigma = vwr.LabeledTrackbar("sigma", 0, 100, 2, 0)
 ip = vwr.ImagePane(img_test, callback_interface_example)
 ip2 = vwr.ImagePane(img_test_small, callback_interface_example_2)
-
-# image_viewer.add_panes_new([ip, ip2, trackbar_rho, trackbar_sigma])
-
-image_viewer.add_pane(ip)
-image_viewer.add_pane(ip2)
-image_viewer.add_pane(trackbar_rho)
-image_viewer.add_pane(trackbar_sigma)
+image_viewer.add_panes([ip, ip2, trackbar_rho, trackbar_sigma])
 image_viewer.run()

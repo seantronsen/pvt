@@ -5,18 +5,15 @@ from qtviewer.state import State
 from pyqtgraph import LayoutWidget
 
 
-class StatefulWidget(QWidget):
+class StatefulWidget(LayoutWidget):
 
     states: List[State]
     key: str
-    __layout: LayoutWidget
 
     def __init__(self, key, init) -> None:
         self.key = key
         self.init = init
         self.states = []
-        self.__layout = LayoutWidget()
-        self.setLayout(self.__layout)
         super().__init__()
 
     def attach(self, state: State):
@@ -95,8 +92,8 @@ class LabeledTrackbar(StatefulWidget):
         t.setText(f"{l}: {s.value()}")
         s.valueChanged.connect(self.on_change)
 
-        self.__layout.addWidget(s, 0, 0)  # left
-        self.__layout.addWidget(t, 0, 1)  # far-right (trackbar size pushes it luckily)
+        self.addWidget(s, 0, 0)  # left
+        self.addWidget(t, 0, 1)  # far-right (trackbar size pushes it luckily)
 
     def on_change(self, *_):
         """

@@ -15,9 +15,8 @@ class AppViewer:
     """
 
     app: QApplication
-    panel: QWidget
+    panel: LayoutWidget
     timer: QTimer
-    layout: LayoutWidget
 
     data_displays: List[StatefulPane]
     data_controls: List[StatefulWidget]
@@ -27,7 +26,10 @@ class AppViewer:
         self.app = QApplication([])
         self.panel = LayoutWidget()
         self.panel.setWindowTitle(title)
-        self.layout = self.panel
+
+        # set up storage
+        self.data_controls = []
+        self.data_displays = []
 
         # enable close on ctrl-c
         signal.signal(signal.SIGINT, self.__handler_sigint)
@@ -46,7 +48,7 @@ class AppViewer:
         print("received interrupt signal")
         self.app.quit()
 
-    def add_panes_new(self, panes: List[QWidget]):
+    def add_panes(self, panes: List[QWidget]):
         """
         A convenience wrapper function.
 
@@ -63,8 +65,8 @@ class AppViewer:
 
         :param pane: any instance of a QtWidget
         """
-        self.layout.addWidget(pane)
-        self.layout.nextRow()
+        self.panel.addWidget(pane)
+        self.panel.nextRow()
 
         pane_type = type(pane)
         if issubclass(pane_type, StatefulPane):

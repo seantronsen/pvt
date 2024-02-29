@@ -8,7 +8,7 @@ from qtviewer.state import State
 from qtviewer.widgets import StatefulWidget
 
 
-class StatefulPane(QWidget):
+class StatefulPane(LayoutWidget):
     """
     A simple pane/panel class that holds some state used for event handling /
     processing. Layouts are created vertically as this is the simplest scheme
@@ -19,13 +19,10 @@ class StatefulPane(QWidget):
     """
 
     __state: State
-    __layout: LayoutWidget
 
     def __init__(self, callback) -> None:
         super().__init__()
         self.__state = State(callback)
-        self.__layout = LayoutWidget()
-        self.setLayout(self.__layout)
 
     def update(self, **_):
         """
@@ -70,8 +67,8 @@ class StatefulPane(QWidget):
         :param widget: [TODO:description]
         """
         self.enchain(widget)
-        self.__layout.addWidget(widget)
-        self.__layout.nextRow()
+        self.addWidget(widget)
+        self.nextRow()
 
 
 class ImagePane(StatefulPane):
@@ -100,7 +97,8 @@ class ImagePane(StatefulPane):
         super().__init__(self.update)
         self.iv = pg.ImageView()
         self.callback = calculate if calculate is not None else lambda *a, **b: image
-        self.__layout.addWidget(self.iv)
+        self.addWidget(self.iv)
+        self.nextRow()
 
         # prepare for data display
         self.set_image(image)
@@ -150,8 +148,8 @@ class GraphicsPane(StatefulPane):
 
         # set up graphics view
         self.gp = pg.GraphicsView()
-        self.__layout.addWidget(self.gp)
-        self.__layout.nextRow()
+        self.addWidget(self.gp)
+        self.nextRow()
 
         # set up mod image view
         self.callback = calculate
