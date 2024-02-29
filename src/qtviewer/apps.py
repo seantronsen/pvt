@@ -1,8 +1,11 @@
 import signal
 import sys
+from typing import List
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QWidget, QApplication
 from pyqtgraph import LayoutWidget
+from qtviewer.panels import StatefulPane
+from qtviewer.widgets import StatefulWidget
 
 
 class AppViewer:
@@ -16,30 +19,42 @@ class AppViewer:
     timer: QTimer
     layout: LayoutWidget
 
+    data_displays: List[StatefulPane]
+    data_controls: List[StatefulWidget]
+
     def __init__(self, title="") -> None:
 
         self.app = QApplication([])
-        self.panel = QWidget()
+        self.panel = LayoutWidget()
         self.panel.setWindowTitle(title)
-        self.layout = LayoutWidget()
-        self.panel.setLayout(self.layout)
+        self.layout = self.panel
 
         # enable close on ctrl-c
-        signal.signal(signal.SIGINT, self.handler_sigint)
+        signal.signal(signal.SIGINT, self.__handler_sigint)
         self.timer = QTimer()
-        self.timer.timeout.connect(self.squelch)
+        self.timer.timeout.connect(self.__squelch)
         self.timer.start(100)
 
-    def squelch(self, *args, **kwargs):
+    def __squelch(self, *args, **kwargs):
         """
         exists purely to return process control to the python layer, allowing
         signals to be processed and actions to be taken accordingly.
         """
         pass
 
-    def handler_sigint(self, signal, frame):
+    def __handler_sigint(self, signal, frame):
         print("received interrupt signal")
         self.app.quit()
+
+    def add_panes_new(self, panes: List[QWidget]):
+        """
+        A convenience wrapper function.
+
+        :param panes: [TODO:description]
+        """
+
+        for x in panes:
+            self.add_pane(x)
 
     def add_pane(self, pane: QWidget):
         """
@@ -51,12 +66,27 @@ class AppViewer:
         self.layout.addWidget(pane)
         self.layout.nextRow()
 
+        pane_type = type(pane)
+        if issubclass(pane_type, StatefulPane):
+            s_pane: StatefulPane = pane  # pyright: ignore
+            for x in self.data_controls:
+                s_pane.enchain(x)
+            self.data_displays.append(s_pane)
+
+        if issubclass(pane_type, StatefulWidget):
+            s_widget: StatefulWidget = pane  # pyright: ignore
+            for x in self.data_displays:
+                x.enchain(s_widget)
+            self.data_controls.append(s_widget)
+
     def run(self):
         """
         A conveniece function with launches the Qt GUI and displays the window
         simultaneously.
         """
         self.panel.show()
+        for x in self.data_displays:
+            x.force_flush()
         sys.exit(self.app.exec())
 
 

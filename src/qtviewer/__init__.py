@@ -17,4 +17,5 @@ def run_pyqtgraph_examples():
     little typing.
     """
     import pyqtgraph.examples
+
     pyqtgraph.examples.run()  # pyright: ignore
