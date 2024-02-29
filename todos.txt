@@ -1,9 +1,4 @@
-
-- my current gripe with this software is that setting up the application
-	remains somewhat tedious. it's definitely better than it could be, but having
-	to enchain all items individually is a task.
-
-
-	what if we made it such that we can add panes to the app viewer 
-		for each new pane that's added, check it's type and see if it's inheriting from the stateful widget. 
-			if it is, then enchain that widget with all stateful panes.
+	
+- do another round of speed testing.
+- codebase could probably use some cleaning up
+- need to implement a line plotting utility, similar to the matplotlib standard plot function.
