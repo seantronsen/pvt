@@ -85,8 +85,7 @@ class LabeledTrackbar(StatefulWidget):
         self.t = QLabel()
         l, s, t = self.label, self.s, self.t
         s.setFocusPolicy(Qt.StrongFocus)  # pyright: ignore
-        s.setMinimum(start)
-        s.setMaximum(stop)
+        s.setRange(start, stop)
         s.setSingleStep(step)
         s.setValue(init)
         t.setText(f"{l}: {s.value()}")
