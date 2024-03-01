@@ -1,8 +1,7 @@
 from typing import Callable, Optional
 from numpy.typing import NDArray
-from PySide6.QtWidgets import QWidget
 import pyqtgraph as pg
-from pyqtgraph import LayoutWidget
+from pyqtgraph import GraphicsLayoutWidget, LayoutWidget
 
 from qtviewer.state import State
 from qtviewer.widgets import StatefulWidget
@@ -174,3 +173,61 @@ class GraphicsPane(StatefulPane):
     def update(self, **args):
         new_image = self.callback(**args)  # pyright: ignore
         self.set_image(new_image)
+
+
+class Plot2DPane(StatefulPane):
+    """
+    IMPORTANT: Data immutability is a property that should be abided by when
+    defining the callback function. That is, the callback function should
+    either return entirely new data or a modified copy of the original data.
+    Failing to abide by this suggestion will require users to restart the
+    application in order to re-obtain the initial state of the image later
+    mutated by the callback.
+    """
+
+    plots_window: pg.GraphicsLayoutWidget
+    plotPrimary: pg.PlotItem
+    callback: Callable
+
+    def __init__(self, data: NDArray, calculate: Optional[Callable] = None, **kwargs) -> None:
+        super().__init__(self.update)
+        kwarg_flag = lambda x: kwargs.get(x) if kwargs.get(x) is not None else False
+
+        self.callback = calculate if calculate is not None else lambda *a, **b: data
+
+        # prepare the graphics layout
+        self.plots_window = GraphicsLayoutWidget()
+        self.addWidget(self.plots_window)
+        self.nextRow()
+
+        self.plotPrimary = self.plots_window.addPlot(title=kwargs.get("title"))
+        if kwarg_flag("legend"):
+            self.plotPrimary.addLegend()
+
+        self.plotPrimary.setLogMode(x=kwarg_flag("logx"), y=kwarg_flag("logy"))
+        self.plotPrimary.showGrid(x=kwarg_flag("gridx"), y=kwarg_flag("gridy"))
+
+        plot_args = dict()
+        plot_args["pen"] = None if kwarg_flag("scatter") else 'g'
+        plot_args["symbol"] = 't' if kwarg_flag("scatter") else None
+        plot_args["symbolSize"] = 10
+        plot_args["symbolBrush"] = (0, 255, 0, 90)
+
+        self.curve = self.plotPrimary.plot(**plot_args)
+        self.set_data(data)
+
+    def set_data(self, data: NDArray):
+        """
+        Provide an NDArray either of shape (N,) or (N, 2). When the first case
+        is true, the plotter assumes you have provided the y-coordinates and a
+        uniform spacing of x-coordinates will be generated for you. In the
+        second case, it is assumed that both kinds of points were provided.
+
+        :param data: [TODO:description]
+        """
+
+        self.curve.setData(data)
+
+    def update(self, **args):
+        data = self.callback(**args)
+        self.set_data(data)

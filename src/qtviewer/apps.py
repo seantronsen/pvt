@@ -109,3 +109,12 @@ class VisionViewer(AppViewer):
 
     def __init__(self, title="CV Image Viewer") -> None:
         super().__init__(title=title)
+
+
+class PlotViewer(AppViewer):
+    """
+    Another superficial class that may exist only temporarily.
+    """
+
+    def __init__(self, title="Plot Viewer") -> None:
+        super().__init__(title=title)
