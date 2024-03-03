@@ -1,4 +1,6 @@
 from typing import Callable, Optional
+import numpy as np
+from PySide6.QtCore import QTimer
 from numpy.typing import NDArray
 import pyqtgraph as pg
 from pyqtgraph import GraphicsLayoutWidget, LayoutWidget
@@ -10,29 +12,73 @@ from qtviewer.widgets import StatefulWidget
 class StatefulPane(LayoutWidget):
     """
     A simple pane/panel class that holds some state used for event handling /
-    processing. Layouts are created vertically as this is the simplest scheme
-    to use for fast prototyping and allows for the maximal possible viewport
-    for data analysis. Override the methods related to layout if different
-    behavior is desired.
+    processing. Pane-level layouts are created vertically merely for simplicity
+    as it allows for the maximum possible viewport for data analysis. Override
+    the methods related to layout if different behavior is desired.
 
+    TODO: CONSIDER CREATING A TIMED STATEFUL PANE SUBCLASS
+    IMPORTANT: If using the timer for sequence data, provide
+
+    IMPORTANT: For most intents and purposes, you will want to attach control
+    widgets to the main application window and not to an instance of a display
+    pane directly. Doing such allows a common state to be shared among all data
+    display panes which allows for a state change within a control widget to
+    affect all related data display panes (i.e. no need for duplicate control
+    widgets).
+
+    IMPORTANT: Data immutability is a property that should be abided by when
+    defining callback functions. That is, the callback function should either
+    return new or a modified copy of the original data. Failing to abide by
+    this suggestion will require users to restart the application in order to
+    re-obtain the initial state of the image later mutated by the callback.
+    Specifically, the scope of this class and all derivations does not include
+    managing the state of your data. It only includes management of the state
+    of tuning parameters.
+
+    NOTE: A base class for deriving implementations.
     """
 
     __state: State
+    callback: Callable
+    timer: Optional[QTimer]
+    timer_ptr = np.uintp
 
-    def __init__(self, callback) -> None:
+    def __init__(self, data, callback: Optional[Callable] = None, fps: Optional[float] = None, **_) -> None:
+        self.callback = callback if callback is not None else lambda **_: data  # potential name clash
         super().__init__()
-        self.__state = State(callback)
+        self.__state = State(self.update)
+        if fps is not None:
+            assert not fps < 0
+            interval = int(0 if fps == 0 else 1000 / fps)
+            self.timer_ptr = np.uintp(0)
+            self.timer = QTimer()
+            self.timer.timeout.connect(self.__timer_timeout)
+            self.__state = State(lambda **kwargs: self.update(timer_ptr=self.timer_ptr, **kwargs))
+            self.timer.start(interval)
 
-    def update(self, **_):
+    def __timer_timeout(self):
         """
-        IMPORTANT: A parent method which will fail if not overridden/shadowed.
+        Exists to provide a timed update feature for animation / sequence data
+        where new frames should be delivered at the specified interval.
+        """
+        self.timer_ptr += 1  # pyright: ignore
+        self.force_flush()
 
+    def update(self, **kwargs):
+        """
         This function is the callback provided to the State instance and is
         executed on each state change. The user specified callback is executed
         by this callback. If you wish to exist in user land, don't worry about
-        anything other than the one callback you're required to define as this
-        detail isn't important to the experience.
+        anything other than the one callback you're required to define.
+        """
+        data = self.callback(**kwargs)
+        self.set_data(data)
 
+    def set_data(self, *args):
+        """
+        IMPORTANT: A parent method which will fail if not overridden/shadowed.
+
+        :raises [TODO:name]: [TODO:description]
         """
         raise NotImplementedError
 
@@ -73,16 +119,9 @@ class StatefulPane(LayoutWidget):
 class ImagePane(StatefulPane):
     """
     A pane which can be used to display and analyze image data with a fast
-    refresh rate. Functionality dictates an initial image be provided to the
-    constructor along with the user specified callback function. The callback
-    function can be used to chaneg the currently display image.
-
-    IMPORTANT: Data immutability is a property that should be abided by when
-    defining the callback function. That is, the callback function should
-    either return entirely new data or a modified copy of the original data.
-    Failing to abide by this suggestion will require users to restart the
-    application in order to re-obtain the initial state of the image later
-    mutated by the callback.
+    refresh rate. An initial image to display must be provided to the
+    constructor along with an optional callback function which may be used to
+    update the display.
 
     IMPORTANT: Image data should be normalized and converted to standard bytes
     (uint8). Note the underlying pyqtgraph library supports uint16 and small
@@ -90,30 +129,20 @@ class ImagePane(StatefulPane):
     """
 
     iv: pg.ImageView
-    callback: Callable
 
-    def __init__(self, image: NDArray, calculate: Optional[Callable] = None) -> None:
-        super().__init__(self.update)
+    def __init__(self, image: NDArray, calculate: Optional[Callable] = None, **kwargs) -> None:
+        super().__init__(image, calculate, **kwargs)
         self.iv = pg.ImageView()
-        self.callback = calculate if calculate is not None else lambda *a, **b: image
         self.addWidget(self.iv)
-        self.nextRow()
 
         # prepare for data display
-        self.set_image(image)
+        self.set_data(image)
 
-    def set_image(self, image: NDArray):
+    def set_data(self, *args):
         """
-        Set the currently displayed image and immediately render the update on
-        the pane.
-
-        :param image: a new image to render encoded as an ndarray
+        OVERRIDE: See parent definition
         """
-        self.iv.setImage(image, autoRange=True, autoLevels=True, autoHistogramRange=True)
-
-    def update(self, **args):
-        new_image = self.callback(**args)
-        self.set_image(new_image)
+        self.iv.setImage(args[0], autoRange=True, autoLevels=True, autoHistogramRange=True)
 
 
 class GraphicsPane(StatefulPane):
@@ -124,100 +153,68 @@ class GraphicsPane(StatefulPane):
     along with the user specified callback function. The callback function can
     be used to chaneg the currently display image.
 
-    IMPORTANT: Data immutability is a property that should be abided by when
-    defining the callback function. That is, the callback function should
-    either return entirely new data or a modified copy of the original data.
-    Failing to abide by this suggestion will require users to restart the
-    application in order to re-obtain the initial state of the image later
-    mutated by the callback.
-
     IMPORTANT: Image data should be normalized and converted to standard bytes
     (uint8). Note the underlying pyqtgraph library supports uint16 and small
     floats, but visualization works best and renders fastest for bytes.
-
     """
 
-    gp: pg.GraphicsView
-    callback: Optional[Callable]
-    img_item: pg.ImageItem
-    vb: pg.ViewBox
+    iv: pg.ImageItem
 
-    def __init__(self, image: NDArray, calculate: Optional[Callable] = None) -> None:
-        super().__init__(self.update)
+    def __init__(self, image: NDArray, calculate: Optional[Callable] = None, **kwargs) -> None:
+        super().__init__(self.update, calculate, **kwargs)
 
-        # set up graphics view
-        self.gp = pg.GraphicsView()
-        self.addWidget(self.gp)
-        self.nextRow()
+        self.iv = pg.ImageItem()
 
         # set up mod image view
-        self.callback = calculate
-        self.vb = pg.ViewBox()
-        self.gp.setCentralWidget(self.vb)
-        self.img_item = pg.ImageItem()
-        self.vb.setAspectLocked()
-        self.vb.addItem(self.img_item)
+        vb = pg.ViewBox()
+        vb.setAspectLocked()
+        vb.addItem(self.iv)
+        gp = pg.GraphicsView()
+        gp.setCentralWidget(vb)
 
         # prepare for data display
-        self.set_image(image)
+        self.set_data(image)
+        self.addWidget(gp)
 
-    def set_image(self, image: NDArray):
+    def set_data(self, *args):
         """
-        Set the currently displayed image and immediately render the update on
-        the pane.
-
-        :param image: a new image to render encoded as an ndarray
+        OVERRIDE: See parent definition
         """
-        self.img_item.setImage(image)
-
-    def update(self, **args):
-        new_image = self.callback(**args)  # pyright: ignore
-        self.set_image(new_image)
+        self.iv.setImage(args[0])
 
 
 class Plot2DPane(StatefulPane):
-    """
-    IMPORTANT: Data immutability is a property that should be abided by when
-    defining the callback function. That is, the callback function should
-    either return entirely new data or a modified copy of the original data.
-    Failing to abide by this suggestion will require users to restart the
-    application in order to re-obtain the initial state of the image later
-    mutated by the callback.
-    """
 
     plots_window: pg.GraphicsLayoutWidget
     plotPrimary: pg.PlotItem
-    callback: Callable
 
     def __init__(self, data: NDArray, calculate: Optional[Callable] = None, **kwargs) -> None:
-        super().__init__(self.update)
-        kwarg_flag = lambda x: kwargs.get(x) if kwargs.get(x) is not None else False
-
-        self.callback = calculate if calculate is not None else lambda *a, **b: data
+        kflag = lambda x: kwargs.get(x) if kwargs.get(x) is not None else False
+        super().__init__(data, calculate, **kwargs)
 
         # prepare the graphics layout
         self.plots_window = GraphicsLayoutWidget()
-        self.addWidget(self.plots_window)
-        self.nextRow()
-
         self.plotPrimary = self.plots_window.addPlot(title=kwargs.get("title"))
-        if kwarg_flag("legend"):
+        if kflag("legend"):
             self.plotPrimary.addLegend()
 
-        self.plotPrimary.setLogMode(x=kwarg_flag("logx"), y=kwarg_flag("logy"))
-        self.plotPrimary.showGrid(x=kwarg_flag("gridx"), y=kwarg_flag("gridy"))
+        self.plotPrimary.setLogMode(x=kflag("logx"), y=kflag("logy"))
+        self.plotPrimary.showGrid(x=kflag("gridx"), y=kflag("gridy"))
 
         plot_args = dict()
-        plot_args["pen"] = None if kwarg_flag("scatter") else 'g'
-        plot_args["symbol"] = 't' if kwarg_flag("scatter") else None
+        plot_args["pen"] = None if kflag("scatter") else 'g'
+        plot_args["symbol"] = 't' if kflag("scatter") else None
         plot_args["symbolSize"] = 10
         plot_args["symbolBrush"] = (0, 255, 0, 90)
 
         self.curve = self.plotPrimary.plot(**plot_args)
         self.set_data(data)
+        self.addWidget(self.plots_window)
 
-    def set_data(self, data: NDArray):
+    def set_data(self, *args):
         """
+        OVERRIDE: See parent definition.
+
         Provide an NDArray either of shape (N,) or (N, 2). When the first case
         is true, the plotter assumes you have provided the y-coordinates and a
         uniform spacing of x-coordinates will be generated for you. In the
@@ -226,8 +223,4 @@ class Plot2DPane(StatefulPane):
         :param data: [TODO:description]
         """
 
-        self.curve.setData(data)
-
-    def update(self, **args):
-        data = self.callback(**args)
-        self.set_data(data)
+        self.curve.setData(args[0])

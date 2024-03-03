@@ -1,4 +1,9 @@
-	
+
 - do another round of speed testing.
 - codebase could probably use some cleaning up
 - need to implement a line plotting utility, similar to the matplotlib standard plot function.
+- need to implement a video and / or animation pane viewer
+- need to implement a top level pane that conducts scan line analysis of images
+
+
+- consider adding qsplitter

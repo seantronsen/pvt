@@ -45,23 +45,17 @@ class AppViewer:
         pass
 
     def __handler_sigint(self, signal, frame):
+        """
+        A component of the timed event check used to "gracefully shutdown"
+        (kill) the application if the user sends the interrupt signal.
+
+        :param signal: [TODO:description]
+        :param frame: [TODO:description]
+        """
         print("received interrupt signal")
         self.app.quit()
 
-    def add_panes(self, *panes: QWidget):
-        """
-        Add the provided pane to the GUI window layout.
-        Override in inheriting classes if different behavior is desired.
-
-        :param panes: [TODO:description]
-        """
-
-        for x in panes:
-            self.panel.addWidget(x)
-            self.panel.nextRow()
-            self.link_with_global_state(x)
-
-    def link_with_global_state(self, pane: QWidget):
+    def __link_with_global_state(self, pane: QWidget):
         pane_type = type(pane)
         if issubclass(pane_type, StatefulPane):
             s_pane: StatefulPane = pane  # pyright: ignore
@@ -75,6 +69,19 @@ class AppViewer:
                 x.enchain(s_widget)
             self.data_controls.append(s_widget)
 
+    def add_panes(self, *panes: QWidget):
+        """
+        Add the provided pane to the GUI window layout.
+        Override in inheriting classes if different behavior is desired.
+
+        :param panes: [TODO:description]
+        """
+
+        for x in panes:
+            self.panel.addWidget(x)
+            self.panel.nextRow()
+            self.__link_with_global_state(x)
+
     def add_mosaic(self, mosaic: List[List[QWidget]]):
         assert type(mosaic) == list
         assert len(mosaic) != 0 and type(mosaic[0]) == list
@@ -85,7 +92,7 @@ class AppViewer:
             wrapper.setLayout(hbox)
             for element in row:
                 hbox.addWidget(element)
-                self.link_with_global_state(element)
+                self.__link_with_global_state(element)
             self.panel.addWidget(wrapper)
             self.panel.nextRow()
 
@@ -95,6 +102,9 @@ class AppViewer:
         simultaneously.
         """
         self.panel.show()
+
+        # TODO/FIX: should all panes solely use global state, then this results
+        # in many unnecessary re-renders on start up. not a major issue for now.
         for x in self.data_displays:
             x.force_flush()
         sys.exit(self.app.exec())
