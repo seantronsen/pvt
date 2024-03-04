@@ -41,7 +41,7 @@ class StatefulPane(LayoutWidget):
     __state: State
     callback: Callable
     timer: Optional[QTimer]
-    timer_ptr = np.uintp
+    timer_ptr: np.uintp
 
     def __init__(self, data, callback: Optional[Callable] = None, fps: Optional[float] = None, **_) -> None:
         self.callback = callback if callback is not None else lambda **_: data  # potential name clash
@@ -61,7 +61,7 @@ class StatefulPane(LayoutWidget):
         Exists to provide a timed update feature for animation / sequence data
         where new frames should be delivered at the specified interval.
         """
-        self.timer_ptr += 1  # pyright: ignore
+        self.timer_ptr += np.uintp(1)
         self.force_flush()
 
     def update(self, **kwargs):
