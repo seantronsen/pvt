@@ -8,6 +8,7 @@
 
 
 - consider adding qsplitter
+- consider adding a time clock to log potential fps for debugging callback speeds.
 
 
 - it would be a hell of a lot more efficient if we could take the results from
