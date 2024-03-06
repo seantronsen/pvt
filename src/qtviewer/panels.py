@@ -1,30 +1,22 @@
-from typing import Callable, Optional
-import numpy as np
+import time
 from PySide6.QtCore import QTimer
 from numpy.typing import NDArray
-import pyqtgraph as pg
-from pyqtgraph import GraphicsLayoutWidget, LayoutWidget
-
+from pyqtgraph import GraphicsLayoutWidget, LayoutWidget, PlotDataItem
 from qtviewer.state import State
 from qtviewer.widgets import StatefulWidget
+from typing import Any, Callable, Dict, List, Optional
+import numpy as np
+import pyqtgraph as pg
 
 
 class StatefulPane(LayoutWidget):
     """
     A simple pane/panel class that holds some state used for event handling /
-    processing. Pane-level layouts are created vertically merely for simplicity
-    as it allows for the maximum possible viewport for data analysis. Override
-    the methods related to layout if different behavior is desired.
-
-    TODO: CONSIDER CREATING A TIMED STATEFUL PANE SUBCLASS
-    IMPORTANT: If using the timer for sequence data, provide
-
-    IMPORTANT: For most intents and purposes, you will want to attach control
-    widgets to the main application window and not to an instance of a display
-    pane directly. Doing such allows a common state to be shared among all data
-    display panes which allows for a state change within a control widget to
-    affect all related data display panes (i.e. no need for duplicate control
-    widgets).
+    processing. The intended design has it such that this class acts as a base
+    for more specific implementations to derive from. Pane-level layouts are
+    created vertically merely for simplicity as it allows for the maximum
+    possible viewport for data analysis. Override the methods related to layout
+    if different behavior is desired.
 
     IMPORTANT: Data immutability is a property that should be abided by when
     defining callback functions. That is, the callback function should either
@@ -35,7 +27,12 @@ class StatefulPane(LayoutWidget):
     managing the state of your data. It only includes management of the state
     of tuning parameters.
 
-    NOTE: A base class for deriving implementations.
+    IMPORTANT: For most intents and purposes, you will want to attach control
+    widgets to the main application window and not to an instance of a display
+    pane directly. Doing such allows a common state to be shared among all data
+    display panes which allows for a state change within a control widget to
+    affect all related data display panes (i.e. no need for duplicate control
+    widgets).
     """
 
     __state: State
@@ -43,9 +40,18 @@ class StatefulPane(LayoutWidget):
     timer: Optional[QTimer]
     timer_ptr: np.uintp
 
-    def __init__(self, data, callback: Optional[Callable] = None, fps: Optional[float] = None, **_) -> None:
-        self.callback = callback if callback is not None else lambda **_: data  # potential name clash
+    def __init__(
+        self,
+        data,
+        callback: Optional[Callable] = None,
+        log_perfomance: Optional[bool] = False,
+        fps: Optional[float] = None,
+        **_,
+    ) -> None:
+        self.callback = callback if callback is not None else lambda **_: data
         super().__init__()
+        func_update = self.update if not log_perfomance else self.update_log_performance
+
         self.__state = State(self.update)
         if fps is not None:
             assert not fps < 0
@@ -53,8 +59,10 @@ class StatefulPane(LayoutWidget):
             self.timer_ptr = np.uintp(0)
             self.timer = QTimer()
             self.timer.timeout.connect(self.__timer_timeout)
-            self.__state = State(lambda **kwargs: self.update(timer_ptr=self.timer_ptr, **kwargs))
+            # todo: make a more practical method soon.
+            func_update = lambda **kwargs: self.update(timer_ptr=self.timer_ptr, **kwargs)
             self.timer.start(interval)
+        self.__state = State(func_update)
 
     def __timer_timeout(self):
         """
@@ -73,6 +81,12 @@ class StatefulPane(LayoutWidget):
         """
         data = self.callback(**kwargs)
         self.set_data(data)
+
+    def update_log_performance(self, **kwargs):
+        start = time.time()
+        self.update(**kwargs)
+        elapsed = time.time() - start
+        print(f"processing time: {elapsed:08.03f} max possible fps: {1 / elapsed: 08.03f}")
 
     def set_data(self, *args):
         """
@@ -145,48 +159,12 @@ class ImagePane(StatefulPane):
         self.iv.setImage(args[0], autoRange=True, autoLevels=True, autoHistogramRange=True)
 
 
-class GraphicsPane(StatefulPane):
-    """
-    A more complicated to implement image pane which may display data at a
-    faster FPS depending on the user's machine and operating system.
-    Functionality dictates an initial image be provided to the constructor
-    along with the user specified callback function. The callback function can
-    be used to chaneg the currently display image.
-
-    IMPORTANT: Image data should be normalized and converted to standard bytes
-    (uint8). Note the underlying pyqtgraph library supports uint16 and small
-    floats, but visualization works best and renders fastest for bytes.
-    """
-
-    iv: pg.ImageItem
-
-    def __init__(self, image: NDArray, calculate: Optional[Callable] = None, **kwargs) -> None:
-        super().__init__(self.update, calculate, **kwargs)
-
-        self.iv = pg.ImageItem()
-
-        # set up mod image view
-        vb = pg.ViewBox()
-        vb.setAspectLocked()
-        vb.addItem(self.iv)
-        gp = pg.GraphicsView()
-        gp.setCentralWidget(vb)
-
-        # prepare for data display
-        self.set_data(image)
-        self.addWidget(gp)
-
-    def set_data(self, *args):
-        """
-        OVERRIDE: See parent definition
-        """
-        self.iv.setImage(args[0])
-
-
 class Plot2DPane(StatefulPane):
 
     plots_window: pg.GraphicsLayoutWidget
     plotPrimary: pg.PlotItem
+    curves: List[PlotDataItem]
+    plot_args: Dict
 
     def __init__(self, data: NDArray, calculate: Optional[Callable] = None, **kwargs) -> None:
         kflag = lambda x: kwargs.get(x) if kwargs.get(x) is not None else False
@@ -206,8 +184,8 @@ class Plot2DPane(StatefulPane):
         plot_args["symbol"] = 't' if kflag("scatter") else None
         plot_args["symbolSize"] = 10
         plot_args["symbolBrush"] = (0, 255, 0, 90)
-
-        self.curve = self.plotPrimary.plot(**plot_args)
+        self.plot_args = plot_args
+        self.curves = []
         self.set_data(data)
         self.addWidget(self.plots_window)
 
@@ -222,5 +200,22 @@ class Plot2DPane(StatefulPane):
 
         :param data: [TODO:description]
         """
+        data: NDArray = args[0]
 
-        self.curve.setData(args[0])
+        # prep the data into shape (M,N,2)
+        if len(data.shape) == 1:
+            data = np.array([[data]])
+        elif len(data.shape) == 2 and data.shape[1] == 2:
+
+
+        n_curves = data.shape[0]
+        if n_curves != len(self.curves):
+            for x in self.curves:
+                self.plotPrimary.removeItem(x)
+            self.curves = []
+            for x in range(n_curves):
+                self.curves.append(self.plotPrimary.plot(**self.plot_args))
+
+        print(data.shape)
+        for i in range(n_curves):
+            self.curves[i].setData(data[i])

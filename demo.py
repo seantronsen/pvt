@@ -107,42 +107,38 @@ def demo_image_viewer():
     # define the viewer interface and run the application
     # happy tuning / visualizing!
     image_viewer = vwr.VisionViewer()
-    trackbar_rho = vwr.LabeledTrackbar("rho", 0, 100, 1, 50)
-    trackbar_sigma = vwr.LabeledTrackbar("sigma", 0, 100, 2, 0)
+    trackbar_rho = vwr.ParameterTrackbar("rho", 0, 100, 1, 50)
+    trackbar_sigma = vwr.ParameterTrackbar("sigma", 0, 100, 2, 0)
     ip = vwr.ImagePane(img_test, callback_example)
     ip2 = vwr.ImagePane(img_test_small, callback_example_2)
     image_viewer.add_mosaic([[ip, ip2], [trackbar_rho], [trackbar_sigma]])
     image_viewer.run()
 
 
-event_counter = 0
-
-
 def demo_plot_viewer():
 
     def callback(n, sigma=1, omega=1, phasem=1, components=2, timer_ptr=0, **kwargs):
-        start = time.time()
-        global event_counter
-        event_counter += 1
         cphase = (2 * np.pi) * ((phasem / 10 * timer_ptr % 360) / 360)
         sinusoid = np.zeros(shape=(n,), dtype=np.float32)
         for x in range(components):
             comp = 2 * x + 1
             sinusoid += (1 / comp) * np.sin((comp * omega * np.linspace(0, 2 * np.pi, n)) + cphase)
+
         noise = np.random.randn(n) * (sigma / 10)
         result = sinusoid + noise
-        elapsed = time.time() - start
-        print(f"events processed: {event_counter: 08d} maximum possible FPS.: {1 / elapsed: 0.06f}")
-        return result
+
+        shifted = result.copy() + 10
+        result =np.array([result, shifted]) 
+        return np.expand_dims(result, axis=1)
 
     viewer = vwr.PlotViewer()
-    trackbar_n = vwr.LabeledTrackbar("n", 100, 3000, 100, 1000)
-    trackbar_sigma = vwr.LabeledTrackbar("sigma", 0, 30, 1, 1)
-    trackbar_omega = vwr.LabeledTrackbar("omega", 1, 50, 1, 5)
-    trackbar_phasem = vwr.LabeledTrackbar("phasem", 1, 100, 1, 25)
-    trackbar_components = vwr.LabeledTrackbar("components", 1, 100, 1, 2)
+    trackbar_n = vwr.ParameterTrackbar("n", 100, 3000, 100, 1000)
+    trackbar_sigma = vwr.ParameterTrackbar("sigma", 0, 30, 1, 1)
+    trackbar_omega = vwr.ParameterTrackbar("omega", 1, 50, 1, 5)
+    trackbar_phasem = vwr.ParameterTrackbar("phasem", 1, 100, 1, 25)
+    trackbar_components = vwr.ParameterTrackbar("components", 1, 100, 1, 2)
 
-    pp = vwr.Plot2DPane(callback(1000), callback, fps=60)  # 144)
+    pp = vwr.Plot2DPane(callback(1000), callback, log_performance=True, fps=60)  # 144)
     viewer.add_panes(pp, trackbar_n, trackbar_omega, trackbar_phasem, trackbar_sigma, trackbar_components)
     viewer.run()
 

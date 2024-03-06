@@ -1,6 +1,6 @@
 import signal
 import sys
-from typing import List
+from typing import List, NoReturn
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QHBoxLayout, QWidget, QApplication
 from pyqtgraph import LayoutWidget
@@ -8,28 +8,19 @@ from qtviewer.panels import StatefulPane
 from qtviewer.widgets import StatefulWidget
 
 
-class AppViewer:
+class AppBase(QApplication):
     """
-    A wrapper around QApplication which provides several creature comforts.
-    Serves as a root node for any qtviewer GUI.
+    A general refactoring of the larger application class which extracts some
+    of the more basic elements.
     """
 
-    app: QApplication
     panel: LayoutWidget
     timer: QTimer
 
-    data_displays: List[StatefulPane]
-    data_controls: List[StatefulWidget]
-
-    def __init__(self, title="") -> None:
-
-        self.app = QApplication([])
+    def __init__(self, title="qtviewer"):
+        super().__init__([])
         self.panel = LayoutWidget()
         self.panel.setWindowTitle(title)
-
-        # set up storage
-        self.data_controls = []
-        self.data_displays = []
 
         # enable close on ctrl-c
         signal.signal(signal.SIGINT, self.__handler_sigint)
@@ -53,7 +44,30 @@ class AppViewer:
         :param frame: [TODO:description]
         """
         print("received interrupt signal")
-        self.app.quit()
+        self.quit()
+
+    def run(self) -> None:  # pyright: ignore # typing exists to shut up pyright
+        """
+        A conveniece function with launches the Qt GUI and displays the window
+        simultaneously.
+        """
+        self.panel.show()
+        sys.exit(self.exec())
+
+
+class AppMain(AppBase):
+    """
+    A wrapper around QApplication which provides several creature comforts.
+    Serves as a root node for any qtviewer GUI.
+    """
+
+    data_displays: List[StatefulPane]
+    data_controls: List[StatefulWidget]
+
+    def __init__(self, title="") -> None:
+        super().__init__(title=title)
+        self.data_controls = []
+        self.data_displays = []
 
     def __link_with_global_state(self, pane: QWidget):
         pane_type = type(pane)
@@ -97,20 +111,14 @@ class AppViewer:
             self.panel.nextRow()
 
     def run(self):
-        """
-        A conveniece function with launches the Qt GUI and displays the window
-        simultaneously.
-        """
-        self.panel.show()
-
         # TODO/FIX: should all panes solely use global state, then this results
         # in many unnecessary re-renders on start up. not a major issue for now.
         for x in self.data_displays:
             x.force_flush()
-        sys.exit(self.app.exec())
+        super().run()
 
 
-class VisionViewer(AppViewer):
+class VisionViewer(AppMain):
     """
     An image data focused viewer. At the time of writing, there are no true
     differences between this class and the parent. Instead, it exists for the
@@ -121,7 +129,7 @@ class VisionViewer(AppViewer):
         super().__init__(title=title)
 
 
-class PlotViewer(AppViewer):
+class PlotViewer(AppMain):
     """
     Another superficial class that may exist only temporarily.
     """

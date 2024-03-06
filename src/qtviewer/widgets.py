@@ -66,7 +66,7 @@ class StatefulWidget(LayoutWidget):
             x.flush()
 
 
-class Toggle(StatefulWidget):
+class ParameterToggle(StatefulWidget):
     cb: QCheckBox
 
     # instantiated with a detached state for future integration ergonomics
@@ -105,7 +105,7 @@ class Toggle(StatefulWidget):
         self.state_update(value)
 
 
-class LabeledTrackbar(StatefulWidget):
+class ParameterTrackbar(StatefulWidget):
     label: str
     s: QSlider
     t: QLabel
