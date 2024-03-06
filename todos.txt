@@ -28,3 +28,12 @@
 
 - (backburner): add support for surface and probabilistic plots.
 	- this includes 3D plots.
+
+
+- need to create a decorator that preserves the docstrings of the abstract
+	class for some member functions.
+
+- PRIORITY: Need to decouple and deserialize the update times of different
+	panes. The current implementation updates all panes serially in the order
+	they are defined. Suppose we have 10 views and each takes 20ms to render.
+	With the current implentation, the last view will not be updated for 200ms.
