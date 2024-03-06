@@ -89,21 +89,17 @@ def demo_image_viewer():
     # pane to ignore extra parameters without crashing the program from failing to
     # adhere to the defined functional interface.
     def callback_example(rho, sigma, **kwargs):
-        start = time.time()
         ratio = np.max([0.001, rho / 1000])
         resized = resize_by_ratio(img_test, ratio)
         noise_slice = noise_image[: resized.shape[0], : resized.shape[1]]
         result = resized + (noise_slice * sigma)
-        elapsed = time.time() - start
-        print(f"resolution: ({result.shape[0]:05d}, {result.shape[1]:05d}) approx. fps: {1 / elapsed: 0.06f}")
+        print(f"resolution: ({result.shape[0]:05d}, {result.shape[1]:05d})")
         return result
 
     def callback_example_2(sigma, **kwargs):
-        start = time.time()
         noise_slice = noise_image[: img_test_small.shape[0], : img_test_small.shape[1]]
         result = img_test_small + (noise_slice * sigma)
-        elapsed = time.time() - start
-        print(f"resolutionb: ({result.shape[0]:05d}, {result.shape[1]:05d}) approx. fps: {1 / elapsed: 0.06f}")
+        print(f"resolutionb: ({result.shape[0]:05d}, {result.shape[1]:05d})")
         return result
 
     # define the viewer interface and run the application
@@ -119,28 +115,22 @@ def demo_image_viewer():
 
 def demo_plot_viewer():
 
-    def callback(n, sigma=1, omega=1, phasem=1, components=2, timer_ptr=0, **kwargs):
-        cphase = (2 * np.pi) * ((phasem / 10 * timer_ptr % 360) / 360)
-        sinusoid = np.zeros(shape=(n,), dtype=np.float32)
-        for x in range(components):
-            comp = 2 * x + 1
-            sinusoid += (1 / comp) * np.sin((comp * omega * np.linspace(0, 2 * np.pi, n)) + cphase)
+    def callback(nsamples, sigma=1, omega=1, phasem=1, timer_ptr=0, **kwargs):
+        cphase = timer_ptr / (2 * np.pi)
+        cphase *= phasem / 10
+        sinusoid = np.sin((np.linspace(0, omega * 2 * np.pi, nsamples) + cphase))
+        noise = np.random.randn(nsamples)
+        result = sinusoid + (noise[:nsamples] * (sigma / 10))
+        waves = 5
+        return np.array([result] * waves) + np.arange(waves).reshape(-1, 1)
 
-        noise = np.random.randn(n) * (sigma / 10)
-        result = sinusoid + noise
-
-        shifted = result.copy() + 2
-        return np.array([result, shifted])
-
-    viewer = vwr.PlotViewer()
-    trackbar_n = vwr.ParameterTrackbar("n", 100, 3000, 100, 1000)
-    trackbar_sigma = vwr.ParameterTrackbar("sigma", 0, 30, 1, 1)
-    trackbar_omega = vwr.ParameterTrackbar("omega", 1, 50, 1, 5)
-    trackbar_phasem = vwr.ParameterTrackbar("phasem", 1, 100, 1, 25)
-    trackbar_components = vwr.ParameterTrackbar("components", 1, 100, 1, 2)
-
-    pp = vwr.Animator(fps=60, contents=vwr.Plot2DPane(callback(1000), callback))
-    viewer.add_panes(pp.anim_content, trackbar_n, trackbar_omega, trackbar_phasem, trackbar_sigma, trackbar_components)
+    viewer = vwr.PlotViewer(title="Multiple Plots: A Visual Illustration of Signal Aliasing")
+    trackbar_n = vwr.ParameterTrackbar("nsamples", 100, 1000, 100)
+    trackbar_sigma = vwr.ParameterTrackbar("sigma", 0, 30, 1)
+    trackbar_omega = vwr.ParameterTrackbar("omega", 1, 50, 1, 50)
+    trackbar_phasem = vwr.ParameterTrackbar("phasem", 1, 100, 1)
+    animated_plot = vwr.Animator(fps=60, contents=vwr.Plot2DPane(callback(1000), callback))
+    viewer.add_panes(animated_plot.anim_content, trackbar_n, trackbar_omega, trackbar_phasem, trackbar_sigma)
     viewer.run()
 
 
