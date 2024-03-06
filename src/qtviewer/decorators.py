@@ -16,7 +16,7 @@ def performance_log(func: Callable):
     :param func: routine to decorate
     """
 
-    if os.getenv("VIEWER_PERF_LOG") == "1":
+    if not os.getenv("VIEWER_PERF_LOG") == "1":
         return func
 
     @wraps(func)

@@ -6,6 +6,7 @@ from qtviewer.apps import *
 from qtviewer.state import *
 from qtviewer.widgets import *
 from qtviewer.panels import *
+from qtviewer.animation import * 
 import pyqtgraph as pg
 
 pg.setConfigOption('imageAxisOrder', 'row-major')  # best performance

@@ -35,13 +35,13 @@ class StatefulPane(LayoutWidget):
     widgets).
     """
 
-    __state: State
+    pane_state: State
     callback: Callable
 
     def __init__(self, data, callback: Optional[Callable] = None, **_) -> None:
         self.callback = callback if callback is not None else lambda **_: data
         super().__init__()
-        self.__state = State(self.update)
+        self.pane_state = State(self.update)
 
     @performance_log
     def update(self, **kwargs):
@@ -69,7 +69,7 @@ class StatefulPane(LayoutWidget):
         level of inheritance object oriented programming can aspire to.
 
         """
-        self.__state.flush()
+        self.pane_state.flush()
 
     def enchain(self, widget: StatefulWidget):
         """
@@ -81,7 +81,7 @@ class StatefulPane(LayoutWidget):
         :param widget: [TODO:description]
         """
 
-        widget.attach(self.__state)
+        widget.attach(self.pane_state)
 
     def attach_widget(self, widget: StatefulWidget):
         """

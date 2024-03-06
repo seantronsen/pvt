@@ -4,25 +4,26 @@ import numpy as np
 
 
 class Animator:
-    __contents: StatefulPane
+    anim_content: StatefulPane
     timer: QTimer
     timer_ptr: np.uintp
 
     def __init__(
         self,
         fps: float,
-        **_,
+        contents: StatefulPane,
     ) -> None:
-        super().__init__()
         assert not fps <= 0
-        self.__contents.__state.onUpdate = self.update
+        super().__init__()
+        self.anim_content = contents
+        self.anim_content.pane_state.onUpdate = self.update
         self.timer_ptr = np.uintp(0)
         self.timer = QTimer()
         self.timer.timeout.connect(self.timer_timeout)
         self.timer.start(int(1000 / fps))
 
     def __getattr__(self, name):
-        return getattr(self.__contents, name)
+        return getattr(self.anim_content, name)
 
     def timer_timeout(self):
         """
@@ -30,7 +31,7 @@ class Animator:
         where new frames should be delivered at the specified interval.
         """
         self.timer_ptr += np.uintp(1)
-        self.__contents.force_flush()
+        self.anim_content.force_flush()
 
     def update(self, **kwargs):
         """
@@ -40,4 +41,4 @@ class Animator:
         anything other than the one callback you're required to define.
         """
 
-        self.__contents.update(timer_ptr=self.timer_ptr, **kwargs)
+        self.anim_content.update(timer_ptr=self.timer_ptr, **kwargs)

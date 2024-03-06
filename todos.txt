@@ -1,15 +1,10 @@
 
 - do another round of speed testing.
-- codebase could probably use some cleaning up
-- need to implement a line plotting utility, similar to the matplotlib standard plot function.
-- need to implement a video and / or animation pane viewer
 - need to implement a top level pane that conducts scan line analysis of images
 
 
 
 - consider adding qsplitter
-- consider adding a time clock to log potential fps for debugging callback speeds.
-
 
 - it would be a hell of a lot more efficient if we could take the results from
 	one of the callbacks and allow the other callbacks to use them. but... this is where coupling starts to be a problem. do the other callbacks need to wait? what should the order be? 

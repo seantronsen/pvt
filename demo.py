@@ -13,10 +13,12 @@
 ##################################################
 ##################################################
 from numpy.typing import NDArray
-import qtviewer as vwr
-import numpy as np
 import cv2
+import numpy as np
+import os
+import qtviewer as vwr
 import time
+import sys
 
 
 def resize_by_ratio(image: NDArray, ratio: float):
@@ -137,11 +139,17 @@ def demo_plot_viewer():
     trackbar_phasem = vwr.ParameterTrackbar("phasem", 1, 100, 1, 25)
     trackbar_components = vwr.ParameterTrackbar("components", 1, 100, 1, 2)
 
-    pp = vwr.Plot2DPane(callback(1000), callback, perf_log=True, fps=60)  # 144)
-    viewer.add_panes(pp, trackbar_n, trackbar_omega, trackbar_phasem, trackbar_sigma, trackbar_components)
+    pp = vwr.Animator(fps=60, contents=vwr.Plot2DPane(callback(1000), callback))
+    viewer.add_panes(pp.anim_content, trackbar_n, trackbar_omega, trackbar_phasem, trackbar_sigma, trackbar_components)
     viewer.run()
 
 
 if __name__ == "__main__":
-    # demo_image_viewer()
-    demo_plot_viewer()
+    os.environ["VIEWER_PERF_LOG"] = "1"
+    options = {}
+    options[demo_image_viewer.__name__] = demo_image_viewer
+    options[demo_plot_viewer.__name__] = demo_plot_viewer
+    if len(sys.argv) >= 2:
+        options[sys.argv[1]]()
+    else:
+        demo_plot_viewer()
