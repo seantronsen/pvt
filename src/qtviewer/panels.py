@@ -1,10 +1,10 @@
-import time
-from PySide6.QtCore import QTimer
 from numpy.typing import NDArray
 from pyqtgraph import GraphicsLayoutWidget, LayoutWidget, PlotDataItem
+from qtviewer.decorators import performance_log
 from qtviewer.state import State
 from qtviewer.widgets import StatefulWidget
-from typing import Any, Callable, Dict, List, Optional
+from qtviewer.exceptions import PlotDataValueError
+from typing import Callable, Dict, List, Optional
 import numpy as np
 import pyqtgraph as pg
 
@@ -37,41 +37,13 @@ class StatefulPane(LayoutWidget):
 
     __state: State
     callback: Callable
-    timer: Optional[QTimer]
-    timer_ptr: np.uintp
 
-    def __init__(
-        self,
-        data,
-        callback: Optional[Callable] = None,
-        log_perfomance: Optional[bool] = False,
-        fps: Optional[float] = None,
-        **_,
-    ) -> None:
+    def __init__(self, data, callback: Optional[Callable] = None, **_) -> None:
         self.callback = callback if callback is not None else lambda **_: data
         super().__init__()
-        func_update = self.update if not log_perfomance else self.update_log_performance
-
         self.__state = State(self.update)
-        if fps is not None:
-            assert not fps < 0
-            interval = int(0 if fps == 0 else 1000 / fps)
-            self.timer_ptr = np.uintp(0)
-            self.timer = QTimer()
-            self.timer.timeout.connect(self.__timer_timeout)
-            # todo: make a more practical method soon.
-            func_update = lambda **kwargs: self.update(timer_ptr=self.timer_ptr, **kwargs)
-            self.timer.start(interval)
-        self.__state = State(func_update)
 
-    def __timer_timeout(self):
-        """
-        Exists to provide a timed update feature for animation / sequence data
-        where new frames should be delivered at the specified interval.
-        """
-        self.timer_ptr += np.uintp(1)
-        self.force_flush()
-
+    @performance_log
     def update(self, **kwargs):
         """
         This function is the callback provided to the State instance and is
@@ -81,12 +53,6 @@ class StatefulPane(LayoutWidget):
         """
         data = self.callback(**kwargs)
         self.set_data(data)
-
-    def update_log_performance(self, **kwargs):
-        start = time.time()
-        self.update(**kwargs)
-        elapsed = time.time() - start
-        print(f"processing time: {elapsed:08.03f} max possible fps: {1 / elapsed: 08.03f}")
 
     def set_data(self, *args):
         """
@@ -189,24 +155,49 @@ class Plot2DPane(StatefulPane):
         self.set_data(data)
         self.addWidget(self.plots_window)
 
+    # TODO: ensure this doesn't cost that much time. otherwise remove and
+    # provide a format guide for users. this viewer is concerned with speed and
+    # less so with formatting hand holding.
+    @staticmethod
+    def format_data(data: NDArray):
+        """
+        Ensure data provided to other methods is formatted appropriately.
+
+        Valid formats are:
+            - (N,)
+            - (N,2)
+            - (M,N)
+            - (M,N,2)
+
+        :param data: an ndarray of data points
+        :raises PlotDataValueError: error raised when the provided data cannot
+        be formatted with simple efforts.
+        """
+        if len(data.shape) == 2 and data.shape[0] == 1:
+            data = data.reshape(-1)
+        if len(data.shape) == 1:
+            data = data[np.newaxis, ...]
+        # convert from (N,2) to (1,N,2)
+        if len(data.shape) == 2 and data.shape[1] == 2:
+            data = data[np.newaxis, ...]
+        # ensure valid shape for 3D ndarray
+        if len(data.shape) == 3 and data.shape[2] != 2:
+            raise PlotDataValueError(data.shape)
+
+        return data
+
     def set_data(self, *args):
         """
         OVERRIDE: See parent definition.
 
-        Provide an NDArray either of shape (N,) or (N, 2). When the first case
-        is true, the plotter assumes you have provided the y-coordinates and a
-        uniform spacing of x-coordinates will be generated for you. In the
-        second case, it is assumed that both kinds of points were provided.
+        Use the provided data to update the curves (PlotDataItem's) on the 2D
+        PlotView. See format related methods for details on what constitutes a
+        valid format.
 
-        :param data: [TODO:description]
+        :param data: an ndarray of data points
         """
         data: NDArray = args[0]
-
-        # prep the data into shape (M,N,2)
-        if len(data.shape) == 1:
-            data = np.array([[data]])
-        elif len(data.shape) == 2 and data.shape[1] == 2:
-
+        data = self.format_data(data)
 
         n_curves = data.shape[0]
         if n_curves != len(self.curves):
@@ -216,6 +207,5 @@ class Plot2DPane(StatefulPane):
             for x in range(n_curves):
                 self.curves.append(self.plotPrimary.plot(**self.plot_args))
 
-        print(data.shape)
         for i in range(n_curves):
             self.curves[i].setData(data[i])
