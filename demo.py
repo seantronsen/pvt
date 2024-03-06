@@ -127,9 +127,8 @@ def demo_plot_viewer():
         noise = np.random.randn(n) * (sigma / 10)
         result = sinusoid + noise
 
-        shifted = result.copy() + 10
-        result =np.array([result, shifted]) 
-        return np.expand_dims(result, axis=1)
+        shifted = result.copy() + 2
+        return np.array([result, shifted])
 
     viewer = vwr.PlotViewer()
     trackbar_n = vwr.ParameterTrackbar("n", 100, 3000, 100, 1000)
@@ -138,7 +137,7 @@ def demo_plot_viewer():
     trackbar_phasem = vwr.ParameterTrackbar("phasem", 1, 100, 1, 25)
     trackbar_components = vwr.ParameterTrackbar("components", 1, 100, 1, 2)
 
-    pp = vwr.Plot2DPane(callback(1000), callback, log_performance=True, fps=60)  # 144)
+    pp = vwr.Plot2DPane(callback(1000), callback, perf_log=True, fps=60)  # 144)
     viewer.add_panes(pp, trackbar_n, trackbar_omega, trackbar_phasem, trackbar_sigma, trackbar_components)
     viewer.run()
 
