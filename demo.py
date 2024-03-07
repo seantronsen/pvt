@@ -134,11 +134,24 @@ def demo_plot_viewer():
     viewer.run()
 
 
+def demo_huge_trackbar_performance():
+    """
+    An example to illustrate that trackbars with extreme ranges of values are
+    slow and cumbersome, even when used alone.
+    """
+
+    viewer = vwr.PlotViewer(title="Multiple Plots: A Visual Illustration of Signal Aliasing")
+    trackbar_n = vwr.ParameterTrackbar("nsamples", 0, 10000, 1)
+    viewer.add_panes(trackbar_n)
+    viewer.run()
+
+
 if __name__ == "__main__":
     os.environ["VIEWER_PERF_LOG"] = "1"
     options = {}
     options[demo_image_viewer.__name__] = demo_image_viewer
     options[demo_plot_viewer.__name__] = demo_plot_viewer
+    options[demo_huge_trackbar_performance.__name__] = demo_huge_trackbar_performance
     if len(sys.argv) >= 2:
         options[sys.argv[1]]()
     else:
