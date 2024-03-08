@@ -19,13 +19,13 @@ class Animator:
         self.anim_content.pane_state.onUpdate = self.update
         self.timer_ptr = np.uintp(0)
         self.timer = QTimer()
-        self.timer.timeout.connect(self.timer_timeout)
+        self.timer.timeout.connect(self.on_tick)
         self.timer.start(int(1000 / fps))
 
     def __getattr__(self, name):
         return getattr(self.anim_content, name)
 
-    def timer_timeout(self):
+    def on_tick(self):
         """
         Exists to provide a timed update feature for animation / sequence data
         where new frames should be delivered at the specified interval.

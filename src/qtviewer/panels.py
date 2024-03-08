@@ -7,6 +7,7 @@ from qtviewer.exceptions import PlotDataValueError
 from typing import Callable, Dict, List, Optional
 import numpy as np
 import pyqtgraph as pg
+import pyqtgraph.opengl as pggl
 
 
 class StatefulPane(LayoutWidget):
@@ -209,3 +210,118 @@ class Plot2DPane(StatefulPane):
 
         for i in range(n_curves):
             self.curves[i].setData(data[i])
+
+
+class Plot3DPane(StatefulPane):
+    """
+    An OpenGL-enabled 3D plotting pane. The current documentation for PyQtGraph
+    reveals features related to this plotting technique remain in early
+    development and will improve over time.
+
+    Quoting the current capabilities within the backticks:
+
+    ```
+    - 3D view widget with zoom/rotate controls (mouse drag and wheel)
+    - Scenegraph allowing items to be added/removed from scene with per-item
+      transformations and parent/child relationships.
+    - Triangular meshes
+    - Basic mesh computation functions: isosurfaces, per-vertex normals
+    - Volumetric rendering item
+    - Grid/axis items
+
+    ```
+    """
+
+    ogl_view: pggl.GLViewWidget
+    surface_item: pggl.GLSurfacePlotItem
+
+    def __init__(self, data: NDArray, calculate: Optional[Callable] = None, **kwargs) -> None:
+
+        # "borrowed" directly from the demos
+        self.ogl_view = pggl.GLViewWidget()
+        self.ogl_view.setCameraPosition(distance=40)
+        gx = pggl.GLGridItem()
+        gx.rotate(90, 0, 1, 0)
+        gx.translate(-10, 0, 0)
+        # gx.scale(x,y,z)
+        # g.setDepthValue(10)  # draw grid after surfaces since they may be translucent
+        self.ogl_view.addItem(gx)
+        gy = pggl.GLGridItem()
+        gy.rotate(90, 1, 0, 0)
+        gy.translate(0, -10, 0)
+        self.ogl_view.addItem(gy)
+        gz = pggl.GLGridItem()
+        gz.translate(0, 0, -10)
+        self.ogl_view.addItem(gz)
+
+        """
+        needs:
+            - auto scale grid sizes to data.
+
+
+        """
+
+        self.surface_item = pggl.GLSurfacePlotItem()
+        self.ogl_view.addItem(self.surface_item)
+        self.set_data(data)
+        self.addWidget(self.ogl_view)
+
+    def set_data(self, *args):
+        """
+        OVERRIDE: See parent definition.
+
+        """
+        if len(args) == 3:
+            x, y, z = args
+            self.surface_item.setData(x=x, y=y, z=z)
+        else:
+            self.surface_item.setData(z=args[0])
+
+
+#
+# ## Simple surface plot example
+# ## x, y values are not specified, so assumed to be 0:50
+# z = pg.gaussianFilter(np.random.normal(size=(50, 50)), (1, 1))
+# p1 = gl.GLSurfacePlotItem(z=z, shader='shaded', color=(0.5, 0.5, 1, 1))
+# p1.scale(16.0 / 49.0, 16.0 / 49.0, 1.0)
+# p1.translate(-18, 2, 0)
+# w.addItem(p1)
+#
+#
+# ## Animated example
+# ## compute surface vertex data
+# cols = 90
+# rows = 100
+# x = np.linspace(-8, 8, cols + 1).reshape(cols + 1, 1)
+# y = np.linspace(-8, 8, rows + 1).reshape(1, rows + 1)
+# d = (x**2 + y**2) * 0.1
+# d2 = d**0.5 + 0.1
+#
+# ## precompute height values for all frames
+# phi = np.arange(0, np.pi * 2, np.pi / 20.0)
+# z = np.sin(d[np.newaxis, ...] + phi.reshape(phi.shape[0], 1, 1)) / d2[np.newaxis, ...]
+#
+#
+# ## create a surface plot, tell it to use the 'heightColor' shader
+# ## since this does not require normal vectors to render (thus we
+# ## can set computeNormals=False to save time when the mesh updates)
+# p4 = gl.GLSurfacePlotItem(x=x[:, 0], y=y[0, :], shader='heightColor', computeNormals=False, smooth=False)
+# p4.shader()['colorMap'] = np.array([0.2, 2, 0.5, 0.2, 1, 1, 0.2, 0, 2])
+# p4.translate(10, 10, 0)
+# w.addItem(p4)
+#
+# index = 0
+#
+#
+# def update():
+#     global p4, z, index
+#     index -= 1
+#     p4.setData(z=z[index % z.shape[0]])
+#
+#
+# timer = QtCore.QTimer()
+# timer.timeout.connect(update)
+# timer.start(30)
+#
+# if __name__ == '__main__':
+#     pg.exec()

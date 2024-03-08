@@ -146,13 +146,27 @@ def demo_huge_trackbar_performance():
     viewer.run()
 
 
+def demo_3d_prototype():
+
+    viewer = vwr.PlotViewer(title="Multiple Plots: A Visual Illustration of Signal Aliasing")
+    gaussian = cv2.getGaussianKernel(10, sigma=3)
+    gaussian = gaussian * gaussian.T  # pyright: ignore
+    animated_plot = vwr.Plot3DPane(gaussian * 10)
+    viewer.add_panes(animated_plot)
+    viewer.run()
+
+    raise NotImplementedError
+
+
 if __name__ == "__main__":
     os.environ["VIEWER_PERF_LOG"] = "1"
     options = {}
     options[demo_image_viewer.__name__] = demo_image_viewer
     options[demo_plot_viewer.__name__] = demo_plot_viewer
     options[demo_huge_trackbar_performance.__name__] = demo_huge_trackbar_performance
+    options[demo_3d_prototype.__name__] = demo_3d_prototype
     if len(sys.argv) >= 2:
         options[sys.argv[1]]()
     else:
-        demo_plot_viewer()
+        # demo_plot_viewer()
+        demo_3d_prototype()
