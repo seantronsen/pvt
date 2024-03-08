@@ -37,3 +37,7 @@
 	panes. The current implementation updates all panes serially in the order
 	they are defined. Suppose we have 10 views and each takes 20ms to render.
 	With the current implentation, the last view will not be updated for 200ms.
+
+- PRIORITY: Need to ensure control widgets always take the smallest possible
+	size. 3D plot currently gets the same space as control widgets and it's off
+	putting.

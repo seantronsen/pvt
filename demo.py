@@ -149,13 +149,17 @@ def demo_huge_trackbar_performance():
 def demo_3d_prototype():
 
     viewer = vwr.PlotViewer(title="Multiple Plots: A Visual Illustration of Signal Aliasing")
-    gaussian = cv2.getGaussianKernel(10, sigma=3)
-    gaussian = gaussian * gaussian.T  # pyright: ignore
-    animated_plot = vwr.Plot3DPane(gaussian * 10)
-    viewer.add_panes(animated_plot)
-    viewer.run()
 
-    raise NotImplementedError
+    def callback(hm=1, sigma=1, **_):
+        gaussian = cv2.getGaussianKernel(20, sigma=sigma)
+        gaussian = gaussian * gaussian.T  # pyright: ignore
+        return gaussian * hm
+
+    d3plot = vwr.Plot3DPane(callback(), callback)
+    t_hm = vwr.ParameterTrackbar("hm", 1, 10000, 1, 100)
+    t_sigma = vwr.ParameterTrackbar("sigma", 0, 100, 1, 3)
+    viewer.add_mosaic([[d3plot], [t_hm, t_sigma]])
+    viewer.run()
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 from numpy.typing import NDArray
 from pyqtgraph import GraphicsLayoutWidget, LayoutWidget, PlotDataItem
+from PySide6.QtWidgets import QWidget, QHBoxLayout
 from qtviewer.decorators import performance_log
 from qtviewer.state import State
 from qtviewer.widgets import StatefulWidget
@@ -236,10 +237,16 @@ class Plot3DPane(StatefulPane):
     surface_item: pggl.GLSurfacePlotItem
 
     def __init__(self, data: NDArray, calculate: Optional[Callable] = None, **kwargs) -> None:
+        """
+        needs:
+            - auto scale grid sizes to data.
 
+
+        """
+        super().__init__(data, calculate, **kwargs)
         # "borrowed" directly from the demos
         self.ogl_view = pggl.GLViewWidget()
-        self.ogl_view.setCameraPosition(distance=40)
+        self.ogl_view.setCameraPosition(distance=100)
         gx = pggl.GLGridItem()
         gx.rotate(90, 0, 1, 0)
         gx.translate(-10, 0, 0)
@@ -253,15 +260,9 @@ class Plot3DPane(StatefulPane):
         gz = pggl.GLGridItem()
         gz.translate(0, 0, -10)
         self.ogl_view.addItem(gz)
-
-        """
-        needs:
-            - auto scale grid sizes to data.
-
-
-        """
-
-        self.surface_item = pggl.GLSurfacePlotItem()
+        self.surface_item = pggl.GLSurfacePlotItem(
+            shader='heightColor', color=(0, 0.5, 0, 0.9), computeNormals=False, smooth=False, glOptions="additive"
+        )
         self.ogl_view.addItem(self.surface_item)
         self.set_data(data)
         self.addWidget(self.ogl_view)
@@ -275,7 +276,10 @@ class Plot3DPane(StatefulPane):
             x, y, z = args
             self.surface_item.setData(x=x, y=y, z=z)
         else:
-            self.surface_item.setData(z=args[0])
+            z = args[0]
+            x = np.arange(z.shape[1]) - 10
+            y = np.arange(z.shape[0]) - 10
+            self.surface_item.setData(x=x, y=y, z=args[0])
 
 
 #
