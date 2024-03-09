@@ -118,16 +118,19 @@ class ImagePane(StatefulPane):
         self.addWidget(self.displaypane)
 
     def set_data(self, *args):
-        """
-        OVERRIDE: See parent definition
-        """
         self.displaypane.setImage(args[0], autoRange=True, autoLevels=True, autoHistogramRange=True)
 
 
-class Plot2DPane(StatefulPane):
+class BasePlot2DPane(StatefulPane):
+    """
+    The Base/Abstract class in which all 2D plotting panes are derived. The
+    purpose of this class is merely to provide a basic set up for inheritors
+    and reduce the amount of typing required to add new 2D plot kinds in the
+    future.
+    """
 
-    __display_pane_layout: pg.GraphicsLayoutWidget
     display_pane: pg.PlotItem
+    __display_pane_layout: pg.GraphicsLayoutWidget
     curves: List[PlotDataItem]
     plot_args: Dict
 
@@ -143,71 +146,70 @@ class Plot2DPane(StatefulPane):
 
         self.display_pane.setLogMode(x=kflag("logx"), y=kflag("logy"))
         self.display_pane.showGrid(x=kflag("gridx"), y=kflag("gridy"))
-
-        plot_args = dict()
-        plot_args["pen"] = None if kflag("scatter") else 'g'
-        plot_args["symbol"] = 't' if kflag("scatter") else None
-        plot_args["symbolSize"] = 10
-        plot_args["symbolBrush"] = (0, 255, 0, 90)
-        self.plot_args = plot_args
         self.curves = []
-        # self.set_data(data)
+        self.plot_args = {}
         self.addWidget(self.__display_pane_layout)
 
-    # TODO: ensure this doesn't cost that much time. otherwise remove and
-    # provide a format guide for users. this viewer is concerned with speed and
-    # less so with formatting hand holding.
-    @staticmethod
-    def format_data(data: NDArray):
+    def __reinitialize_curves(self, ncurves: int):
         """
-        Ensure data provided to other methods is formatted appropriately.
+        If the number of curves to plot on the next render differs from the
+        number currently known, reinitialize the curves collection such that it
+        holds the required number of curve instances.
 
+        :param ncurves: the number of required curves to plot
+        """
+        for x in self.curves:
+            self.display_pane.removeItem(x)
+        self.curves = []
+        for x in range(ncurves):
+            self.curves.append(self.display_pane.plot(**self.plot_args))
+
+    def set_data(self, *args):
+        """
+        OVERRIDE: See parent definition.
+        Use the provided data to update the curves on the 2D PlotView.
+
+        IMPORTANT: Ensure data provided to other methods is formatted appropriately.
         Valid formats are:
             - (N,)
             - (N,2)
             - (M,N)
             - (M,N,2)
 
-        :param data: an ndarray of data points
-        :raises PlotDataValueError: error raised when the provided data cannot
-        be formatted with simple efforts.
-        """
-        if len(data.shape) == 2 and data.shape[0] == 1:
-            data = data.reshape(-1)
-        if len(data.shape) == 1:
-            data = data[np.newaxis, ...]
-        # convert from (N,2) to (1,N,2)
-        if len(data.shape) == 2 and data.shape[1] == 2:
-            data = data[np.newaxis, ...]
-        # ensure valid shape for 3D ndarray
-        if len(data.shape) == 3 and data.shape[2] != 2:
-            raise PlotDataValueError(data.shape)
-
-        return data
-
-    def set_data(self, *args):
-        """
-        OVERRIDE: See parent definition.
-
-        Use the provided data to update the curves (PlotDataItem's) on the 2D
-        PlotView. See format related methods for details on what constitutes a
-        valid format.
-
-        :param data: an ndarray of data points
+        :param args[0]: an ndarray of data points
         """
         data: NDArray = args[0]
-        data = self.format_data(data)
-
         n_curves = data.shape[0]
         if n_curves != len(self.curves):
-            for x in self.curves:
-                self.display_pane.removeItem(x)
-            self.curves = []
-            for x in range(n_curves):
-                self.curves.append(self.display_pane.plot(**self.plot_args))
+            self.__reinitialize_curves(n_curves)
 
         for i in range(n_curves):
             self.curves[i].setData(data[i])
+
+
+class Plot2DLinePane(BasePlot2DPane):
+    """
+    Display a pane which draws all provided data as a set of one or more
+    lines/curves.
+    """
+
+    def __init__(self, data: Optional[NDArray] = None, callback: Optional[Callable] = None, **kwargs) -> None:
+        super().__init__(data, callback, **kwargs)
+        self.plot_args["pen"] = 'g'
+
+
+class Plot2DScatterPane(BasePlot2DPane):
+    """
+    Display a pane which draws all provided data as a set of one or more
+    scatter plots.
+    """
+
+    def __init__(self, data: Optional[NDArray] = None, callback: Optional[Callable] = None, **kwargs) -> None:
+        super().__init__(data, callback, **kwargs)
+        self.plot_args["pen"] = None
+        self.plot_args["symbol"] = 't'
+        self.plot_args["symbolSize"] = 10
+        self.plot_args["symbolBrush"] = (0, 255, 0, 90)
 
 
 class Plot3DPane(StatefulPane):
@@ -258,16 +260,12 @@ class Plot3DPane(StatefulPane):
         gz.translate(0, 0, -10)
         self.display_pane.addItem(gz)
         self.surface_plot = pggl.GLSurfacePlotItem(
-            shader='heightColor', color=(0, 0.5, 0, 0.9), computeNormals=False, smooth=False, glOptions="additive"
+            shader='heightColor', color=(0, 0.5, 0, 0.9), computeNormals=False, smooth=True, glOptions="additive"
         )
         self.display_pane.addItem(self.surface_plot)
         self.addWidget(self.display_pane)
 
     def set_data(self, *args):
-        """
-        OVERRIDE: See parent definition.
-
-        """
         if len(args) == 3:
             x, y, z = args
             self.surface_plot.setData(x=x, y=y, z=z)

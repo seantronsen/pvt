@@ -73,7 +73,7 @@ def demo_image_viewer():
     image_viewer.run()
 
 
-def demo_plot_viewer():
+def demo_line_plot_viewer():
 
     def callback(nsamples=1000, sigma=1, omega=1, phasem=1, timer_ptr=0, **kwargs):
         cphase = timer_ptr / (2 * np.pi)
@@ -89,7 +89,28 @@ def demo_plot_viewer():
     trackbar_sigma = vwr.ParameterTrackbar("sigma", 0, 30, 1)
     trackbar_omega = vwr.ParameterTrackbar("omega", 1, 50, 1, 50)
     trackbar_phasem = vwr.ParameterTrackbar("phasem", 1, 100, 1)
-    animated_plot = vwr.Animator(fps=60, contents=vwr.Plot2DPane(callback=callback))
+    animated_plot = vwr.Animator(fps=60, contents=vwr.Plot2DLinePane(callback=callback))
+    viewer.add_panes(animated_plot.anim_content, trackbar_n, trackbar_omega, trackbar_phasem, trackbar_sigma)
+    viewer.run()
+
+
+def demo_scatter_plot_viewer():
+
+    def callback(nsamples=1000, sigma=1, omega=1, phasem=1, timer_ptr=0, **kwargs):
+        cphase = timer_ptr / (2 * np.pi)
+        cphase *= phasem / 10
+        sinusoid = np.sin((np.linspace(0, omega * 2 * np.pi, nsamples) + cphase))
+        noise = np.random.randn(nsamples)
+        result = sinusoid + (noise[:nsamples] * (sigma / 10))
+        waves = 5
+        return np.array([result] * waves) + np.arange(waves).reshape(-1, 1)
+
+    viewer = vwr.PlotViewer(title="Multiple Plots: A Visual Illustration of Signal Aliasing")
+    trackbar_n = vwr.ParameterTrackbar("nsamples", 100, 1000, 100)
+    trackbar_sigma = vwr.ParameterTrackbar("sigma", 0, 30, 1)
+    trackbar_omega = vwr.ParameterTrackbar("omega", 1, 50, 1, 50)
+    trackbar_phasem = vwr.ParameterTrackbar("phasem", 1, 100, 1)
+    animated_plot = vwr.Animator(fps=60, contents=vwr.Plot2DScatterPane(callback=callback))
     viewer.add_panes(animated_plot.anim_content, trackbar_n, trackbar_omega, trackbar_phasem, trackbar_sigma)
     viewer.run()
 
@@ -126,7 +147,8 @@ if __name__ == "__main__":
     os.environ["VIEWER_PERF_LOG"] = "1"
     options = {}
     options[demo_image_viewer.__name__] = demo_image_viewer
-    options[demo_plot_viewer.__name__] = demo_plot_viewer
+    options[demo_line_plot_viewer.__name__] = demo_line_plot_viewer
+    options[demo_scatter_plot_viewer.__name__] = demo_scatter_plot_viewer
     options[demo_huge_trackbar_performance.__name__] = demo_huge_trackbar_performance
     options[demo_3d_prototype.__name__] = demo_3d_prototype
     if len(sys.argv) >= 2:
