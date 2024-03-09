@@ -112,7 +112,7 @@ class ParameterTrackbar(StatefulWidget):
 
     # instantiated with a detached state for future integration ergonomics
     def __init__(
-        self, label: str, start: int, stop: int, step: int, init: Optional[int] = None, key: Optional[str] = None
+        self, label: str, start: int, stop: int, step: int = 1, init: Optional[int] = None, key: Optional[str] = None
     ) -> None:
         """
         Instantiate a new stateful trackbar widget to visualize the results of
@@ -131,7 +131,8 @@ class ParameterTrackbar(StatefulWidget):
         :param stop: maximum slider value
         :param step: change in value (delta) for one tick of slider movement.
         :param init: initial slider value / position
-        :param key: optional key for the state. if not specified, the label is the key.
+        :param key: optional key for the state. if not specified, the label is
+        the key. the value must abide by python variable naming requirements.
         """
 
         # fill in the optionals

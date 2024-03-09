@@ -1,11 +1,10 @@
 from numpy.typing import NDArray
 from pyqtgraph import GraphicsLayoutWidget, LayoutWidget, PlotDataItem
-from PySide6.QtWidgets import QWidget, QHBoxLayout
 from qtviewer.decorators import performance_log
 from qtviewer.state import State
 from qtviewer.widgets import StatefulWidget
 from qtviewer.exceptions import PlotDataValueError
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Any
 import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.opengl as pggl
@@ -40,7 +39,8 @@ class StatefulPane(LayoutWidget):
     pane_state: State
     callback: Callable
 
-    def __init__(self, data, callback: Optional[Callable] = None, **_) -> None:
+    def __init__(self, data: Optional[Any] = None, callback: Optional[Callable] = None, **_) -> None:
+        assert data is not None or callback is not None
         self.callback = callback if callback is not None else lambda **_: data
         super().__init__()
         self.pane_state = State(self.update)
@@ -110,42 +110,39 @@ class ImagePane(StatefulPane):
     floats, but visualization works best and renders fastest for bytes.
     """
 
-    iv: pg.ImageView
+    displaypane: pg.ImageView
 
-    def __init__(self, image: NDArray, calculate: Optional[Callable] = None, **kwargs) -> None:
-        super().__init__(image, calculate, **kwargs)
-        self.iv = pg.ImageView()
-        self.addWidget(self.iv)
-
-        # prepare for data display
-        self.set_data(image)
+    def __init__(self, data: Optional[NDArray] = None, callback: Optional[Callable] = None, **kwargs) -> None:
+        super().__init__(data, callback, **kwargs)
+        self.displaypane = pg.ImageView()
+        self.addWidget(self.displaypane)
 
     def set_data(self, *args):
         """
         OVERRIDE: See parent definition
         """
-        self.iv.setImage(args[0], autoRange=True, autoLevels=True, autoHistogramRange=True)
+        self.displaypane.setImage(args[0], autoRange=True, autoLevels=True, autoHistogramRange=True)
 
 
 class Plot2DPane(StatefulPane):
 
-    plots_window: pg.GraphicsLayoutWidget
-    plotPrimary: pg.PlotItem
+    __display_pane_layout: pg.GraphicsLayoutWidget
+    display_pane: pg.PlotItem
     curves: List[PlotDataItem]
     plot_args: Dict
 
-    def __init__(self, data: NDArray, calculate: Optional[Callable] = None, **kwargs) -> None:
+    def __init__(self, data: Optional[NDArray] = None, callback: Optional[Callable] = None, **kwargs) -> None:
         kflag = lambda x: kwargs.get(x) if kwargs.get(x) is not None else False
-        super().__init__(data, calculate, **kwargs)
+        super().__init__(data, callback, **kwargs)
 
         # prepare the graphics layout
-        self.plots_window = GraphicsLayoutWidget()
-        self.plotPrimary = self.plots_window.addPlot(title=kwargs.get("title"))
+        self.__display_pane_layout = GraphicsLayoutWidget()
+        self.display_pane = self.__display_pane_layout.addPlot(title=kwargs.get("title"))
         if kflag("legend"):
-            self.plotPrimary.addLegend()
+            self.display_pane.addLegend()
 
-        self.plotPrimary.setLogMode(x=kflag("logx"), y=kflag("logy"))
-        self.plotPrimary.showGrid(x=kflag("gridx"), y=kflag("gridy"))
+        self.display_pane.setLogMode(x=kflag("logx"), y=kflag("logy"))
+        self.display_pane.showGrid(x=kflag("gridx"), y=kflag("gridy"))
 
         plot_args = dict()
         plot_args["pen"] = None if kflag("scatter") else 'g'
@@ -154,8 +151,8 @@ class Plot2DPane(StatefulPane):
         plot_args["symbolBrush"] = (0, 255, 0, 90)
         self.plot_args = plot_args
         self.curves = []
-        self.set_data(data)
-        self.addWidget(self.plots_window)
+        # self.set_data(data)
+        self.addWidget(self.__display_pane_layout)
 
     # TODO: ensure this doesn't cost that much time. otherwise remove and
     # provide a format guide for users. this viewer is concerned with speed and
@@ -204,10 +201,10 @@ class Plot2DPane(StatefulPane):
         n_curves = data.shape[0]
         if n_curves != len(self.curves):
             for x in self.curves:
-                self.plotPrimary.removeItem(x)
+                self.display_pane.removeItem(x)
             self.curves = []
             for x in range(n_curves):
-                self.curves.append(self.plotPrimary.plot(**self.plot_args))
+                self.curves.append(self.display_pane.plot(**self.plot_args))
 
         for i in range(n_curves):
             self.curves[i].setData(data[i])
@@ -233,39 +230,38 @@ class Plot3DPane(StatefulPane):
     ```
     """
 
-    ogl_view: pggl.GLViewWidget
-    surface_item: pggl.GLSurfacePlotItem
+    display_pane: pggl.GLViewWidget
+    surface_plot: pggl.GLSurfacePlotItem
 
-    def __init__(self, data: NDArray, calculate: Optional[Callable] = None, **kwargs) -> None:
+    def __init__(self, data: Optional[NDArray] = None, callback: Optional[Callable] = None, **kwargs) -> None:
         """
         needs:
             - auto scale grid sizes to data.
 
 
         """
-        super().__init__(data, calculate, **kwargs)
+        super().__init__(data, callback, **kwargs)
         # "borrowed" directly from the demos
-        self.ogl_view = pggl.GLViewWidget()
-        self.ogl_view.setCameraPosition(distance=100)
+        self.display_pane = pggl.GLViewWidget()
+        self.display_pane.setCameraPosition(distance=100)
         gx = pggl.GLGridItem()
         gx.rotate(90, 0, 1, 0)
         gx.translate(-10, 0, 0)
         # gx.scale(x,y,z)
         # g.setDepthValue(10)  # draw grid after surfaces since they may be translucent
-        self.ogl_view.addItem(gx)
+        self.display_pane.addItem(gx)
         gy = pggl.GLGridItem()
         gy.rotate(90, 1, 0, 0)
         gy.translate(0, -10, 0)
-        self.ogl_view.addItem(gy)
+        self.display_pane.addItem(gy)
         gz = pggl.GLGridItem()
         gz.translate(0, 0, -10)
-        self.ogl_view.addItem(gz)
-        self.surface_item = pggl.GLSurfacePlotItem(
+        self.display_pane.addItem(gz)
+        self.surface_plot = pggl.GLSurfacePlotItem(
             shader='heightColor', color=(0, 0.5, 0, 0.9), computeNormals=False, smooth=False, glOptions="additive"
         )
-        self.ogl_view.addItem(self.surface_item)
-        self.set_data(data)
-        self.addWidget(self.ogl_view)
+        self.display_pane.addItem(self.surface_plot)
+        self.addWidget(self.display_pane)
 
     def set_data(self, *args):
         """
@@ -274,12 +270,12 @@ class Plot3DPane(StatefulPane):
         """
         if len(args) == 3:
             x, y, z = args
-            self.surface_item.setData(x=x, y=y, z=z)
+            self.surface_plot.setData(x=x, y=y, z=z)
         else:
             z = args[0]
             x = np.arange(z.shape[1]) - 10
             y = np.arange(z.shape[0]) - 10
-            self.surface_item.setData(x=x, y=y, z=args[0])
+            self.surface_plot.setData(x=x, y=y, z=args[0])
 
 
 #

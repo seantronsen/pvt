@@ -12,52 +12,12 @@
 # still remain, please get in touch with the author.
 ##################################################
 ##################################################
-from numpy.typing import NDArray
 import cv2
 import numpy as np
 import os
 import qtviewer as vwr
-import time
 import sys
-
-
-def resize_by_ratio(image: NDArray, ratio: float):
-    """
-    Provided a fractional ratio in the form of a floating point number, resize
-    the image dimensions (width, height) by scaling each axis by the ratio.
-    Note this does not include axes outside of the realm of width and height
-    and the procedure assumes the axes are ordered as (height, width,
-    a,b,c,...).
-
-    Understand any fractional portions of the new resulting axes will be
-    truncated and no rounding will occur.
-
-    Example: Specifying `ratio=0.5` will halve each axis (height, width) and
-    thus return an image 25% of the original size.
-
-    :param image: ndarray encoded image
-    :param ratio: a positive floating point number representing the resize ratio
-    """
-    shape = image.shape[:2]
-    nshape = np.array(shape, dtype=np.float_) * ratio
-    nshape = nshape.astype(np.uintp)  # purposely truncate / math floor
-    nshape = tuple(nshape.tolist())
-    return cv2.resize(image, nshape[::-1])
-
-
-def norm_uint8(ndarray: NDArray):
-    """
-    Re-center the data between zero and one and then convert to 8-bit unsigned
-    integers after a scaling operation.
-
-    :param ndarray: any contiguous memory collection of ndarray encoded data
-    """
-    converted = ndarray.astype(np.float_)
-    minval, maxval = np.min(converted), np.max(converted)
-    top = ndarray - minval
-    bottom = maxval - minval
-    result = np.divide(top, bottom)
-    return (255 * result).astype(np.uint8)
+from demo_utils import *
 
 
 def demo_image_viewer():
@@ -115,7 +75,7 @@ def demo_image_viewer():
 
 def demo_plot_viewer():
 
-    def callback(nsamples, sigma=1, omega=1, phasem=1, timer_ptr=0, **kwargs):
+    def callback(nsamples=1000, sigma=1, omega=1, phasem=1, timer_ptr=0, **kwargs):
         cphase = timer_ptr / (2 * np.pi)
         cphase *= phasem / 10
         sinusoid = np.sin((np.linspace(0, omega * 2 * np.pi, nsamples) + cphase))
@@ -129,7 +89,7 @@ def demo_plot_viewer():
     trackbar_sigma = vwr.ParameterTrackbar("sigma", 0, 30, 1)
     trackbar_omega = vwr.ParameterTrackbar("omega", 1, 50, 1, 50)
     trackbar_phasem = vwr.ParameterTrackbar("phasem", 1, 100, 1)
-    animated_plot = vwr.Animator(fps=60, contents=vwr.Plot2DPane(callback(1000), callback))
+    animated_plot = vwr.Animator(fps=60, contents=vwr.Plot2DPane(callback=callback))
     viewer.add_panes(animated_plot.anim_content, trackbar_n, trackbar_omega, trackbar_phasem, trackbar_sigma)
     viewer.run()
 
@@ -155,7 +115,7 @@ def demo_3d_prototype():
         gaussian = gaussian * gaussian.T  # pyright: ignore
         return gaussian * hm
 
-    d3plot = vwr.Plot3DPane(callback(), callback)
+    d3plot = vwr.Plot3DPane(callback=callback)
     t_hm = vwr.ParameterTrackbar("hm", 1, 10000, 1, 100)
     t_sigma = vwr.ParameterTrackbar("sigma", 0, 100, 1, 3)
     viewer.add_mosaic([[d3plot], [t_hm, t_sigma]])
@@ -172,5 +132,4 @@ if __name__ == "__main__":
     if len(sys.argv) >= 2:
         options[sys.argv[1]]()
     else:
-        # demo_plot_viewer()
         demo_3d_prototype()
