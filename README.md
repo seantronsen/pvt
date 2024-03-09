@@ -70,6 +70,7 @@ brew install qt
 ```
 
 **Windows Users**
+
 Provided this is a Python project, it should be possible to run all of this on
 Windows with minimal changes. It's likely a similar issue to the missing Qt
 installation will be presented on this operating system. Open an issue if you
