@@ -1,50 +1,48 @@
 # qtviewer
 
-A small collection of image viewing utilities created to simplify algorithmic
-tuning efforts by utilizing technologies which allow for a fast render cycle
-when changes are detected.
+A small collection of real-time data viewing utilities, initially created to
+satisfy the goal of enabling algorithmic tuning with rapid feedback.
 
 With this viewer, your code is the bottleneck to the rendering pipeline rather
-than the renderer (looking at you JupyterLab). In other words, this will render 
-as quickly as your code can spit out the data.
+than the renderer itself (looking at you JupyterLab). In other words, this will
+render as quickly as your code can spit out the data.
 
 ## Installation
 
 1. Review the requirements and suggestions below.
-2. Open a shell and create / activate your virtual python environment.
+2. Open a shell and create / activate a fresh python virtual environment.
 3. Clone or submodule this repository.
-4. Navigate to the project directory.
-5. Run `make install-dev`
+4. Navigate to the repository directory.
+5. Run `make install-dev` to install this package into the virtual environment,
+   enabling use in any project.
 6. Mess around with the demo: `python demo.py`.
 7. Mess around with `pyqtgraph`'s demos: `python -c "import qtviewer; qtviewer.run_pyqtgraph_examples()"`
 
 ## Visualization Workflow
 
-1. Create an application instance (e.g. `VisionViewer`) as QtApplication must
-   exist before instantiating any widgets. Obscure errors may result if this
-   requirement is not abided by.
+1. Create an application instance (e.g. `VisionViewer`) as a QtApplication
+   instance must exist before instantiating any widgets.
 
-2. Create all modification / control widgets for a pane. Provide all such instances with
-   both a key and initial value for their corresponding state assignment. Each
-   widget should be responsible for a unique state element. Conceptually, these
-   are just key value pairs in a python dictionary. Interacting with the widget
-   and altering it's local state results in changes being bubbled up to the parent
-   pane state.
+2. Create all control widgets. Provide all instances with a key which will
+   later be used to reference a unique element in the application state.
+   Interacting with the widget will cause any subscribing display panes to be
+   updated. Note that subscription occurs automatically when data and control
+   panes are added to the viewer instance.
 
-3. Create all data display panes (e.g. `ImagePane`). Each child class of
-   StatefulPane requires that a callback function be passed to the instance
-   constructor. Remember those keys from the key-value pairs in step 02? The
-   parameters of the callback function need to have the same names as those keys.
-   Order doesn't matter and extras are ignored if a `**kwargs` parameter is
-   defined on the callback function. An example is provided below.
+3. Create all display panes (e.g. `ImagePane`). Any display pane can optionally
+   be given the ability to update itself by providing a callback argument to
+   the constructor function. To make use of the application state, the
+   arguments of the callback must share the same names as the key values
+   provided to the control widgets created in step 2. Note the order of defined
+   arguments doesn't matter nor do all possible arguments need to be specified
+   if the function declares a `**kwargs**` parameter. If the display doesn't
+   need to be updated at any point, merely pass the constructor some initial
+   data to render a static view. Detailed examples are provided in the
+   `demo.py` file.
 
-4. Attach all widgets to their corresponding panes.
+4. Add all panes to the viewer instance and execute the `run` method.
 
-5. Attach all panes to the application instance (see step 01).
-
-6. Execute the `run` method for the application instance.
-
-## A Note on the QT Viewer Callback Interface
+## A Note about the Callback Interface
 
 Instances of the `StatefulPane` class intuitively hold references to a `State`
 object. For the sake of brevity, understand that an indirect chain of callback
@@ -57,9 +55,13 @@ details in the source code.
 - [anaconda3/miniconda3](https://docs.anaconda.com/free/miniconda/index.html)
 - [GNU Make](https://www.gnu.org/software/make/)
 
+**Linux Users**
+
+Should work out of the box without any issues.
+
 **MacOS Users**
 
-- A Qt installation: MacOS uses cocoa by default (jeers and boos allowed).
+- A Qt installation: MacOS uses cocoa and metal by default (jeers and boos allowed).
 
 ```bash
 
@@ -68,19 +70,43 @@ brew install qt
 ```
 
 **Windows Users**
-Provided this is a python project, it should be possible to run all of this on
+Provided this is a Python project, it should be possible to run all of this on
 Windows with minimal changes. It's likely a similar issue to the missing Qt
 installation will be presented on this operating system. Open an issue if you
 run into any trouble or submit a pull request if you rectify the issue on your
 own and want to share the solution with others.
 
-## Suggestions
+## Help & Suggestions
 
-Review the `pyproject.toml` file to see the package requirements for this
-project. It's imperative the packages in existing projects are compatible.
+- **Review**: Read through the `pyproject.toml` file to see the package
+  requirements for this project. It's imperative the packages in existing
+  projects are compatible.
 
-Additionally, bast on past experience with similar libraries and OpenCV,
-certain virtual environments will find a Qt package conflict issue which is
-typically the result of the Qt library packaged with matplotlib. If you find
-yourself in this situation, open an issue on the repository page and we can
-work through it together.
+- **Qt Incompatibilities**: Depending on packages already within your Python
+  virtual environment, you may run into compatibility issues related to
+  ambiguous references to multiple Qt library versions. To verify the problem,
+  following the debugging steps outlined in this section. Likely culprits are
+  any other packages that come bundled with Qt by default like `matplotlib` and
+  `opencv-contrib-python`. The former rarely presents a problem, but OpenCV's
+  python packages often are the culprit. To resolve the issue, uninstall all
+  things OpenCV in the virtual environment and reinstall the **headless**
+  versions (e.g. `pip install opencv-contrib-python-headless`).
+
+- **Issues and Debugging**: Begin your debugging process by installing this
+  package into a fresh `conda` environment enabled with `python==3.9` as this
+  is the version used for development. From here, test out the implementations
+  provided in `demo.py`. If the demos run appropriate with this set up, an
+  incompatibility exists in your target environment. Based on past experience,
+  this typically occurs from an ambiguous reference to multiple Qt libraries.
+
+- **GitHub Issues**: If all else fails, don't hesitate to browse through
+  current and past GitHub issues to see if anyone else has found the same
+  problem (and potentially a solution). If there's nothing useful to be found,
+  don't hesitate to open a new issue and so we work though the problem
+  together.
+
+## Acknowledgements
+
+This project was made possible by the efforts of the
+[PyQtGraph](https://www.pyqtgraph.org/) team. If you enjoy any feature of this
+package, be sure to check out theirs for specifics and more advanced use cases.
