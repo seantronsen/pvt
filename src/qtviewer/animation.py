@@ -4,9 +4,9 @@ import numpy as np
 
 
 class Animator:
-    anim_content: StatefulPane
+    animation_content: StatefulPane
     timer: QTimer
-    timer_ptr: np.uintp
+    animation_tick: np.uintp
 
     def __init__(
         self,
@@ -15,23 +15,23 @@ class Animator:
     ) -> None:
         assert not fps <= 0
         super().__init__()
-        self.anim_content = contents
-        self.anim_content.pane_state.onUpdate = self.update
-        self.timer_ptr = np.uintp(0)
+        self.animation_content = contents
+        self.animation_content.pane_state.onUpdate = self.update
+        self.animation_tick = np.uintp(0)
         self.timer = QTimer()
         self.timer.timeout.connect(self.on_tick)
         self.timer.start(int(1000 / fps))
 
     def __getattr__(self, name):
-        return getattr(self.anim_content, name)
+        return getattr(self.animation_content, name)
 
     def on_tick(self):
         """
         Exists to provide a timed update feature for animation / sequence data
         where new frames should be delivered at the specified interval.
         """
-        self.timer_ptr += np.uintp(1)
-        self.anim_content.force_flush()
+        self.animation_tick += np.uintp(1)
+        self.animation_content.force_flush()
 
     def update(self, **kwargs):
         """
@@ -41,4 +41,4 @@ class Animator:
         anything other than the one callback you're required to define.
         """
 
-        self.anim_content.update(timer_ptr=self.timer_ptr, **kwargs)
+        self.animation_content.update(animation_tick=self.animation_tick, **kwargs)

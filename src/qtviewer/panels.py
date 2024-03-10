@@ -3,7 +3,6 @@ from pyqtgraph import GraphicsLayoutWidget, LayoutWidget, PlotDataItem
 from qtviewer.decorators import performance_log
 from qtviewer.state import State
 from qtviewer.widgets import StatefulWidget
-from qtviewer.exceptions import PlotDataValueError
 from typing import Callable, Dict, List, Optional, Any
 import numpy as np
 import pyqtgraph as pg

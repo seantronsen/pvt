@@ -35,7 +35,7 @@ render as quickly as your code can spit out the data.
    arguments of the callback must share the same names as the key values
    provided to the control widgets created in step 2. Note the order of defined
    arguments doesn't matter nor do all possible arguments need to be specified
-   if the function declares a `**kwargs**` parameter. If the display doesn't
+   if the function declares a `**kwargs` parameter. If the display doesn't
    need to be updated at any point, merely pass the constructor some initial
    data to render a static view. Detailed examples are provided in the
    `demo.py` file.

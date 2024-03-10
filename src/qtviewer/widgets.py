@@ -1,6 +1,7 @@
 from typing import List, Optional
-from PySide6.QtWidgets import QCheckBox, QWidget, QSlider, QLabel
+from PySide6.QtWidgets import QCheckBox, QLabel
 from PySide6.QtCore import Qt
+from qtviewer.qtmods import TrackbarH
 from qtviewer.state import State
 from pyqtgraph import LayoutWidget
 
@@ -28,6 +29,11 @@ class StatefulWidget(LayoutWidget):
     key: str
 
     def __init__(self, key, init) -> None:
+        """
+        :param key: key name for the state. must abide by python variable
+        naming requirements.
+        :param init [Any]: an initial value
+        """
         self.key = key
         self.init = init
         self.states = []
@@ -47,17 +53,20 @@ class StatefulWidget(LayoutWidget):
 
     def on_change(self, *_):
         """
-        A method which exists on this base class purely as a reminder to
-        implement it on inheriting classes.
+        A callback method to be defined on deriving classes and passed to the
+        `onChange` handler of the wrapped QWidget control. Members of user land
+        do not need to be concerned with this details.
+
+        Implementors must ensure to pass the resulting value to
+        `self.state_update` in order for the callback chain to function
+        properly.
         """
         raise NotImplementedError
 
     def state_update(self, value):
         """
-        will fail if not attached to a parent state
-        i.e. self.state == None
-
         :param value: [TODO:description]
+        :raises KeyError: fails when not attached to state
         """
         for x in self.states:
             x[self.key] = value
@@ -69,7 +78,6 @@ class StatefulWidget(LayoutWidget):
 class ParameterToggle(StatefulWidget):
     cb: QCheckBox
 
-    # instantiated with a detached state for future integration ergonomics
     def __init__(self, label: str, init: bool, key: Optional[str] = None) -> None:
         """
         Instantiate a new stateful checkbox / toggle widget in a detached state
@@ -97,22 +105,17 @@ class ParameterToggle(StatefulWidget):
         self.addWidget(self.s)
 
     def on_change(self, *_):
-        """
-        A call back provided to the QSlider instance which is execute on any
-        change to the underlying slider state.
-        """
         value = int(self.s.isChecked())
         self.state_update(value)
 
 
 class ParameterTrackbar(StatefulWidget):
     label: str
-    s: QSlider
+    s: TrackbarH
     t: QLabel
 
-    # instantiated with a detached state for future integration ergonomics
     def __init__(
-        self, label: str, start: int, stop: int, step: int = 1, init: Optional[int] = None, key: Optional[str] = None
+        self, key: str, start: int, stop: int, step: int = 1, init: Optional[int] = None, label: Optional[str] = None
     ) -> None:
         """
         Instantiate a new stateful trackbar widget to visualize the results of
@@ -126,42 +129,36 @@ class ParameterTrackbar(StatefulWidget):
         when the step size is only one, only a fraction of the events will be
         processed and result in callbacks being triggered to change the UI.
 
-        :param label: the label to appear on the right side of the slider.
+        :param key: key name for the state.
         :param start: minimum slider value
         :param stop: maximum slider value
         :param step: change in value (delta) for one tick of slider movement.
         :param init: initial slider value / position
-        :param key: optional key for the state. if not specified, the label is
-        the key. the value must abide by python variable naming requirements.
+        :param label: optional label to appear on the right side of the slider.
+        defaults to `key` if not assigned.
         """
 
         # fill in the optionals
         init = init if init is not None else start
-        skey = key if key is not None else label
+        label = label if label is not None else key
         assert init <= stop and init >= start
-        super().__init__(skey, init)
+        super().__init__(key, init)
 
         # set up the control
         self.label = label
-        self.s = QSlider(Qt.Horizontal)  # pyright: ignore
-        self.s.setTickPosition(QSlider.TickPosition.TicksBelow)
+        self.s = TrackbarH()
         self.t = QLabel()
         l, s, t = self.label, self.s, self.t
-        s.setFocusPolicy(Qt.StrongFocus)  # pyright: ignore
         s.setRange(start, stop)
-        s.setSingleStep(step)
+        s.setStepSizeForAllEvents(step)
         s.setValue(init)
         t.setText(f"{l}: {s.value()}")
         s.valueChanged.connect(self.on_change)
 
-        self.addWidget(s, 0, 0)  # left
-        self.addWidget(t, 0, 1)  # far-right (trackbar size pushes it luckily)
+        self.addWidget(s, 0, 0)
+        self.addWidget(t, 0, 1)
 
     def on_change(self, *_):
-        """
-        A call back provided to the QSlider instance which is execute on any
-        change to the underlying slider state.
-        """
         value = self.s.value()
         self.t.setText(f"{self.label}: {value}")
         self.state_update(value)
