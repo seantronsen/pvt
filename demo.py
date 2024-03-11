@@ -15,7 +15,7 @@
 import cv2
 import numpy as np
 import os
-import qtviewer as vwr
+from qtviewer import *
 import sys
 from demo_utils import *
 
@@ -40,7 +40,7 @@ def demo_image_viewer():
     # arguments without failing. To elaborate, parameters associated with
     # global control widgets are passed to the callbacks for all top level
     # display panes.
-    def callback_example(rho, sigma, **_):
+    def callback_0(rho, sigma, **_):
         ratio = np.max([0.001, rho / 1000])
         resized = resize_by_ratio(img_test, ratio)
         noise_slice = noise_image[: resized.shape[0], : resized.shape[1]]
@@ -48,7 +48,7 @@ def demo_image_viewer():
         print(f"resolution: ({result.shape[0]:05d}, {result.shape[1]:05d})")
         return result
 
-    def callback_example_2(sigma, **_):
+    def callback_1(sigma, **_):
         noise_slice = noise_image[: img_test_small.shape[0], : img_test_small.shape[1]]
         result = img_test_small + (noise_slice * sigma)
         print(f"resolutionb: ({result.shape[0]:05d}, {result.shape[1]:05d})")
@@ -56,18 +56,18 @@ def demo_image_viewer():
 
     # define the viewer interface and run the application
     # happy tuning / visualizing!
-    image_viewer = vwr.VisionViewer()
-    trackbar_rho = vwr.ParameterTrackbar("rho", 0, 100, step=1, init=50)
-    trackbar_sigma = vwr.ParameterTrackbar("sigma", 0, 100, 2)
-    ip = vwr.ImagePane(img_test, callback_example)
-    ip2 = vwr.ImagePane(img_test_small, callback_example_2)
+    image_viewer = VisionViewer()
+    trackbar_rho = ParameterTrackbar("rho", 0, 100, init=50)
+    trackbar_sigma = ParameterTrackbar("sigma", 0, 100, 2)
+    ip = ImagePane(callback_0)
+    ip2 = ImagePane(callback_1)
     image_viewer.add_mosaic([[ip, ip2], [trackbar_rho], [trackbar_sigma]])
     image_viewer.run()
 
 
 def demo_line_plot_viewer():
 
-    def callback(nsamples=1000, sigma=1, omega=1, phasem=1, animation_tick=0, **_):
+    def callback(nsamples, sigma, omega, phasem, animation_tick, **_):
         cphase = animation_tick / (2 * np.pi)
         cphase *= phasem / 10
         sinusoid = np.sin((np.linspace(0, omega * 2 * np.pi, nsamples) + cphase))
@@ -76,19 +76,19 @@ def demo_line_plot_viewer():
         waves = 3
         return np.array([result] * waves) + np.arange(waves).reshape(-1, 1)
 
-    viewer = vwr.PlotViewer(title="Multiple Plots: A Visual Illustration of Signal Aliasing")
-    trackbar_n = vwr.ParameterTrackbar("nsamples", 100, 1000, step=100)
-    trackbar_sigma = vwr.ParameterTrackbar("sigma", 0, 30)
-    trackbar_omega = vwr.ParameterTrackbar("omega", 1, 50, init=50)
-    trackbar_phasem = vwr.ParameterTrackbar("phasem", 1, 100)
-    animated_plot = vwr.Animator(fps=60, contents=vwr.Plot2DLinePane(callback=callback))
+    viewer = PlotViewer(title="Multiple Plots: A Visual Illustration of Signal Aliasing")
+    trackbar_n = ParameterTrackbar("nsamples", 100, 1000, 100)
+    trackbar_sigma = ParameterTrackbar("sigma", 0, 30)
+    trackbar_omega = ParameterTrackbar("omega", 1, 50, init=50)
+    trackbar_phasem = ParameterTrackbar("phasem", 1, 100)
+    animated_plot = Animator(fps=60, contents=Plot2DLinePane(callback))
     viewer.add_panes(animated_plot.animation_content, trackbar_n, trackbar_omega, trackbar_phasem, trackbar_sigma)
     viewer.run()
 
 
 def demo_scatter_plot_viewer():
 
-    def callback(nsamples=1000, sigma=1, omega=1, phasem=1, animation_tick=0, **_):
+    def callback(nsamples, sigma, omega, phasem, animation_tick, **_):
         cphase = animation_tick / (2 * np.pi)
         cphase *= phasem / 10
         sinusoid = np.sin((np.linspace(0, omega * 2 * np.pi, nsamples) + cphase))
@@ -97,12 +97,12 @@ def demo_scatter_plot_viewer():
         waves = 3
         return np.array([result] * waves) + np.arange(waves).reshape(-1, 1)
 
-    viewer = vwr.PlotViewer(title="Multiple Plots: A Visual Illustration of Signal Aliasing")
-    trackbar_n = vwr.ParameterTrackbar("nsamples", 100, 1000, step=100)
-    trackbar_sigma = vwr.ParameterTrackbar("sigma", 0, 30)
-    trackbar_omega = vwr.ParameterTrackbar("omega", 1, 50, init=50)
-    trackbar_phasem = vwr.ParameterTrackbar("phasem", 1, 100)
-    animated_plot = vwr.Animator(fps=60, contents=vwr.Plot2DScatterPane(callback=callback))
+    viewer = PlotViewer(title="Multiple Plots: A Visual Illustration of Signal Aliasing")
+    trackbar_n = ParameterTrackbar("nsamples", 100, 1000, 100)
+    trackbar_sigma = ParameterTrackbar("sigma", 0, 30)
+    trackbar_omega = ParameterTrackbar("omega", 1, 50, init=50)
+    trackbar_phasem = ParameterTrackbar("phasem", 1, 100)
+    animated_plot = Animator(fps=60, contents=Plot2DScatterPane(callback))
     viewer.add_panes(animated_plot.animation_content, trackbar_n, trackbar_omega, trackbar_phasem, trackbar_sigma)
     viewer.run()
 
@@ -113,24 +113,23 @@ def demo_huge_trackbar_bad_performance():
     slow and cumbersome, even when used alone.
     """
 
-    viewer = vwr.PlotViewer(title="Multiple Plots: A Visual Illustration of Signal Aliasing")
-    trackbar_n = vwr.ParameterTrackbar("nsamples", 0, 10000)
+    viewer = PlotViewer(title="Multiple Plots: A Visual Illustration of Signal Aliasing")
+    trackbar_n = ParameterTrackbar("nsamples", 0, 10000)
     viewer.add_panes(trackbar_n)
     viewer.run()
 
 
 def demo_3d_prototype():
 
-    viewer = vwr.PlotViewer(title="Multiple Plots: A Visual Illustration of Signal Aliasing")
-
     def callback(hm=1, sigma=1, **_):
         gaussian = cv2.getGaussianKernel(20, sigma=sigma)
         gaussian = gaussian * gaussian.T  # pyright: ignore
         return gaussian * hm
 
-    d3plot = vwr.Plot3DPane(callback=callback)
-    t_hm = vwr.ParameterTrackbar("hm", 1, 10000, step=100)
-    t_sigma = vwr.ParameterTrackbar("sigma", 0, 100, init=3)
+    viewer = PlotViewer()
+    d3plot = Plot3DPane(callback)
+    t_hm = ParameterTrackbar("hm", 1, 10000, 100)
+    t_sigma = ParameterTrackbar("sigma", 0, 100, init=3)
     viewer.add_mosaic([[d3plot], [t_hm, t_sigma]])
     viewer.run()
 

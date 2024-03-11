@@ -127,9 +127,9 @@ class BasePlot2DPane(StatefulPane):
     curves: List[PlotDataItem]
     plot_args: Dict
 
-    def __init__(self, data: Optional[NDArray] = None, callback: Optional[Callable] = None, **kwargs) -> None:
+    def __init__(self, callback: Callable, **kwargs) -> None:
         kflag = lambda x: kwargs.get(x) if kwargs.get(x) is not None else False
-        super().__init__(data, callback, **kwargs)
+        super().__init__(callback, **kwargs)
 
         # prepare the graphics layout
         self.__display_pane_layout = GraphicsLayoutWidget()
@@ -186,8 +186,8 @@ class Plot2DLinePane(BasePlot2DPane):
     lines/curves.
     """
 
-    def __init__(self, data: Optional[NDArray] = None, callback: Optional[Callable] = None, **kwargs) -> None:
-        super().__init__(data, callback, **kwargs)
+    def __init__(self, callback: Callable, **kwargs) -> None:
+        super().__init__(callback, **kwargs)
         self.plot_args["pen"] = 'g'
 
 
@@ -197,8 +197,8 @@ class Plot2DScatterPane(BasePlot2DPane):
     scatter plots.
     """
 
-    def __init__(self, data: Optional[NDArray] = None, callback: Optional[Callable] = None, **kwargs) -> None:
-        super().__init__(data, callback, **kwargs)
+    def __init__(self, callback: Callable, **kwargs) -> None:
+        super().__init__(callback, **kwargs)
         self.plot_args["pen"] = None
         self.plot_args["symbol"] = 't'
         self.plot_args["symbolSize"] = 10
@@ -228,14 +228,14 @@ class Plot3DPane(StatefulPane):
     display_pane: pggl.GLViewWidget
     surface_plot: pggl.GLSurfacePlotItem
 
-    def __init__(self, data: Optional[NDArray] = None, callback: Optional[Callable] = None, **kwargs) -> None:
+    def __init__(self, callback: Callable, **kwargs) -> None:
         """
         needs:
             - auto scale grid sizes to data.
 
 
         """
-        super().__init__(data, callback, **kwargs)
+        super().__init__(callback, **kwargs)
         # "borrowed" directly from the demos
         self.display_pane = pggl.GLViewWidget()
         self.display_pane.setCameraPosition(distance=100)
@@ -269,7 +269,7 @@ class Plot3DPane(StatefulPane):
             self.surface_plot.setData(x=x, y=y, z=args[0])
 
 
-#
+# ## CITATION: THIS IS PULLED DIRECTLY FROM PYQTGRAPH'S EXAMPLES
 # ## Simple surface plot example
 # ## x, y values are not specified, so assumed to be 0:50
 # z = pg.gaussianFilter(np.random.normal(size=(50, 50)), (1, 1))
