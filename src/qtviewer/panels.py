@@ -3,7 +3,7 @@ from pyqtgraph import GraphicsLayoutWidget, LayoutWidget, PlotDataItem
 from qtviewer.decorators import performance_log
 from qtviewer.state import State
 from qtviewer.widgets import StatefulWidget
-from typing import Callable, Dict, List, Optional, Any
+from typing import Callable, Dict, List, Optional
 import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.opengl as pggl
@@ -19,28 +19,22 @@ class StatefulPane(LayoutWidget):
     if different behavior is desired.
 
     IMPORTANT: Data immutability is a property that should be abided by when
-    defining callback functions. That is, the callback function should either
-    return new or a modified copy of the original data. Failing to abide by
-    this suggestion will require users to restart the application in order to
-    re-obtain the initial state of the image later mutated by the callback.
-    Specifically, the scope of this class and all derivations does not include
-    managing the state of your data. It only includes management of the state
-    of tuning parameters.
+    defining callback functions. Management of specific data is external to the
+    design scope of this class.
 
-    IMPORTANT: For most intents and purposes, you will want to attach control
-    widgets to the main application window and not to an instance of a display
-    pane directly. Doing such allows a common state to be shared among all data
-    display panes which allows for a state change within a control widget to
-    affect all related data display panes (i.e. no need for duplicate control
-    widgets).
+    IMPORTANT: For most intents and purposes, attach control widgets to the
+    main application window and not a derivation of this class. Doing such
+    allows a common state to be shared among all data display panes and allows
+    for a state change within a control widget to be reflected across all
+    related data display panes (i.e. no need for duplicate control widgets).
     """
 
     pane_state: State
     callback: Callable
 
-    def __init__(self, data: Optional[Any] = None, callback: Optional[Callable] = None, **_) -> None:
-        assert data is not None or callback is not None
-        self.callback = callback if callback is not None else lambda **_: data
+    def __init__(self, callback: Optional[Callable] = None, **_) -> None:
+        assert callback is not None
+        self.callback = callback
         super().__init__()
         self.pane_state = State(self.update)
 
@@ -111,8 +105,8 @@ class ImagePane(StatefulPane):
 
     displaypane: pg.ImageView
 
-    def __init__(self, data: Optional[NDArray] = None, callback: Optional[Callable] = None, **kwargs) -> None:
-        super().__init__(data, callback, **kwargs)
+    def __init__(self, callback: Callable, **kwargs) -> None:
+        super().__init__(callback, **kwargs)
         self.displaypane = pg.ImageView()
         self.addWidget(self.displaypane)
 
