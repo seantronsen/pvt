@@ -94,9 +94,8 @@ class StatefulPane(LayoutWidget):
 class ImagePane(StatefulPane):
     """
     A pane which can be used to display and analyze image data with a fast
-    refresh rate. An initial image to display must be provided to the
-    constructor along with an optional callback function which may be used to
-    update the display.
+    refresh rate. An callback function for updating the display must be
+    provided to the constructor function.
 
     IMPORTANT: Image data should be normalized and converted to standard bytes
     (uint8). Note the underlying pyqtgraph library supports uint16 and small
@@ -162,8 +161,8 @@ class BasePlot2DPane(StatefulPane):
         OVERRIDE: See parent definition.
         Use the provided data to update the curves on the 2D PlotView.
 
-        IMPORTANT: Ensure data provided to other methods is formatted appropriately.
-        Valid formats are:
+        IMPORTANT: Ensure data provided to other methods is formatted
+        appropriately. Valid formats are:
             - (N,)
             - (N,2)
             - (M,N)

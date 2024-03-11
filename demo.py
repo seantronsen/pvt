@@ -65,6 +65,19 @@ def demo_image_viewer():
     image_viewer.run()
 
 
+def demo_static_image_viewer():
+    img_test = cv2.imread("sample-media/checkboard_non_planar.png").astype(np.uint8)
+    img_test = norm_uint8(cv2.cvtColor(img_test, cv2.COLOR_BGR2GRAY))
+
+    def callback(**_):
+        return img_test
+
+    image_viewer = VisionViewer()
+    ip = ImagePane(callback)
+    image_viewer.add_panes(ip)
+    image_viewer.run()
+
+
 def demo_line_plot_viewer():
 
     def callback(nsamples, sigma, omega, phasem, animation_tick, **_):

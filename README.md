@@ -29,16 +29,15 @@ render as quickly as your code can spit out the data.
    updated. Note that subscription occurs automatically when data and control
    panes are added to the viewer instance.
 
-3. Create all display panes (e.g. `ImagePane`). Any display pane can optionally
-   be given the ability to update itself by providing a callback argument to
-   the constructor function. To make use of the application state, the
-   arguments of the callback must share the same names as the key values
-   provided to the control widgets created in step 2. Note the order of defined
-   arguments doesn't matter nor do all possible arguments need to be specified
-   if the function declares a `**kwargs` parameter. If the display doesn't
-   need to be updated at any point, merely pass the constructor some initial
-   data to render a static view. Detailed examples are provided in the
-   `demo.py` file.
+3. Create all display panes (e.g. `ImagePane`), passing each a callback
+   function to generate new frames for display. To make use of the application
+   state, the arguments of the callback must share the same names as the key
+   values provided to the control widgets created in step 2. Note the order of
+   defined arguments doesn't matter nor do all possible arguments need to be
+   specified if the function declares a `**kwargs` parameter. If there is no
+   need to update the display, specify a default callback which performs no
+   processing and merely returns the data to be displayed. Detailed examples
+   are provided in the `demo.py` file.
 
 4. Add all panes to the viewer instance and execute the `run` method.
 
