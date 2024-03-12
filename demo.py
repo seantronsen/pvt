@@ -12,9 +12,16 @@
 # still remain, please get in touch with the author.
 ##################################################
 ##################################################
+
+# optional imports
+import os
+
+os.environ["VIEWER_PERF_LOG"] = "1"  # remove to disable performance logging
+
+
+# standard imports
 import cv2
 import numpy as np
-import os
 from qtviewer import *
 import sys
 from demo_utils import *
@@ -61,7 +68,7 @@ def demo_image_viewer():
     trackbar_sigma = ParameterTrackbar("sigma", 0, 100, 2)
 
     # set to False if panning and zoom should not reset on each new frame
-    ip = ImagePane(callback_0, autoRange=True) 
+    ip = ImagePane(callback_0, autoRange=True)
     ip2 = ImagePane(callback_1)
     image_viewer.add_mosaic([[ip, ip2], [trackbar_rho], [trackbar_sigma]])
     image_viewer.run()
@@ -147,7 +154,6 @@ def demo_3d_prototype():
 
 
 if __name__ == "__main__":
-    os.environ["VIEWER_PERF_LOG"] = "1"
     options = {}
     options[demo_image_viewer.__name__] = demo_image_viewer
     options[demo_static_image_viewer.__name__] = demo_static_image_viewer
