@@ -25,7 +25,7 @@ def performance_log(func: Callable):
         start = time.time()
         result = func(self, *args, **kwargs)
         elapsed = time.time() - start
-        print(f"processing time: {elapsed:010.07f} max possible fps: {1 / elapsed: 015.07f}")
+        print(f"processing time (s): {elapsed:010.07f} max possible fps: {1 / elapsed: 015.07f}")
         return result
 
     return wrapper
