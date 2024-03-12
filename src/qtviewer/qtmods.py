@@ -9,7 +9,7 @@ class TrackbarH(QSlider):
     A derivation of Qt's QSlider class that allows the slider position to
     change according to the step size, even when dragged. Why this is not
     provided as an "in the box" feature for anything except keyboard arrow keys
-    is unknown.
+    is unknown, especially considering how simple the solution is.
     """
 
     _stepSize: int = 1
@@ -19,31 +19,21 @@ class TrackbarH(QSlider):
         self.setFocusPolicy(Qt.StrongFocus)  # pyright: ignore
         self.setTickPosition(QSlider.TickPosition.TicksBelow)
 
-    def mousePressEvent(self, ev: QMouseEvent) -> None:
-
-        # capture click position
-        self._initialClickPosition = ev.position().x()
-        ev.accept()
-
     def mouseMoveEvent(self, ev: QMouseEvent) -> None:
-        # change to set the new value based off the current position and discard the entire notion of tracking the position
-        # calc step => bounded pos / (width / num steps)
-        # round to closest
-        # calculate the position delta
-        bound = lambda value: min(max(value, 0), self.width())
-        # step_total = (self.maximum() / self._stepSize) - 1
-        step_total = (self.maximum() / self._stepSize) 
-        step_distance = np.round(self.width() / step_total)
-        new_position = bound(ev.position().x())
-        diff = new_position - self._initialClickPosition
+        boundary_truncation = lambda value: min(max(value, 0), self.width())
 
-        # calculate step delta
-        steps = np.round(diff / step_distance)
-        print(f"{ev.position().x()=} {new_position=} {diff=} {steps=} {step_total=} {step_distance=}")
-        if steps:
-            next_position = bound(self._initialClickPosition + (steps * step_distance))
-            self.setValue(self.value() + int(steps * self._stepSize))
-            self._initialClickPosition = int(next_position)
+        # determine position
+        new_position = boundary_truncation(ev.position().x())
+
+        # calculate prereqs to determine nearest tick
+        max_setting = self.maximum()
+        total_steps = max_setting / self._stepSize  # n steps => n + 1 settings
+        step_width_px = self.width() / total_steps
+
+        # calculate nearest tick and assign as widget value.
+        # min with maxval to prevent undefined behaviors
+        new_value = min(np.round(new_position / step_width_px) * self._stepSize, max_setting)
+        self.setValue(int(new_value))
         return ev.accept()
 
     def setStepSizeForAllEvents(self, stepSize):
