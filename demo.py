@@ -65,7 +65,7 @@ def demo_image_viewer():
     # happy tuning / visualizing!
     image_viewer = VisionViewer()
     trackbar_rho = ParameterTrackbar("rho", 0, 100, init=50)
-    trackbar_sigma = ParameterTrackbar("sigma", 0, 10, 3)
+    trackbar_sigma = ParameterTrackbar("sigma", 0, 100, 2)
 
     # set to False if panning and zoom should not reset on each new frame
     ip = ImagePane(callback_0, autoRange=True)
