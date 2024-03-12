@@ -59,7 +59,9 @@ def demo_image_viewer():
     image_viewer = VisionViewer()
     trackbar_rho = ParameterTrackbar("rho", 0, 100, init=50)
     trackbar_sigma = ParameterTrackbar("sigma", 0, 100, 2)
-    ip = ImagePane(callback_0)
+
+    # set to False if panning and zoom should not reset on each new frame
+    ip = ImagePane(callback_0, autoRange=True) 
     ip2 = ImagePane(callback_1)
     image_viewer.add_mosaic([[ip, ip2], [trackbar_rho], [trackbar_sigma]])
     image_viewer.run()

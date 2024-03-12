@@ -103,14 +103,30 @@ class ImagePane(StatefulPane):
     """
 
     displaypane: pg.ImageView
+    dargs: Dict
 
-    def __init__(self, callback: Callable, **kwargs) -> None:
+    def __init__(self, callback: Callable, autoRange=True, autoLevels=True, autoHistogramRange=True, **kwargs) -> None:
+        """
+        Constructor function
+
+        :param callback: user defined callback responsible for yielding new data for display
+        :param autoRange: flag which specifies whether display zoom and panning
+        should be reset on each render. disable this if you want to focus on a
+        particular set of pixels for any frame to be displayed.
+
+        :param autoLevels: flag which specifies whether to update the intensity
+        range when displaying the image (normalization)
+
+        :param autoHistogramRange: flag which specifies whether the histogram
+        widget is scaled to fit the data.
+        """
+        self.dargs = dict(autoRange=autoRange, autoLevels=autoLevels, autoHistogramRange=autoHistogramRange)
         super().__init__(callback, **kwargs)
         self.displaypane = pg.ImageView()
         self.addWidget(self.displaypane)
 
     def set_data(self, *args):
-        self.displaypane.setImage(args[0], autoRange=True, autoLevels=True, autoHistogramRange=True)
+        self.displaypane.setImage(args[0], **self.dargs)
 
 
 class BasePlot2DPane(StatefulPane):
