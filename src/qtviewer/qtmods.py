@@ -26,15 +26,20 @@ class TrackbarH(QSlider):
         ev.accept()
 
     def mouseMoveEvent(self, ev: QMouseEvent) -> None:
+        # change to set the new value based off the current position and discard the entire notion of tracking the position
+        # calc step => bounded pos / (width / num steps)
+        # round to closest
         # calculate the position delta
         bound = lambda value: min(max(value, 0), self.width())
-        step_total = (self.maximum() / self._stepSize) - 1
+        # step_total = (self.maximum() / self._stepSize) - 1
+        step_total = (self.maximum() / self._stepSize) 
         step_distance = np.round(self.width() / step_total)
         new_position = bound(ev.position().x())
         diff = new_position - self._initialClickPosition
 
         # calculate step delta
         steps = np.round(diff / step_distance)
+        print(f"{ev.position().x()=} {new_position=} {diff=} {steps=} {step_total=} {step_distance=}")
         if steps:
             next_position = bound(self._initialClickPosition + (steps * step_distance))
             self.setValue(self.value() + int(steps * self._stepSize))

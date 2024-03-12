@@ -16,7 +16,7 @@
 # optional imports
 import os
 
-os.environ["VIEWER_PERF_LOG"] = "1"  # remove to disable performance logging
+# os.environ["VIEWER_PERF_LOG"] = "1"  # remove to disable performance logging
 
 
 # standard imports
@@ -52,13 +52,13 @@ def demo_image_viewer():
         resized = resize_by_ratio(img_test, ratio)
         noise_slice = noise_image[: resized.shape[0], : resized.shape[1]]
         result = resized + (noise_slice * sigma)
-        print(f"resolution: ({result.shape[0]:05d}, {result.shape[1]:05d})")
+        # print(f"resolution: ({result.shape[0]:05d}, {result.shape[1]:05d})")
         return result
 
     def callback_1(sigma, **_):
         noise_slice = noise_image[: img_test_small.shape[0], : img_test_small.shape[1]]
         result = img_test_small + (noise_slice * sigma)
-        print(f"resolutionb: ({result.shape[0]:05d}, {result.shape[1]:05d})")
+        # print(f"resolutionb: ({result.shape[0]:05d}, {result.shape[1]:05d})")
         return result
 
     # define the viewer interface and run the application
@@ -70,7 +70,7 @@ def demo_image_viewer():
     # set to False if panning and zoom should not reset on each new frame
     ip = ImagePane(callback_0, autoRange=True)
     ip2 = ImagePane(callback_1)
-    image_viewer.add_mosaic([[ip, ip2], [trackbar_rho], [trackbar_sigma]])
+    image_viewer.add_mosaic([[ip, ip2], [trackbar_rho, trackbar_sigma]])
     image_viewer.run()
 
 
