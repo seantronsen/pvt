@@ -20,20 +20,18 @@ class TrackbarH(QSlider):
         self.setTickPosition(QSlider.TickPosition.TicksBelow)
 
     def mouseMoveEvent(self, ev: QMouseEvent) -> None:
-        boundary_truncation = lambda value: min(max(value, 0), self.width())
+        min_setting, max_setting, width = self.minimum(), self.maximum(), self.width()
+        boundary_truncation = lambda value: min(max(value, 0), width)
 
         # determine position
         new_position = boundary_truncation(ev.position().x())
 
         # calculate prereqs to determine nearest tick
-        max_setting = self.maximum()
-        total_steps = max_setting / self._stepSize  # n steps => n + 1 settings
-        step_width_px = self.width() / total_steps
+        total_steps = (max_setting - min_setting) / self._stepSize  # n steps => n + 1 settings
+        step_width_px = width / total_steps
 
         # calculate nearest tick and assign as widget value.
-        # min with maxval to prevent undefined behaviors
-        new_value = min(np.round(new_position / step_width_px) * self._stepSize, max_setting)
-        self.setValue(int(new_value))
+        self.setValue(np.round(new_position / step_width_px * self._stepSize + min_setting).astype(np.intp))
         return ev.accept()
 
     def setStepSizeForAllEvents(self, stepSize):
