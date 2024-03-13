@@ -36,7 +36,6 @@ class StatefulPane(LayoutWidget):
     identifier: str
 
     def __init__(self, callback: Optional[Callable] = None, **kwargs) -> None:
-        print(self.__class__.__name__)
         assert callback is not None
         super().__init__(**kwargs)
         self.identifier = f"{self.__class__.__name__}-{IdManager().generate_identifier()}"

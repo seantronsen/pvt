@@ -41,7 +41,6 @@ def inherit_docstring(func: Callable):
     DOESN'T WORK... CUE THE FAILURE TROMBONE
     """
 
-    print(globals())
     assoc_class = globals()[str.split(func.__qualname__, sep=".")[0]]
     parent = assoc_class.__bases__[0]
     parent_method = getattr(parent, func.__name__)
