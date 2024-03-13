@@ -118,16 +118,15 @@ def demo_huge_trackbar_bad_performance():
 
 def demo_3d_prototype():
 
-    def callback(scale=1, sigma=1, **_):
+    def callback(animation_tick, sigma, **_):
         gaussian = cv2.getGaussianKernel(20, sigma=sigma)
         gaussian = gaussian * gaussian.T  # pyright: ignore
-        return gaussian * scale
+        return gaussian * ((animation_tick % 500) + 1) * 10
 
     viewer = PlotViewer()
-    d3plot = Plot3DPane(callback)
-    t_hm = ParameterTrackbar("scale", 100, 10000, 100, init=500)
-    t_sigma = ParameterTrackbar("sigma", 0, 100, init=3)
-    viewer.add_mosaic([[d3plot], [t_hm, t_sigma]])
+    d3plot = Animator(fps=60, contents=Plot3DPane(callback)).animation_content
+    t_sigma = ParameterTrackbar("sigma", 1, 25, init=5)
+    viewer.add_panes(d3plot, t_sigma)
     viewer.run()
 
 
