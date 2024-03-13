@@ -8,7 +8,7 @@ from typing import Callable, Dict, List, Optional
 import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.opengl as pggl
-from PySide6.QtWidgets import QSizePolicy, QWidget
+from PySide6.QtWidgets import QLabel, QSizePolicy, QWidget
 
 
 class StatefulPane(LayoutWidget):
@@ -42,7 +42,9 @@ class StatefulPane(LayoutWidget):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)  # pyright: ignore
         self.callback = callback
         self.pane_state = State(self.update)
-        self.addLabel(self.identifier)
+        self.identifier_label = QLabel(self.identifier)
+        # self.identifier_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed) # pyright: ignore
+        self.addWidget(self.identifier_label)
         self.nextRow()
 
     @performance_log
@@ -253,12 +255,13 @@ class Plot3DPane(StatefulPane):
 
     def __init__(self, callback: Callable, **kwargs) -> None:
         """
+        borrowed" directly from the demos"
         needs:
             - auto scale grid sizes to data.
         """
         super().__init__(callback, **kwargs)
-        # "borrowed" directly from the demos
         self.plot_space = pggl.GLViewWidget()
+        self.plot_space.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)  # pyright: ignore
         self.plot_space.setCameraPosition(distance=100)
         gx = pggl.GLGridItem()
         gx.rotate(90, 0, 1, 0)
