@@ -18,7 +18,7 @@ class Animator:
         self.animation_content = contents
         self.animation_content.pane_state.onUpdate = self.update
         self.animation_tick = np.uintp(0)
-        self.timer = QTimer()
+        self.timer = QTimer(parent=self.animation_content)
         self.timer.timeout.connect(self.on_tick)
         self.timer.start(int(1000 / fps))
 

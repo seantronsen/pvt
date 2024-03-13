@@ -7,7 +7,7 @@ from typing import Callable, Dict, List, Optional
 import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.opengl as pggl
-from PySide6.QtWidgets import QSizePolicy
+from PySide6.QtWidgets import QSizePolicy, QWidget
 
 
 class StatefulPane(LayoutWidget):
@@ -33,12 +33,12 @@ class StatefulPane(LayoutWidget):
     pane_state: State
     callback: Callable
 
-    def __init__(self, callback: Optional[Callable] = None, **_) -> None:
+    def __init__(self, callback: Optional[Callable] = None, **kwargs) -> None:
         assert callback is not None
+        super().__init__(**kwargs)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)  # pyright: ignore
         self.callback = callback
-        super().__init__()
         self.pane_state = State(self.update)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
     @performance_log
     def update(self, **kwargs):
@@ -83,12 +83,13 @@ class StatefulPane(LayoutWidget):
     def attach_widget(self, widget: StatefulWidget):
         """
         Enchain the pane state with the specified widget and position it
-        beneath the main feature pane. Use this method when a control widget
+        beneath the feature pane. Use this method when a control widget
         should be directly associated with a specific data display pane.
 
         :param widget: [TODO:description]
         """
         self.enchain(widget)
+        widget.setParent(self)
         self.addWidget(widget)
         self.nextRow()
 
@@ -122,8 +123,8 @@ class ImagePane(StatefulPane):
         :param autoHistogramRange: flag which specifies whether the histogram
         widget is scaled to fit the data.
         """
-        self.dargs = dict(autoRange=autoRange, autoLevels=autoLevels, autoHistogramRange=autoHistogramRange)
         super().__init__(callback, **kwargs)
+        self.dargs = dict(autoRange=autoRange, autoLevels=autoLevels, autoHistogramRange=autoHistogramRange)
         self.displaypane = pg.ImageView()
         self.addWidget(self.displaypane)
 
@@ -139,8 +140,8 @@ class BasePlot2DPane(StatefulPane):
     future.
     """
 
-    display_pane: pg.PlotItem
-    __display_pane_layout: pg.GraphicsLayoutWidget
+    plot_item: pg.PlotItem
+    plot_layout: pg.GraphicsLayoutWidget
     curves: List[PlotDataItem]
     plot_args: Dict
 
@@ -149,16 +150,16 @@ class BasePlot2DPane(StatefulPane):
         super().__init__(callback, **kwargs)
 
         # prepare the graphics layout
-        self.__display_pane_layout = GraphicsLayoutWidget()
-        self.display_pane = self.__display_pane_layout.addPlot(title=kwargs.get("title"))
+        self.plot_layout = GraphicsLayoutWidget()
+        self.plot_item = self.plot_layout.addPlot(title=kwargs.get("title"))
         if kflag("legend"):
-            self.display_pane.addLegend()
+            self.plot_item.addLegend()
 
-        self.display_pane.setLogMode(x=kflag("logx"), y=kflag("logy"))
-        self.display_pane.showGrid(x=kflag("gridx"), y=kflag("gridy"))
+        self.plot_item.setLogMode(x=kflag("logx"), y=kflag("logy"))
+        self.plot_item.showGrid(x=kflag("gridx"), y=kflag("gridy"))
         self.curves = []
         self.plot_args = {}
-        self.addWidget(self.__display_pane_layout)
+        self.addWidget(self.plot_layout)
 
     def __reinitialize_curves(self, ncurves: int):
         """
@@ -169,10 +170,10 @@ class BasePlot2DPane(StatefulPane):
         :param ncurves: the number of required curves to plot
         """
         for x in self.curves:
-            self.display_pane.removeItem(x)
+            self.plot_item.removeItem(x)
         self.curves = []
         for x in range(ncurves):
-            self.curves.append(self.display_pane.plot(**self.plot_args))
+            self.curves.append(self.plot_item.plot(**self.plot_args))
 
     def set_data(self, *args):
         """
@@ -242,8 +243,8 @@ class Plot3DPane(StatefulPane):
     ```
     """
 
-    display_pane: pggl.GLViewWidget
-    surface_plot: pggl.GLSurfacePlotItem
+    plot_space: pggl.GLViewWidget
+    plot_surface: pggl.GLSurfacePlotItem
 
     def __init__(self, callback: Callable, **kwargs) -> None:
         """
@@ -252,36 +253,36 @@ class Plot3DPane(StatefulPane):
         """
         super().__init__(callback, **kwargs)
         # "borrowed" directly from the demos
-        self.display_pane = pggl.GLViewWidget()
-        self.display_pane.setCameraPosition(distance=100)
+        self.plot_space = pggl.GLViewWidget()
+        self.plot_space.setCameraPosition(distance=100)
         gx = pggl.GLGridItem()
         gx.rotate(90, 0, 1, 0)
         gx.translate(-10, 0, 0)
         # gx.scale(x,y,z)
         # g.setDepthValue(10)  # draw grid after surfaces since they may be translucent
-        self.display_pane.addItem(gx)
+        self.plot_space.addItem(gx)
         gy = pggl.GLGridItem()
         gy.rotate(90, 1, 0, 0)
         gy.translate(0, -10, 0)
-        self.display_pane.addItem(gy)
+        self.plot_space.addItem(gy)
         gz = pggl.GLGridItem()
         gz.translate(0, 0, -10)
-        self.display_pane.addItem(gz)
-        self.surface_plot = pggl.GLSurfacePlotItem(
+        self.plot_space.addItem(gz)
+        self.plot_surface = pggl.GLSurfacePlotItem(
             shader='heightColor', color=(0, 0.5, 0, 0.9), computeNormals=False, smooth=True, glOptions="additive"
         )
-        self.display_pane.addItem(self.surface_plot)
-        self.addWidget(self.display_pane)
+        self.plot_space.addItem(self.plot_surface)
+        self.addWidget(self.plot_space)
 
     def set_data(self, *args):
         if len(args) == 3:
             x, y, z = args
-            self.surface_plot.setData(x=x, y=y, z=z)
+            self.plot_surface.setData(x=x, y=y, z=z)
         else:
             z = args[0]
             x = np.arange(z.shape[1]) - 10
             y = np.arange(z.shape[0]) - 10
-            self.surface_plot.setData(x=x, y=y, z=args[0])
+            self.plot_surface.setData(x=x, y=y, z=args[0])
 
 
 # ## CITATION: THIS IS PULLED DIRECTLY FROM PYQTGRAPH'S EXAMPLES

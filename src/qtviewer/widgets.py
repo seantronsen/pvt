@@ -17,18 +17,15 @@ class StatefulWidget(LayoutWidget):
     integer value could be used to index into a string array if a particular
     string value is needed.
 
-    IMPORTANT: This is a base class for deriving widgets used in this library.
-
     NOTE FROM THE AUTHOR: I have no intention of supporting form components
-    such as text input fields at this time. The purpose of this library is to
-    simplify quick and dirty data visualization and algorithmic tuning. Text
-    inputs have no place here in that regard.
+    like text input fields at this time. The purpose of this library is to
+    simplify quick and dirty data visualization and algorithmic tuning.
     """
 
     states: List[State]
     key: str
 
-    def __init__(self, key, init) -> None:
+    def __init__(self, key, init, **kwargs) -> None:
         """
         :param key: key name for the state. must abide by python variable
         naming requirements.
@@ -37,7 +34,7 @@ class StatefulWidget(LayoutWidget):
         self.key = key
         self.init = init
         self.states = []
-        super().__init__()
+        super().__init__(**kwargs)
 
     def attach(self, state: State):
         """

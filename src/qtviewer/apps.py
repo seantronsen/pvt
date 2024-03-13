@@ -1,41 +1,52 @@
 import signal
 import sys
-from typing import List, NoReturn
+from typing import List
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QHBoxLayout, QWidget, QApplication
+from PySide6.QtWidgets import QHBoxLayout, QMainWindow, QWidget, QApplication
 from pyqtgraph import LayoutWidget
 from qtviewer.panels import StatefulPane
 from qtviewer.widgets import StatefulWidget
+from PySide6.QtWidgets import QSizePolicy
 
 
-class AppBase(QApplication):
+class MainWindow(QMainWindow):
+
+    panel: LayoutWidget
+
+    def __init__(self, title="qtviewer") -> None:
+        super().__init__()
+        self.setWindowTitle(title)
+        self.panel = LayoutWidget(parent=self)
+        self.setCentralWidget(self.panel)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)  # pyright: ignore
+
+    def addWidget(self, widget: QWidget):
+        self.panel.addWidget(widget)
+
+    def nextRow(self):
+        self.panel.nextRow()
+
+
+class Skeleton(QApplication):
     """
     A general refactoring of the larger application class which extracts some
     of the more basic elements.
     """
 
-    panel: LayoutWidget
     timer: QTimer
+    main_window: MainWindow
 
-    def __init__(self, title="qtviewer"):
+    def __init__(self, title):
         super().__init__([])
-        self.panel = LayoutWidget()
-        self.panel.setWindowTitle(title)
+        self.main_window = MainWindow(title=title)
 
-        # enable close on ctrl-c
-        signal.signal(signal.SIGINT, self.__handler_sigint)
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.__squelch)
+        # enable terminate on sigint / ctrl-c
+        signal.signal(signal.SIGINT, self.sigint)
+        self.timer = QTimer(parent=self)
+        self.timer.timeout.connect(lambda **_: None)
         self.timer.start(100)
 
-    def __squelch(self, *args, **kwargs):
-        """
-        exists purely to return process control to the python layer, allowing
-        signals to be processed and actions to be taken accordingly.
-        """
-        pass
-
-    def __handler_sigint(self, signal, frame):
+    def sigint(self, signal, frame):
         """
         A component of the timed event check used to "gracefully shutdown"
         (kill) the application if the user sends the interrupt signal.
@@ -43,19 +54,19 @@ class AppBase(QApplication):
         :param signal: [TODO:description]
         :param frame: [TODO:description]
         """
-        print("received interrupt signal")
+        print("received interrupt signal: attempting graceful program termination")
         self.quit()
 
-    def run(self) -> None:  # pyright: ignore # typing exists to shut up pyright
+    def run(self) -> None:
         """
         A conveniece function with launches the Qt GUI and displays the window
         simultaneously.
         """
-        self.panel.show()
+        self.main_window.show()
         sys.exit(self.exec())
 
 
-class AppMain(AppBase):
+class App(Skeleton):
     """
     A wrapper around QApplication which provides several creature comforts.
     Serves as a root node for any qtviewer GUI.
@@ -69,7 +80,7 @@ class AppMain(AppBase):
         self.data_controls = []
         self.data_displays = []
 
-    def __link_with_global_state(self, pane: QWidget):
+    def enchain_global(self, pane: QWidget):
         pane_type = type(pane)
         if issubclass(pane_type, StatefulPane):
             s_pane: StatefulPane = pane  # pyright: ignore
@@ -92,23 +103,22 @@ class AppMain(AppBase):
         """
 
         for x in panes:
-            self.panel.addWidget(x)
-            self.panel.nextRow()
-            self.__link_with_global_state(x)
+            self.main_window.addWidget(x)
+            self.main_window.nextRow()
+            self.enchain_global(x)
 
     def add_mosaic(self, mosaic: List[List[QWidget]]):
         assert type(mosaic) == list
         assert len(mosaic) != 0 and type(mosaic[0]) == list
 
         for row in mosaic:
-            hbox = QHBoxLayout()
-            wrapper = QWidget()
-            wrapper.setLayout(hbox)
+            wrapper = QWidget(parent=self.main_window)
+            wrapper.setLayout(QHBoxLayout())
             for element in row:
-                hbox.addWidget(element)
-                self.__link_with_global_state(element)
-            self.panel.addWidget(wrapper)
-            self.panel.nextRow()
+                wrapper.layout().addWidget(element)
+                self.enchain_global(element)
+            self.main_window.addWidget(wrapper)
+            self.main_window.nextRow()
 
     def run(self):
         # TODO/FIX: should all panes solely use global state, then this results
@@ -118,7 +128,7 @@ class AppMain(AppBase):
         super().run()
 
 
-class VisionViewer(AppMain):
+class VisionViewer(App):
     """
     An image data focused viewer. At the time of writing, there are no true
     differences between this class and the parent. Instead, it exists for the
@@ -129,7 +139,7 @@ class VisionViewer(AppMain):
         super().__init__(title=title)
 
 
-class PlotViewer(AppMain):
+class PlotViewer(App):
     """
     Another superficial class that may exist only temporarily.
     """
