@@ -38,6 +38,7 @@ class StatefulPane(LayoutWidget):
         self.callback = callback
         super().__init__()
         self.pane_state = State(self.update)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
     @performance_log
     def update(self, **kwargs):
@@ -252,7 +253,6 @@ class Plot3DPane(StatefulPane):
         super().__init__(callback, **kwargs)
         # "borrowed" directly from the demos
         self.display_pane = pggl.GLViewWidget()
-        self.display_pane.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.display_pane.setCameraPosition(distance=100)
         gx = pggl.GLGridItem()
         gx.rotate(90, 0, 1, 0)
