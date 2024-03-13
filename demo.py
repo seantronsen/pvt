@@ -125,7 +125,7 @@ def demo_3d_prototype():
 
     viewer = PlotViewer()
     d3plot = Plot3DPane(callback)
-    t_hm = ParameterTrackbar("scale", 1, 10000, 100)
+    t_hm = ParameterTrackbar("scale", 100, 10000, 100, init=500)
     t_sigma = ParameterTrackbar("sigma", 0, 100, init=3)
     viewer.add_mosaic([[d3plot], [t_hm, t_sigma]])
     viewer.run()
