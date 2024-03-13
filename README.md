@@ -7,6 +7,12 @@ With this viewer, your code is the bottleneck to the rendering pipeline rather
 than the renderer itself (looking at you JupyterLab). In other words, this will
 render as quickly as your code can spit out the data.
 
+## Early Development Notice
+Note that this project is in the early stages of development and while it
+remains quite functional you should expect frequent changes when tracking the
+`main` branch. For this reason, it's recommended that you
+clone/checkout/submodule one of the project tags for a more stable experience.
+
 ## Installation
 
 1. Review the requirements and suggestions below.
