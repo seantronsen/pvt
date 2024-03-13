@@ -7,6 +7,7 @@ from typing import Callable, Dict, List, Optional
 import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.opengl as pggl
+from PySide6.QtWidgets import QSizePolicy
 
 
 class StatefulPane(LayoutWidget):
@@ -247,12 +248,11 @@ class Plot3DPane(StatefulPane):
         """
         needs:
             - auto scale grid sizes to data.
-
-
         """
         super().__init__(callback, **kwargs)
         # "borrowed" directly from the demos
         self.display_pane = pggl.GLViewWidget()
+        self.display_pane.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.display_pane.setCameraPosition(distance=100)
         gx = pggl.GLGridItem()
         gx.rotate(90, 0, 1, 0)
