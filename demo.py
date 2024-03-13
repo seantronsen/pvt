@@ -84,7 +84,7 @@ def demo_static_image_viewer():
     image_viewer.run()
 
 
-def demo_line_plot_viewer():
+def demo_plot_viewer():
 
     def callback(nsamples, sigma, omega, phasem, animation_tick, **_):
         cphase = animation_tick / (2 * np.pi)
@@ -100,29 +100,9 @@ def demo_line_plot_viewer():
     trackbar_sigma = ParameterTrackbar("sigma", 0, 30)
     trackbar_omega = ParameterTrackbar("omega", 1, 50, init=50)
     trackbar_phasem = ParameterTrackbar("phasem", 1, 100)
-    animated_plot = Animator(fps=60, contents=Plot2DLinePane(callback))
-    viewer.add_panes(animated_plot.animation_content, trackbar_n, trackbar_omega, trackbar_phasem, trackbar_sigma)
-    viewer.run()
-
-
-def demo_scatter_plot_viewer():
-
-    def callback(nsamples, sigma, omega, phasem, animation_tick, **_):
-        cphase = animation_tick / (2 * np.pi)
-        cphase *= phasem / 10
-        sinusoid = np.sin((np.linspace(0, omega * 2 * np.pi, nsamples) + cphase))
-        noise = np.random.randn(nsamples)
-        result = sinusoid + (noise[:nsamples] * (sigma / 10))
-        waves = 3
-        return np.array([result] * waves) + np.arange(waves).reshape(-1, 1)
-
-    viewer = PlotViewer(title="Multiple Plots: A Visual Illustration of Signal Aliasing")
-    trackbar_n = ParameterTrackbar("nsamples", 100, 1000, 100)
-    trackbar_sigma = ParameterTrackbar("sigma", 0, 30)
-    trackbar_omega = ParameterTrackbar("omega", 1, 50, init=50)
-    trackbar_phasem = ParameterTrackbar("phasem", 1, 100)
-    animated_plot = Animator(fps=60, contents=Plot2DScatterPane(callback))
-    viewer.add_panes(animated_plot.animation_content, trackbar_n, trackbar_omega, trackbar_phasem, trackbar_sigma)
+    pl = Animator(fps=60, contents=Plot2DLinePane(callback)).animation_content
+    ps = Animator(fps=60, contents=Plot2DScatterPane(callback)).animation_content
+    viewer.add_mosaic([[pl, ps], [trackbar_n, trackbar_omega], [trackbar_phasem, trackbar_sigma]])
     viewer.run()
 
 
@@ -140,14 +120,14 @@ def demo_huge_trackbar_bad_performance():
 
 def demo_3d_prototype():
 
-    def callback(hm=1, sigma=1, **_):
+    def callback(scale=1, sigma=1, **_):
         gaussian = cv2.getGaussianKernel(20, sigma=sigma)
         gaussian = gaussian * gaussian.T  # pyright: ignore
-        return gaussian * hm
+        return gaussian * scale
 
     viewer = PlotViewer()
     d3plot = Plot3DPane(callback)
-    t_hm = ParameterTrackbar("hm", 1, 10000, 100)
+    t_hm = ParameterTrackbar("scale", 1, 10000, 100)
     t_sigma = ParameterTrackbar("sigma", 0, 100, init=3)
     viewer.add_mosaic([[d3plot], [t_hm, t_sigma]])
     viewer.run()
@@ -157,8 +137,7 @@ if __name__ == "__main__":
     options = {}
     options[demo_image_viewer.__name__] = demo_image_viewer
     options[demo_static_image_viewer.__name__] = demo_static_image_viewer
-    options[demo_line_plot_viewer.__name__] = demo_line_plot_viewer
-    options[demo_scatter_plot_viewer.__name__] = demo_scatter_plot_viewer
+    options[demo_plot_viewer.__name__] = demo_plot_viewer
     options[demo_huge_trackbar_bad_performance.__name__] = demo_huge_trackbar_bad_performance
     options[demo_3d_prototype.__name__] = demo_3d_prototype
     if len(sys.argv) >= 2:

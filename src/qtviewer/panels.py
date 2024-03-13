@@ -1,6 +1,7 @@
 from numpy.typing import NDArray
 from pyqtgraph import GraphicsLayoutWidget, LayoutWidget, PlotDataItem
 from qtviewer.decorators import performance_log
+from qtviewer.identifier import IdManager
 from qtviewer.state import State
 from qtviewer.widgets import StatefulWidget
 from typing import Callable, Dict, List, Optional
@@ -32,13 +33,18 @@ class StatefulPane(LayoutWidget):
 
     pane_state: State
     callback: Callable
+    identifier: str
 
     def __init__(self, callback: Optional[Callable] = None, **kwargs) -> None:
+        print(self.__class__.__name__)
         assert callback is not None
         super().__init__(**kwargs)
+        self.identifier = f"{self.__class__.__name__}-{IdManager().generate_identifier()}"
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)  # pyright: ignore
         self.callback = callback
         self.pane_state = State(self.update)
+        self.addLabel(self.identifier)
+        self.nextRow()
 
     @performance_log
     def update(self, **kwargs):

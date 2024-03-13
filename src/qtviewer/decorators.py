@@ -10,6 +10,8 @@ def performance_log(func: Callable):
     Attached to a defined function to wrap with a performance logging feature.
     Used only when the associated environment variable is true.
 
+    IMPORTANT: Right now this is only intended to be used with display panes.
+
     IMPORTANT: The specified function must take a **kwargs argument. Nuisances
     aside, the requirement allows this decorator to remain compatible with
     instance methods and classic functions alike.
@@ -22,10 +24,13 @@ def performance_log(func: Callable):
 
     @wraps(func)
     def wrapper(self, *args, **kwargs):
+        identifier = self.identifier
         start = time.time()
         result = func(self, *args, **kwargs)
         elapsed = time.time() - start
-        print(f"processing time (s): {elapsed:010.07f} max possible fps: {1 / elapsed: 015.07f}")
+        print(
+            f"identifier: {identifier.ljust(35)} processing time (s): {elapsed:010.07f} max possible fps: {1 / elapsed: 015.07f}"
+        )
         return result
 
     return wrapper
