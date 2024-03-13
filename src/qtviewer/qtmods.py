@@ -31,7 +31,7 @@ class TrackbarH(QSlider):
         step_width_px = width / total_steps
 
         # calculate nearest tick and assign as widget value.
-        self.setValue(np.round(new_position / step_width_px * self._stepSize + min_setting).astype(np.intp))
+        self.setValue(np.round(new_position / step_width_px).astype(np.intp) * self._stepSize + min_setting)
         return ev.accept()
 
     def setStepSizeForAllEvents(self, stepSize):
