@@ -5,7 +5,7 @@ import os
 from typing import Callable
 
 
-def performance_log(func: Callable):
+def performance_log(event: str):
     """
     Attached to a defined function to wrap with a performance logging feature.
     Used only when the associated environment variable is true.
@@ -19,21 +19,25 @@ def performance_log(func: Callable):
     :param func: routine to decorate
     """
 
-    if not os.getenv("VIEWER_PERF_LOG") == "1":
-        return func
+    def decorate(func: Callable):
 
-    @wraps(func)
-    def wrapper(self, *args, **kwargs):
-        identifier = self.identifier
-        start = time.time()
-        result = func(self, *args, **kwargs)
-        elapsed = time.time() - start
-        print(
-            f"identifier: {identifier.ljust(35)} processing time (s): {elapsed:010.07f} max possible fps: {1 / elapsed: 015.07f}"
-        )
-        return result
+        if not os.getenv("VIEWER_PERF_LOG") == "1":
+            return func
 
-    return wrapper
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            identifier = self.identifier
+            start = time.time()
+            result = func(self, *args, **kwargs)
+            elapsed = time.time() - start
+            print(
+                f"identifier: {identifier.ljust(30)} event: {event.ljust(10)} processing time (s): {elapsed:010.07f} max possible fps: {1 / elapsed: 015.07f}"
+            )
+            return result
+
+        return wrapper
+
+    return decorate
 
 
 def inherit_docstring(func: Callable):

@@ -47,7 +47,7 @@ class StatefulPane(LayoutWidget):
         self.addWidget(self.identifier_label)
         self.nextRow()
 
-    @performance_log
+    @performance_log(event="compute")
     def update(self, **kwargs):
         """
         This function is the callback provided to the State instance and is
