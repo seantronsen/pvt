@@ -151,6 +151,7 @@ class BasePlot2DPane(StatefulPane):
     plot_layout: pg.GraphicsLayoutWidget
     curves: List[PlotDataItem]
     plot_args: Dict
+    colors = ['r', 'g', 'b', 'c', 'y', 'k', 'w']
 
     def __init__(self, callback: Callable, **kwargs) -> None:
         kflag = lambda x: kwargs.get(x) if kwargs.get(x) is not None else False
