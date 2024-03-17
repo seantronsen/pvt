@@ -98,7 +98,11 @@ def demo_plot_viewer():
     trackbar_sigma = ParameterTrackbar("sigma", 0, 30)
     trackbar_omega = ParameterTrackbar("omega", 1, 50, init=50)
     trackbar_phasem = ParameterTrackbar("phasem", 1, 100)
-    pl = Animator(fps=60, contents=Plot2DLinePane(callback)).animation_content
+    pl = Plot2DLinePane(callback, ncolors=3, cmap="plasma")
+    pl.set_title("Signal Aliasing: Labeled Graph")
+    pl.set_xlabel("Sample Number")
+    pl.set_ylabel("Amplitude")
+    pl = Animator(fps=60, contents=pl).animation_content
     ps = Animator(fps=60, contents=Plot2DScatterPane(callback)).animation_content
     viewer.add_mosaic([[pl, ps], [trackbar_n, trackbar_omega], [trackbar_phasem, trackbar_sigma]])
     viewer.run()

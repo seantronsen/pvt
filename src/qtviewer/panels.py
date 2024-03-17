@@ -1,5 +1,6 @@
 from numpy.typing import NDArray
 from pyqtgraph import GraphicsLayoutWidget, LayoutWidget, PlotDataItem
+from pyqtgraph.colormap import ColorMap
 from qtviewer.decorators import performance_log
 from qtviewer.identifier import IdManager
 from qtviewer.state import State
@@ -139,6 +140,10 @@ class ImagePane(StatefulPane):
         self.displaypane.setImage(args[0], **self.dargs)
 
 
+def colors_from_cmap(cmap: ColorMap, ncolors: int):
+    return [cmap.map(x / ncolors, mode=ColorMap.QCOLOR) for x in range(ncolors)]
+
+
 class BasePlot2DPane(StatefulPane):
     """
     The Base/Abstract class in which all 2D plotting panes are derived. The
@@ -151,23 +156,55 @@ class BasePlot2DPane(StatefulPane):
     plot_layout: pg.GraphicsLayoutWidget
     curves: List[PlotDataItem]
     plot_args: Dict
-    colors = ['r', 'g', 'b', 'c', 'y', 'k', 'w']
 
     def __init__(self, callback: Callable, **kwargs) -> None:
-        kflag = lambda x: kwargs.get(x) if kwargs.get(x) is not None else False
-        super().__init__(callback, **kwargs)
 
         # prepare the graphics layout
         self.plot_layout = GraphicsLayoutWidget()
-        self.plot_item = self.plot_layout.addPlot(title=kwargs.get("title"))
-        if kflag("legend"):
+        self.plot_item = self.plot_layout.addPlot(title=kwargs.pop("title", None))
+
+        # prepare colors
+        self.cmap = pg.colormap.get(kwargs.pop("cmap", "CET-C7s"))
+        self.cmap_colors = colors_from_cmap(self.cmap, kwargs.pop("ncolors", 1))  # pyright: ignore
+
+        if kwargs.pop("legend", False):
             self.plot_item.addLegend()
 
-        self.plot_item.setLogMode(x=kflag("logx"), y=kflag("logy"))
-        self.plot_item.showGrid(x=kflag("gridx"), y=kflag("gridy"))
+        self.plot_item.setLogMode(x=kwargs.pop("logx", False), y=kwargs.pop("logy", False))
+        self.plot_item.showGrid(x=kwargs.pop("gridx", False), y=kwargs.pop("gridy", False))
         self.curves = []
         self.plot_args = {}
+
+        super().__init__(callback, **kwargs)
         self.addWidget(self.plot_layout)
+
+    def nth_color(self, n):
+        return self.cmap_colors[n % len(self.cmap_colors)]
+
+    def set_xlabel(self, label: str, units: Optional[str] = None):
+        self.plot_item.setLabel(axis="bottom", text=label, units=units)
+
+    def set_ylabel(self, label: str, units: Optional[str] = None):
+        self.plot_item.setLabel(axis="left", text=label, units=units)
+
+    def set_title(self, title: str):
+        self.plot_item.setTitle(title=title)
+
+    def plot_tailored(self, i: int, **kwargs):
+        """
+        A method which executes a tailored version of the plotting function.
+        Deriving classes are encouraged to override this function, especially
+        for cases where different plot features (e.g. lines) must have
+        different properties based on their order of appearance (e.g.
+        coloring).
+
+        NOTE: By design, this method should only be called by __reinitialize
+        curves. As such, if different behavior is desired, create a subclass
+        that overrides the default design features.
+
+        :param i: index number of appearance in the plotting order.
+        """
+        return self.plot_item.plot(**self.plot_args, **kwargs)
 
     def __reinitialize_curves(self, ncurves: int):
         """
@@ -181,7 +218,7 @@ class BasePlot2DPane(StatefulPane):
             self.plot_item.removeItem(x)
         self.curves = []
         for x in range(ncurves):
-            self.curves.append(self.plot_item.plot(**self.plot_args))
+            self.curves.append(self.plot_tailored(x))
 
     def set_data(self, *args):
         """
@@ -214,7 +251,11 @@ class Plot2DLinePane(BasePlot2DPane):
 
     def __init__(self, callback: Callable, **kwargs) -> None:
         super().__init__(callback, **kwargs)
-        self.plot_args["pen"] = 'g'
+        # self.plot_args["pen"] = 'g'
+
+    def plot_tailored(self, i, **_):
+        pen = self.nth_color(i)
+        return super().plot_tailored(i, pen=pen)
 
 
 class Plot2DScatterPane(BasePlot2DPane):
@@ -228,7 +269,11 @@ class Plot2DScatterPane(BasePlot2DPane):
         self.plot_args["pen"] = None
         self.plot_args["symbol"] = 't'
         self.plot_args["symbolSize"] = 10
-        self.plot_args["symbolBrush"] = (0, 255, 0, 90)
+        # self.plot_args["symbolBrush"] = (0, 255, 0, 90)
+
+    def plot_tailored(self, i, **_):
+        symbolBrush = self.nth_color(i)
+        return super().plot_tailored(i, symbolBrush=symbolBrush)
 
 
 class Plot3DPane(StatefulPane):
