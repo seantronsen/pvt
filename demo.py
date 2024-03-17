@@ -124,9 +124,11 @@ def demo_3d_prototype():
         return gaussian * ((animation_tick % 500) + 1) * 10
 
     viewer = PlotViewer()
-    d3plot = Animator(fps=60, contents=Plot3DPane(callback)).animation_content
+    animator = Animator(fps=60, contents=Plot3DPane(callback))
+    d3plot = animator.animation_content
+    control_bar = AnimatorControlBar(animator=animator)
     t_sigma = ParameterTrackbar("sigma", 1, 25, init=5)
-    viewer.add_panes(d3plot, t_sigma)
+    viewer.add_panes(d3plot, control_bar, t_sigma)
     viewer.run()
 
 

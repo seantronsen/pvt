@@ -1,4 +1,6 @@
 from PySide6.QtCore import QTimer
+from PySide6.QtWidgets import QCheckBox, QPushButton
+from pyqtgraph import LayoutWidget
 from qtviewer.panels import StatefulPane
 import numpy as np
 
@@ -20,10 +22,14 @@ class Animator:
         self.animation_tick = np.uintp(0)
         self.timer = QTimer(parent=self.animation_content)
         self.timer.timeout.connect(self.on_tick)
-        self.timer.start(int(1000 / fps))
+        self.tick_time = int(1000 / fps)
+        self.timer.start(self.tick_time)
 
     def __getattr__(self, name):
         return getattr(self.animation_content, name)
+
+    def content_flush(self):
+        self.animation_content.force_flush()
 
     def on_tick(self):
         """
@@ -31,7 +37,7 @@ class Animator:
         where new frames should be delivered at the specified interval.
         """
         self.animation_tick += np.uintp(1)
-        self.animation_content.force_flush()
+        self.content_flush()
 
     def update(self, **kwargs):
         """
@@ -42,3 +48,51 @@ class Animator:
         """
 
         self.animation_content.update(animation_tick=self.animation_tick, **kwargs)
+
+    def is_running(self):
+        return self.timer.isActive()
+
+    def pause_toggle(self, *a, **k):
+        if self.is_running():
+            self.timer.stop()
+        else:
+            self.timer.start(self.tick_time)
+
+    def forward_one_step(self, *a, **k):
+        self.animation_tick += 1
+        self.content_flush()
+
+    def reverse_one_step(self, *a, **k):
+        self.animation_tick -= 1
+        self.content_flush()
+
+    def reset(self, *a, **k):
+        self.animation_tick = np.uintp(0)
+        self.content_flush()
+
+
+class AnimatorControlBar(LayoutWidget):
+
+    animator: Animator
+
+    def __init__(self, animator: Animator):
+        super().__init__()
+        self.animator = animator
+
+        self.b_reset = QPushButton("RESET")
+        self.b_one_forward = QPushButton("FORWARD FRAME: >")
+        self.b_one_reverse = QPushButton("< :BACKWARD FRAME")
+
+        self.b_reset.clicked.connect(self.animator.reset)
+        self.b_one_forward.clicked.connect(self.animator.forward_one_step)
+        self.b_one_reverse.clicked.connect(self.animator.reverse_one_step)
+
+        self.b_toggle = QPushButton("PLAY")
+        self.b_toggle.setCheckable(True)
+        self.b_toggle.setChecked(self.animator.is_running())
+        self.b_toggle.clicked.connect(self.animator.pause_toggle)
+
+        self.addWidget(self.b_reset, row=0, col=0)
+        self.addWidget(self.b_one_reverse, row=0, col=1)
+        self.addWidget(self.b_toggle, row=0, col=2)
+        self.addWidget(self.b_one_forward, row=0, col=3)
