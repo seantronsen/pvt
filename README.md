@@ -4,8 +4,8 @@ A small collection of real-time data viewing utilities, initially created to
 satisfy the goal of enabling algorithmic tuning with rapid feedback.
 
 With this viewer, your code is the bottleneck to the rendering pipeline rather
-than the renderer itself (looking at you JupyterLab). In other words, this will
-render as quickly as your code can spit out the data.
+than the renderer itself (looking at you JupyterLab \w `matplotlib`). In other
+words, this will render as quickly as your code can spit out the data.
 
 ## Early Development Notice
 Understand this project is in the early stages of development and while it
