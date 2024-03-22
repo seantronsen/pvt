@@ -1,5 +1,4 @@
 import time
-import inspect
 from functools import wraps
 import os
 from typing import Callable
@@ -38,38 +37,3 @@ def performance_log(event: str):
         return wrapper
 
     return decorate
-
-
-def inherit_docstring(func: Callable):
-    """
-    DOESN'T WORK... CUE THE FAILURE TROMBONE
-    """
-
-    assoc_class = globals()[str.split(func.__qualname__, sep=".")[0]]
-    parent = assoc_class.__bases__[0]
-    parent_method = getattr(parent, func.__name__)
-    parent_docstring = parent_method.__doc__
-    holder = func.__doc__ if func.__doc__ is not None else ""
-    if parent_docstring is not None:
-        holder += "\n"
-        holder += parent_docstring
-        func.__doc__ = holder
-
-    thunk = None
-    if len(inspect.signature(func).parameters) != 1:
-
-        @wraps(func)
-        def a(self, *args, **kwargs):
-            return func(self, *args, **kwargs)
-
-        thunk = a
-
-    else:
-
-        @wraps(func)
-        def b(self):
-            return func(self)
-
-        thunk = b
-
-    return thunk

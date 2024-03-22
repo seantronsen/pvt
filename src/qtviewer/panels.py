@@ -48,7 +48,6 @@ class StatefulPane(LayoutWidget):
         self.addWidget(self.identifier_label)
         self.nextRow()
 
-    @performance_log(event="compute")
     def update(self, **kwargs):
         """
         This function is the callback provided to the State instance and is
@@ -56,10 +55,33 @@ class StatefulPane(LayoutWidget):
         by this callback. If you wish to exist in user land, don't worry about
         anything other than the one callback you're required to define.
         """
-        data = self.callback(**kwargs)
-        self.set_data(data)
+        data = self.compute_data(**kwargs)
+        self.__render_data(data)
 
-    def set_data(self, *args):
+    @performance_log(event="compute")
+    def compute_data(self, **kwargs):
+        """
+        just a general abstraction. doens't really need to exist, but it makes
+        the class definition a little more readable since it allows the more
+        typical use of a decorator as opposed to the inline version.
+
+        I'll update this docstring later.
+
+        :param self [TODO:type]: [TODO:description]
+        """
+        return self.callback(**kwargs)
+
+    @performance_log(event="render")
+    def __render_data(self, *args):
+        """
+        yet another layer of abstraction so that we can make the parent class
+        have optional logging and automatically have it used in child classes.
+
+        :param self [TODO:type]: [TODO:description]
+        """
+        self.render_data(*args)
+
+    def render_data(self, *args):
         """
         IMPORTANT: A parent method which will fail if not overridden/shadowed.
 
@@ -136,7 +158,7 @@ class ImagePane(StatefulPane):
         self.displaypane = pg.ImageView()
         self.addWidget(self.displaypane)
 
-    def set_data(self, *args):
+    def render_data(self, *args):
         self.displaypane.setImage(args[0], **self.dargs)
 
 
@@ -220,7 +242,7 @@ class BasePlot2DPane(StatefulPane):
         for x in range(ncurves):
             self.curves.append(self.plot_tailored(x))
 
-    def set_data(self, *args):
+    def render_data(self, *args):
         """
         OVERRIDE: See parent definition.
         Use the provided data to update the curves on the 2D PlotView.
@@ -327,7 +349,7 @@ class Plot3DPane(StatefulPane):
         self.plot_space.addItem(self.plot_surface)
         self.addWidget(self.plot_space)
 
-    def set_data(self, *args):
+    def render_data(self, *args):
         if len(args) == 3:
             x, y, z = args
             self.plot_surface.setData(x=x, y=y, z=z)
