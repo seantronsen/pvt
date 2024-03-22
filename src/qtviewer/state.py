@@ -11,7 +11,7 @@ class State:
     display panes.
     """
 
-    __storage: Dict
+    storage: Dict
     onUpdate: Callable
 
     def __init__(
@@ -19,18 +19,18 @@ class State:
         callback,
         init: Optional[Dict] = None,
     ) -> None:
-        self.__storage = init if init is not None else {}
+        self.storage = init if init is not None else {}
         self.onUpdate = callback
 
     def __getitem__(self, key):
-        return self.__storage.get(key)
+        return self.storage.get(key)
 
     def __setitem__(self, key, value):
-        self.__storage[key] = value
+        self.storage[key] = value
 
     def flush(self):
         """
         Execute the user specified callback function. Intended use is to flush
         all state changes to the interface when called.
         """
-        self.onUpdate(**self.__storage)
+        self.onUpdate(**self.storage)
