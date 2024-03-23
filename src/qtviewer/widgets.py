@@ -73,9 +73,9 @@ class StatefulWidget(LayoutWidget):
 
 
 class ParameterToggle(StatefulWidget):
-    cb: QCheckBox
+    s: QCheckBox
 
-    def __init__(self, label: str, init: bool, key: Optional[str] = None) -> None:
+    def __init__(self, key: str, init: bool, label: Optional[str] = None) -> None:
         """
         Instantiate a new stateful checkbox / toggle widget in a detached state
         (relative to the parent pane). Due to the functional interface
@@ -91,8 +91,8 @@ class ParameterToggle(StatefulWidget):
         """
 
         # fill in the optionals
-        skey = key if key is not None else label
-        super().__init__(skey, init)
+        label = label if label is not None else key 
+        super().__init__(key, init)
 
         # set up the control
         self.s = QCheckBox(label)
