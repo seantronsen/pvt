@@ -22,36 +22,35 @@ def state(callback, init_storage):
     return State(callback=callback, init=deepcopy(init_storage))
 
 
-def test_state_init(benchmark, callback, init_storage):
-    # test
-    assert State(callback=callback).storage == {}
-    assert State(callback=callback, init=init_storage).storage == init_storage
+class TestState:
 
-    # benchmark
-    benchmark(State, callback=callback, init=init_storage)
+    def test_init(self, benchmark, callback, init_storage):
+        # test
+        assert State(callback=callback).storage == {}
+        assert State(callback=callback, init=init_storage).storage == init_storage
 
+        # benchmark
+        benchmark(State, callback=callback, init=init_storage)
 
-def test_state_get(state, init_storage):
-    assert state.storage == init_storage
-    assert state["a"] == 0
+    def test_get(self, state, init_storage):
+        assert state.storage == init_storage
+        assert state["a"] == 0
 
+    def test_set(self, state, init_storage):
+        state["a"] += 1
+        init_storage["a"] += 1
+        assert state["a"] == 1
+        assert init_storage["a"] == 1
+        assert init_storage == state.storage
 
-def test_state_set(state, init_storage):
-    state["a"] += 1
-    init_storage["a"] += 1
-    assert state["a"] == 1
-    assert init_storage["a"] == 1
-    assert init_storage == state.storage
+    def test_flush(self, benchmark, mocker, init_storage):
 
+        # test
+        mock = mocker.Mock()
+        state = State(callback=mock, init=init_storage)
+        state.flush()
+        assert mock.call_args[1] == init_storage
 
-def test_state_flush(benchmark, mocker, init_storage):
-
-    # test
-    mock = mocker.Mock()
-    state = State(callback=mock, init=init_storage)
-    state.flush()
-    assert mock.call_args[1] == init_storage
-
-    # benchmark
-    state = State(callback=lambda **_: None, init=init_storage)
-    benchmark(state.flush)
+        # benchmark
+        state = State(callback=lambda **_: None, init=init_storage)
+        benchmark(state.flush)
