@@ -228,7 +228,7 @@ class BasePlot2DPane(StatefulPane):
         """
         return self.plot_item.plot(**self.plot_args, **kwargs)
 
-    def __reinitialize_curves(self, ncurves: int):
+    def reinitialize_curves(self, ncurves: int):
         """
         If the number of curves to plot on the next render differs from the
         number currently known, reinitialize the curves collection such that it
@@ -259,7 +259,7 @@ class BasePlot2DPane(StatefulPane):
         data: NDArray = args[0]
         n_curves = data.shape[0]
         if n_curves != len(self.curves):
-            self.__reinitialize_curves(n_curves)
+            self.reinitialize_curves(n_curves)
 
         for i in range(n_curves):
             self.curves[i].setData(data[i])
