@@ -3,94 +3,73 @@ from qtviewer.widgets import *
 from qtviewer.state import State
 
 
-@fixture
-def swidget():
-    return StatefulWidget(key="test", init=0)
-
-
-@fixture
-def state(mocker):
-    cmock = mocker.Mock()
-    return State(callback=cmock, init={})
-
-
-@fixture
-def swidget_w_state(swidget, state):
-    swidget.attach(state)
-    return swidget
-
-
 class TestStatefulWidget:
+    targ_class = StatefulWidget
+    targ_args = dict(key="test", init=0)
+    state_update_val = 1
+
+    @fixture
+    def state(self, mocker):
+        cmock = mocker.Mock()
+        return State(callback=cmock, init={})
+
+    @fixture
+    def sw(self, qtbot):
+        w = self.targ_class(**self.targ_args)
+        qtbot.addWidget(w)
+        return w
+
+    @fixture
+    def sw_w_state(self, sw, state):
+        sw.attach(state)
+        return sw
+
+    def func_update(self, x, y):
+        return x.state_update(y)
+
     def test_init(self, qtbot, benchmark):
-        key = "test"
-        swidget = benchmark(StatefulWidget, key=key, init=0)
+        swidget = benchmark(self.targ_class, **self.targ_args)
         qtbot.addWidget(swidget)
         assert len(swidget.states) == 0
-        assert swidget.key == key
+        assert swidget.key == self.targ_args["key"]
 
-    def test_attach(self, qtbot, benchmark, swidget, state):
+    def test_attach(self, benchmark, sw, state):
+        benchmark(sw.attach, state=state)
+        assert state.storage.get(sw.key, None) is not None
+        assert state[sw.key] == sw.init
+        assert state in sw.states
 
-        qtbot.addWidget(swidget)
-        benchmark(swidget.attach, state=state)
-        assert state.storage.get(swidget.key, None) is not None
-        assert state[swidget.key] == swidget.init
-        assert state in swidget.states
+    def test_on_change(self, benchmark, sw):
+        if not type(self) == TestStatefulWidget:
+            benchmark(sw.on_change)
+        else:
+            with raises(NotImplementedError):
+                sw.on_change()
 
-    def test_on_change_abstract(self, qtbot, swidget):
-        qtbot.addWidget(swidget)
-        with raises(NotImplementedError):
-            swidget.on_change()
-
-    def test_state_update(self, qtbot, benchmark, swidget_w_state):
-        qtbot.addWidget(swidget_w_state)
-        state = swidget_w_state.states[0]
+    def test_state_update(self, benchmark, sw_w_state):
+        state = sw_w_state.states[0]
         cmock = state.onUpdate
-        assert state[swidget_w_state.key] == 0
-        swidget_w_state.state_update(1)
-        assert state[swidget_w_state.key] == 1
+        assert state[sw_w_state.key] == 0
+        self.func_update(sw_w_state, self.state_update_val)
+        assert state[sw_w_state.key] == self.state_update_val
         assert cmock.call_count == 1
         assert cmock.call_args.kwargs == state.storage
-        benchmark(swidget_w_state.state_update, 1)
+        benchmark(sw_w_state.state_update, self.state_update_val)
 
 
-@fixture
-def toggle(state):
-    t = ParameterToggle(key="toggle", init=False)
-    t.attach(state)
-    return t
+class TestParameterToggle(TestStatefulWidget):
+    targ_class = ParameterToggle
+    targ_args = dict(key="toggle", init=False)
+    state_update_val = True
 
-
-class TestParameterToggle:
-    def test_init(self, qtbot, benchmark):
-        toggle = benchmark(ParameterToggle, key="toggle", init=False)
-        qtbot.addWidget(toggle)
-
-    def test_on_change(self, qtbot, benchmark, toggle):
-        state = toggle.states[0]
-        qtbot.addWidget(toggle)
-        assert state[toggle.key] == 0
-        benchmark(toggle.s.setChecked, True)
-        assert state[toggle.key] == 1
-
-
-@fixture
-def trackbar(state):
-    s = ParameterTrackbar(key="slide", start=0, stop=100, init=50)
-    s.attach(state)
-    return s
+    def func_update(self, x, y):
+        return x.s.setChecked(y)
 
 
 class TestParameterTrackbar:
-    def test_init(self, qtbot, benchmark):
-        t = benchmark(ParameterTrackbar, "slider", 0, 100)
-        qtbot.addWidget(t)
+    targ_class = ParameterToggle
+    targ_args = dict(key="slide", start=0, stop=100, init=50)
+    state_update_val = 75
 
-    def test_on_change(self, qtbot, benchmark, trackbar):
-        new_value = 75
-        state = trackbar.states[0]
-        qtbot.addWidget(trackbar)
-        assert state[trackbar.key] == 50
-        assert trackbar.t.text() == f"{trackbar.key}: {state[trackbar.key]}"
-        benchmark(trackbar.s.setValue, 75)
-        assert state[trackbar.key] == new_value
-        assert trackbar.t.text() == f"{trackbar.key}: {new_value}"
+    def func_update(self, x, y):
+        return x.s.setValue(y)
