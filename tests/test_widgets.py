@@ -24,6 +24,15 @@ class TestStatefulWidget:
         sw.attach(state)
         return sw
 
+    @fixture
+    def bench_state(self):
+        return State(callback=lambda **_: None, init={})
+
+    @fixture
+    def bench_sw_w_state(self, sw, bench_state):
+        sw.attach(bench_state)
+        return sw
+
     def func_update(self, x, y):
         return x.state_update(y)
 
@@ -39,7 +48,10 @@ class TestStatefulWidget:
         assert state[sw.key] == sw.init
         assert state in sw.states
 
-    def test_on_change(self, benchmark, sw):
+    def test_attach_b(self, benchmark, sw, bench_state):
+        benchmark(sw.attach, state=bench_state)
+
+    def test_on_change_b(self, benchmark, sw):
         if not type(self) == TestStatefulWidget:
             benchmark(sw.on_change)
         else:
@@ -56,6 +68,9 @@ class TestStatefulWidget:
         assert cmock.call_args.kwargs == state.storage
         benchmark(sw_w_state.state_update, self.state_update_val)
 
+    def test_state_update_b(self, benchmark, bench_sw_w_state):
+        benchmark(bench_sw_w_state.state_update, self.state_update_val)
+
 
 class TestParameterToggle(TestStatefulWidget):
     targ_class = ParameterToggle
@@ -66,9 +81,9 @@ class TestParameterToggle(TestStatefulWidget):
         return x.s.setChecked(y)
 
 
-class TestParameterTrackbar:
-    targ_class = ParameterToggle
-    targ_args = dict(key="slide", start=0, stop=100, init=50)
+class TestParameterTrackbar(TestStatefulWidget):
+    targ_class = ParameterTrackbar
+    targ_args = dict(key="slide", start=0, stop=100)
     state_update_val = 75
 
     def func_update(self, x, y):
