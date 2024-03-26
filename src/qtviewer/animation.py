@@ -47,7 +47,7 @@ class Animator:
         anything other than the one callback you're required to define.
         """
 
-        self.animation_content.update(animation_tick=self.animation_tick, **kwargs)
+        self.animation_content.update(animation_tick=int(self.animation_tick), **kwargs)
 
     def is_running(self):
         return self.timer.isActive()
