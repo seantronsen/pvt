@@ -20,6 +20,8 @@ def performance_log(event: str):
 
     def decorate(func: Callable):
 
+        epsilon = 1e-9
+
         if not os.getenv("VIEWER_PERF_LOG") == "1":
             return func
 
@@ -30,7 +32,7 @@ def performance_log(event: str):
             result = func(self, *args, **kwargs)
             elapsed = time.time() - start
             print(
-                f"identifier: {identifier.ljust(30)} event: {event.ljust(10)} processing time (s): {elapsed:010.07f} max possible fps: {1 / elapsed: 015.07f}"
+                f"identifier: {identifier.ljust(30)} event: {event.ljust(10)} processing time (s): {elapsed:010.07f} max possible fps: {1 / (elapsed + epsilon): 015.07f}"
             )
             return result
 
