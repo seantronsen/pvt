@@ -1,7 +1,7 @@
 import signal
 import sys
 from typing import List
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QCoreApplication, QTimer
 from PySide6.QtWidgets import QHBoxLayout, QMainWindow, QWidget, QApplication
 from pyqtgraph import LayoutWidget
 from qtviewer.panels import StatefulPane
@@ -46,6 +46,9 @@ class Skeleton(QApplication):
         self.timer.timeout.connect(lambda **_: None)
         self.timer.start(100)
 
+    def screen_height(self):
+        return QCoreApplication.instance().primaryScreen().geometry().height()  # pyright: ignore
+
     def sigint(self, signal, frame):
         """
         A component of the timed event check used to "gracefully shutdown"
@@ -75,10 +78,16 @@ class App(Skeleton):
     data_displays: List[StatefulPane]
     data_controls: List[StatefulWidget]
 
-    def __init__(self, title="") -> None:
+    def __init__(self, title="", **kwargs) -> None:
         super().__init__(title=title)
         self.data_controls = []
         self.data_displays = []
+
+        # a most ugly spot fix for issue #033
+        sheight = self.screen_height()
+        window_height = kwargs.get("window_height", sheight - (0.1 * sheight))
+        window_width = kwargs.get("window_width", 1080)
+        self.main_window.resize(window_width, window_height)
 
     def enchain_global(self, pane: QWidget):
         pane_type = type(pane)
@@ -135,8 +144,8 @@ class VisionViewer(App):
     event more custom changes are needed, reducing future code duplication.
     """
 
-    def __init__(self, title="CV Image Viewer") -> None:
-        super().__init__(title=title)
+    def __init__(self, title="CV Image Viewer", **kwargs) -> None:
+        super().__init__(title=title, **kwargs)
 
 
 class PlotViewer(App):
@@ -144,5 +153,5 @@ class PlotViewer(App):
     Another superficial class that may exist only temporarily.
     """
 
-    def __init__(self, title="Plot Viewer") -> None:
-        super().__init__(title=title)
+    def __init__(self, title="Plot Viewer", **kwargs) -> None:
+        super().__init__(title=title, **kwargs)
