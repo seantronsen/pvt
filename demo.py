@@ -48,8 +48,7 @@ def demo_image_viewer():
     # global control widgets are passed to the callbacks for all top level
     # display panes.
     def callback_0(rho, sigma, **_):
-        ratio = np.max([0.001, rho / 1000])
-        resized = resize_by_ratio(img_test, ratio)
+        resized = resize_by_ratio(img_test, rho)
         noise_slice = noise_image[: resized.shape[0], : resized.shape[1]]
         result = resized + (noise_slice * sigma)
         return result
@@ -62,7 +61,7 @@ def demo_image_viewer():
     # define the viewer interface and run the application
     # happy tuning / visualizing!
     image_viewer = VisionViewer()
-    trackbar_rho = ParameterTrackbar("rho", 0, 100, init=50)
+    trackbar_rho = ParameterTrackbar("rho", 0.001, 1, step=0.001, init=0.5)
     trackbar_sigma = ParameterTrackbar("sigma", 0, 100, 2)
 
     # set to False if panning and zoom should not reset on each new frame
@@ -85,19 +84,18 @@ def demo_static_image_viewer():
 def demo_plot_viewer():
 
     def callback(nsamples, sigma, omega, phasem, animation_tick, **_):
-        cphase = animation_tick / (2 * np.pi)
-        cphase *= phasem / 10
+        cphase = (animation_tick / (2 * np.pi)) * phasem
         sinusoid = np.sin((np.linspace(0, omega * 2 * np.pi, nsamples) + cphase))
         noise = np.random.randn(nsamples)
-        result = sinusoid + (noise[:nsamples] * (sigma / 10))
+        result = sinusoid + (noise[:nsamples] * sigma)
         waves = 3
         return np.array([result] * waves) + np.arange(waves).reshape(-1, 1)
 
     viewer = PlotViewer(title="Multiple Plots: A Visual Illustration of Signal Aliasing")
     trackbar_n = ParameterTrackbar("nsamples", 100, 1000, 100)
-    trackbar_sigma = ParameterTrackbar("sigma", 0, 30)
     trackbar_omega = ParameterTrackbar("omega", 1, 50, init=50)
-    trackbar_phasem = ParameterTrackbar("phasem", 1, 100)
+    trackbar_sigma = ParameterTrackbar("sigma", 0, 3, 0.1)
+    trackbar_phasem = ParameterTrackbar("phasem", 0.1, 10, 0.1, init=1)
     pl = Plot2DLinePane(callback, ncolors=3, cmap="plasma")
     pl.set_title("Signal Aliasing: Labeled Graph")
     pl.set_xlabel("Sample Number")
@@ -105,18 +103,6 @@ def demo_plot_viewer():
     pl = Animator(fps=60, contents=pl).animation_content
     ps = Animator(fps=60, contents=Plot2DScatterPane(callback)).animation_content
     viewer.add_mosaic([[pl, ps], [trackbar_n, trackbar_omega], [trackbar_phasem, trackbar_sigma]])
-    viewer.run()
-
-
-def demo_huge_trackbar_bad_performance():
-    """
-    An example to illustrate that trackbars with extreme ranges of values are
-    slow and cumbersome, even when used alone.
-    """
-
-    viewer = PlotViewer(title="Multiple Plots: A Visual Illustration of Signal Aliasing")
-    trackbar_n = ParameterTrackbar("nsamples", 0, 10000)
-    viewer.add_panes(trackbar_n)
     viewer.run()
 
 
@@ -133,7 +119,7 @@ def demo_3d_prototype():
     animator = Animator(fps=60, contents=Plot3DPane(callback))
     d3plot = animator.animation_content
     control_bar = AnimatorControlBar(animator=animator)
-    t_sigma = ParameterTrackbar("sigma", 1, 25, init=5)
+    t_sigma = ParameterTrackbar("sigma", 0.1, 25, step=0.1, init=5)
     viewer.add_panes(d3plot, control_bar, t_sigma)
     viewer.run()
 
@@ -143,7 +129,6 @@ if __name__ == "__main__":
     options[demo_image_viewer.__name__] = demo_image_viewer
     options[demo_static_image_viewer.__name__] = demo_static_image_viewer
     options[demo_plot_viewer.__name__] = demo_plot_viewer
-    options[demo_huge_trackbar_bad_performance.__name__] = demo_huge_trackbar_bad_performance
     options[demo_3d_prototype.__name__] = demo_3d_prototype
     if len(sys.argv) >= 2:
         options[sys.argv[1]]()

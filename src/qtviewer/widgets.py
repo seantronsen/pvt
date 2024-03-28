@@ -1,7 +1,7 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 from PySide6.QtWidgets import QCheckBox, QLabel
 from PySide6.QtCore import Qt
-from qtviewer.qtmods import TrackbarH
+from qtviewer.qtmods import Trackbar
 from qtviewer.state import State
 from pyqtgraph import LayoutWidget
 
@@ -91,7 +91,7 @@ class ParameterToggle(StatefulWidget):
         """
 
         # fill in the optionals
-        label = label if label is not None else key 
+        label = label if label is not None else key
         super().__init__(key, init)
 
         # set up the control
@@ -108,11 +108,17 @@ class ParameterToggle(StatefulWidget):
 
 class ParameterTrackbar(StatefulWidget):
     label: str
-    s: TrackbarH
+    s: Trackbar
     t: QLabel
 
     def __init__(
-        self, key: str, start: int, stop: int, step: int = 1, init: Optional[int] = None, label: Optional[str] = None
+        self,
+        key: str,
+        start: Union[int, float],
+        stop: Union[int, float],
+        step: Union[int, float] = 1,
+        init: Optional[Union[int, float]] = None,
+        label: Optional[str] = None,
     ) -> None:
         """
         Instantiate a new stateful trackbar widget to visualize the results of
@@ -126,36 +132,36 @@ class ParameterTrackbar(StatefulWidget):
         when the step size is only one, only a fraction of the events will be
         processed and result in callbacks being triggered to change the UI.
 
-        :param key: key name for the state.
+        :param key: key name for the state
         :param start: minimum slider value
         :param stop: maximum slider value
-        :param step: change in value (delta) for one tick of slider movement.
+        :param step: change in value (delta) for one tick of slider movement
         :param init: initial slider value / position
-        :param label: optional label to appear on the right side of the slider.
+        :param label: optional label to appear on the right side of the slider
         defaults to `key` if not assigned.
         """
 
         # fill in the optionals
         init = init if init is not None else start
         label = label if label is not None else key
-        assert init <= stop and init >= start
+        # assert init <= stop and init >= start
         super().__init__(key, init)
 
         # set up the control
         self.label = label
-        self.s = TrackbarH()
+        self.s = Trackbar(start, stop, step, init)
         self.t = QLabel()
-        l, s, t = self.label, self.s, self.t
-        s.setRange(start, stop)
-        s.setStepSizeForAllEvents(step)
-        s.setValue(init)
-        t.setText(f"{l}: {s.value()}")
-        s.valueChanged.connect(self.on_change)
+        self.set_label_value()
+        self.s.valueChanged.connect(self.on_change)
 
-        self.addWidget(s, 0, 0)
-        self.addWidget(t, 0, 1)
+        self.addWidget(self.s, 0, 0)
+        self.addWidget(self.t, 0, 1)
+
+    def set_label_value(self, value: Optional[Union[float, int]] = None):
+        v = value if value is not None else self.s.value()
+        self.t.setText(f"{self.label}: {v: g}")
 
     def on_change(self, *_):
         value = self.s.value()
-        self.t.setText(f"{self.label}: {value}")
+        self.set_label_value(value)
         self.state_update(value)
