@@ -25,7 +25,7 @@ class Trackbar(QSlider):
         step: Union[int, float] = 1,
         init: Optional[Union[int, float]] = None,
     ):
-        assert step < stop, f"error: step value exceeds range ({step=} > {stop=})"
+        assert step < (stop - start), f"error: step value exceeds range ({step=} > {stop - start=})"
         init_value = init if init is not None else start
         min_value, max_value = start, stop + step  # np arange excludes final value by default
         values = np.arange(start=min_value, stop=max_value, step=step)
