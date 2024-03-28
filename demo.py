@@ -128,6 +128,8 @@ def demo_3d_prototype():
         return gaussian * ((animation_tick % 500) + 1) * 10
 
     viewer = PlotViewer()
+    # viewer = PlotViewer(width=1600, height=900)
+    # viewer.resize(2000, 1500)
     animator = Animator(fps=60, contents=Plot3DPane(callback))
     d3plot = animator.animation_content
     control_bar = AnimatorControlBar(animator=animator)

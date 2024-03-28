@@ -46,9 +46,6 @@ class Skeleton(QApplication):
         self.timer.timeout.connect(lambda **_: None)
         self.timer.start(100)
 
-    def screen_height(self):
-        return QCoreApplication.instance().primaryScreen().geometry().height()  # pyright: ignore
-
     def sigint(self, signal, frame):
         """
         A component of the timed event check used to "gracefully shutdown"
@@ -83,11 +80,20 @@ class App(Skeleton):
         self.data_controls = []
         self.data_displays = []
 
-        # a most ugly spot fix for issue #033
-        sheight = self.screen_height()
-        window_height = kwargs.get("window_height", sheight - (0.1 * sheight))
-        window_width = kwargs.get("window_width", 1080)
-        self.main_window.resize(window_width, window_height)
+        # a spot fix for issue #033
+        self.resize(kwargs.get("width", 1280), kwargs.get("height", 720))
+
+    def resize(self, width: int, height: int):
+        """
+        Executing this method with the proper arguments will cause the
+        application window to be resized accordingly. It does nothing more than
+        calling the method with the same name on the main window class, but it
+        makes for less typing.
+
+        :param width: width in pixels
+        :param height: height in pixels
+        """
+        self.main_window.resize(width, height)
 
     def enchain_global(self, pane: QWidget):
         pane_type = type(pane)
