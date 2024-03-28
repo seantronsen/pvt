@@ -249,10 +249,8 @@ class BasePlot2DPane(StatefulPane):
 
         IMPORTANT: Ensure data provided to other methods is formatted
         appropriately. Valid formats are:
-            - (N,)
-            - (N,2)
-            - (M,N)
-            - (M,N,2)
+            - (M,N) -> M plots, each with N y-values (x generated as range(y_0, y_n-1))
+            - (M,N,2) -> M plots, each with N x,y points
 
         :param args[0]: an ndarray of data points
         """
@@ -263,6 +261,7 @@ class BasePlot2DPane(StatefulPane):
 
         for i in range(n_curves):
             self.curves[i].setData(data[i])
+            # self.curves[i].setData(data)
 
 
 class Plot2DLinePane(BasePlot2DPane):
