@@ -126,7 +126,7 @@ def demo_3d_prototype():
 
 def debug():
     viewer = PlotViewer()
-    t = ParameterTrackbar("s", 0.1, 25, step=0.1, init=5)
+    t = ParameterTrackbar("s", 0.1, 250, step=0.1, init=5)
     t1 = ParameterTrackbar("s1", 0.7, 0.89, step=0.01, init=0.8)
 
     viewer.add_panes(t, t1)

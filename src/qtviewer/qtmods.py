@@ -67,7 +67,14 @@ class Trackbar(QSlider):
         # initialize
         super().__init__(Qt.Horizontal)  # pyright: ignore
         self.setFocusPolicy(Qt.StrongFocus)  # pyright: ignore
-        self.setTickPosition(QSlider.TickPosition.TicksBelow)
+
+        # IMPORTANT: No ticks is much faster for trackbar ranges of any size
+        # where as trackbars with ticks become obnoxiously slow when more than
+        # 100 ticks are involved. Perhaps in the future when can allow the user
+        # to specify this or make a choose automatically based on the number of
+        # steps, but I'm commenting this out for the sake of consistent
+        # behavior and speed. 
+        # self.setTickPosition(QSlider.TickPosition.TicksBelow)
         self.setMaximum(values.size - 1)
         self.value_range = values
         self.setValue(init_index.item())
