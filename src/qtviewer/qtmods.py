@@ -1,16 +1,14 @@
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QSlider
 import numpy as np
 from typing import Optional, Union
+from decimal import Decimal
 
 
 class Trackbar(QSlider):
     """
     A derivation of Qt's QSlider class that allows use of both integer and
-    floating point ranges. The design of this class also fixes the odd dragging
-    behavior with the original which would occur when users drag the slider out
-    of bounds to other monitors.
+    floating point ranges.
     """
 
     def __init__(
@@ -55,7 +53,10 @@ class Trackbar(QSlider):
         assert step < nrange, f"error: step value exceeds range ({step=} > {nrange=})"
 
         # calculate number of steps with truncated integer divison
-        nsteps = ((stop - start) // step) + 1
+        # decimal types are used to bypass some floating point arithmetic issues
+        # with standard python floats: 24.9 / 0.1 = 248.99999999999997 => 248
+        # (after truncated integer division)
+        nsteps = int(Decimal(str(nrange)) // Decimal(str(step))) + 1
         values = np.arange(nsteps, dtype=np.intp) * step
         values = values + start
 
@@ -67,9 +68,7 @@ class Trackbar(QSlider):
         super().__init__(Qt.Horizontal)  # pyright: ignore
         self.setFocusPolicy(Qt.StrongFocus)  # pyright: ignore
         self.setTickPosition(QSlider.TickPosition.TicksBelow)
-        self.setRange(0, values.size - 1)
-        self.setSingleStep(1)
-        self.setPageStep(1)
+        self.setMaximum(values.size - 1)
         self.value_range = values
         self.setValue(init_index.item())
 
@@ -81,26 +80,4 @@ class Trackbar(QSlider):
         to the caller.
         :return: the value at index referenced by the trackbar position
         """
-        index = super().value()
-        return self.value_range[index].item()
-
-    def mouseMoveEvent(self, ev: QMouseEvent) -> None:
-        """
-        An override of the base class method that eliminates odd behavior that
-        occurs when the user drags the slider to an out of bounds position.
-
-        :param ev: a qt mouse event
-        """
-
-        width = self.width()
-
-        # determine position
-        new_position = np.clip(ev.position().x(), a_min=0, a_max=width)
-
-        # calculate prereqs to determine nearest tick
-        total_steps = self.value_range.size
-        step_width_px = width / total_steps
-
-        # calculate nearest tick and assign as widget value.
-        self.setValue(np.round(new_position / step_width_px).astype(np.intp))
-        return ev.accept()
+        return self.value_range[super().value()].item()

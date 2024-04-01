@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "python",
+      "cwd": "${workspaceFolder}",
+      "request": "launch",
+      "name": "debug demo",
+      "args": ["debug"],
+      "env": {},
+      "program": "${workspaceFolder}/demo.py",
+      "stopOnEntry": false
+    }
+  ]
+}

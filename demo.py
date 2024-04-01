@@ -124,12 +124,22 @@ def demo_3d_prototype():
     viewer.run()
 
 
+def debug():
+    viewer = PlotViewer()
+    t = ParameterTrackbar("s", 0.1, 25, step=0.1, init=5)
+    t1 = ParameterTrackbar("s1", 0.7, 0.89, step=0.01, init=0.8)
+
+    viewer.add_panes(t, t1)
+    viewer.run()
+
+
 if __name__ == "__main__":
     options = {}
     options[demo_image_viewer.__name__] = demo_image_viewer
     options[demo_static_image_viewer.__name__] = demo_static_image_viewer
     options[demo_plot_viewer.__name__] = demo_plot_viewer
     options[demo_3d_prototype.__name__] = demo_3d_prototype
+    options[debug.__name__] = debug
     if len(sys.argv) >= 2:
         options[sys.argv[1]]()
     else:
