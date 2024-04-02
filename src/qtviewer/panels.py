@@ -297,6 +297,10 @@ class Plot2DScatterPane(BasePlot2DPane):
         return super().plot_tailored(i, symbolBrush=symbolBrush)
 
 
+# SWITCHING OVER TO PYVISTA FOR 3D GRAPHICS SOON
+# unfortunately, I just don't have the time to create a full 3D solution and
+# integrating a new library which shares a ton of features with ParaView seems
+# like an obvious choice.
 class Plot3DPane(StatefulPane):
     """
     An OpenGL-enabled 3D plotting pane. The current documentation for PyQtGraph
@@ -357,52 +361,3 @@ class Plot3DPane(StatefulPane):
             x = np.arange(z.shape[1]) - 10
             y = np.arange(z.shape[0]) - 10
             self.plot_surface.setData(x=x, y=y, z=args[0])
-
-
-# ## CITATION: THIS IS PULLED DIRECTLY FROM PYQTGRAPH'S EXAMPLES
-# ## Simple surface plot example
-# ## x, y values are not specified, so assumed to be 0:50
-# z = pg.gaussianFilter(np.random.normal(size=(50, 50)), (1, 1))
-# p1 = gl.GLSurfacePlotItem(z=z, shader='shaded', color=(0.5, 0.5, 1, 1))
-# p1.scale(16.0 / 49.0, 16.0 / 49.0, 1.0)
-# p1.translate(-18, 2, 0)
-# w.addItem(p1)
-#
-#
-# ## Animated example
-# ## compute surface vertex data
-# cols = 90
-# rows = 100
-# x = np.linspace(-8, 8, cols + 1).reshape(cols + 1, 1)
-# y = np.linspace(-8, 8, rows + 1).reshape(1, rows + 1)
-# d = (x**2 + y**2) * 0.1
-# d2 = d**0.5 + 0.1
-#
-# ## precompute height values for all frames
-# phi = np.arange(0, np.pi * 2, np.pi / 20.0)
-# z = np.sin(d[np.newaxis, ...] + phi.reshape(phi.shape[0], 1, 1)) / d2[np.newaxis, ...]
-#
-#
-# ## create a surface plot, tell it to use the 'heightColor' shader
-# ## since this does not require normal vectors to render (thus we
-# ## can set computeNormals=False to save time when the mesh updates)
-# p4 = gl.GLSurfacePlotItem(x=x[:, 0], y=y[0, :], shader='heightColor', computeNormals=False, smooth=False)
-# p4.shader()['colorMap'] = np.array([0.2, 2, 0.5, 0.2, 1, 1, 0.2, 0, 2])
-# p4.translate(10, 10, 0)
-# w.addItem(p4)
-#
-# index = 0
-#
-#
-# def update():
-#     global p4, z, index
-#     index -= 1
-#     p4.setData(z=z[index % z.shape[0]])
-#
-#
-# timer = QtCore.QTimer()
-# timer.timeout.connect(update)
-# timer.start(30)
-#
-# if __name__ == '__main__':
-#     pg.exec()

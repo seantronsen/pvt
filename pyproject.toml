@@ -1,7 +1,7 @@
 [project]
 name = "qtviewer"
 license = { file = "LICENSE" }
-version = "0.0.1"
+version = "0.0.4"
 authors = [{ name = "Sean Tronsen", email = "sean.tronsen@gmail.com" }]
 description = "functions to re-use."
 readme = "README.md"
