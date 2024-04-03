@@ -1,3 +1,4 @@
+from PySide6 import QtGui
 from numpy.typing import NDArray
 from pyqtgraph import GraphicsLayoutWidget, LayoutWidget, PlotDataItem
 from pyqtgraph.colormap import ColorMap
@@ -37,6 +38,11 @@ class StatefulPane(LayoutWidget):
     identifier: str
 
     def __init__(self, callback: Optional[Callable] = None, **kwargs) -> None:
+        """
+        Initialize an instance of the class.
+
+        :param callback: A callback to update the rendered data.
+        """
         assert callback is not None
         super().__init__(**kwargs)
         self.identifier = f"{self.__class__.__name__}-{IdManager().generate_identifier()}".lower()
@@ -61,23 +67,20 @@ class StatefulPane(LayoutWidget):
     @performance_log(event="compute")
     def compute_data(self, **kwargs):
         """
-        just a general abstraction. doens't really need to exist, but it makes
-        the class definition a little more readable since it allows the more
-        typical use of a decorator as opposed to the inline version.
+        Execute the user specified callback and return the resulting data.
 
-        I'll update this docstring later.
-
-        :param self [TODO:type]: [TODO:description]
+        This function is a general abstraction which exists merely to simplify
+        optional performance logging.
         """
         return self.callback(**kwargs)
 
     @performance_log(event="render")
     def __render_data(self, *args):
         """
-        yet another layer of abstraction so that we can make the parent class
-        have optional logging and automatically have it used in child classes.
+        Execute the widget render routines and repaint the display.
 
-        :param self [TODO:type]: [TODO:description]
+        This function is a general abstraction which exists merely to simplify
+        optional performance logging.
         """
         self.render_data(*args)
 
@@ -140,16 +143,14 @@ class ImagePane(StatefulPane):
 
     def __init__(self, callback: Callable, autoRange=True, autoLevels=True, autoHistogramRange=True, **kwargs) -> None:
         """
-        Constructor function
+        Initialize an instance of the class.
 
-        :param callback: user defined callback responsible for yielding new data for display
-        :param autoRange: flag which specifies whether display zoom and panning
-        should be reset on each render. disable this if you want to focus on a
+        :param callback: A callback function which updates the rendered data.
+        :param autoRange: A flag which specifies whether display zoom and panning
+        should be reset on each render. Disable this if you want to focus on a
         particular set of pixels for any frame to be displayed.
-
-        :param autoLevels: flag which specifies whether to update the intensity
+        :param autoLevels: A flag which specifies whether to update the intensity
         range when displaying the image (normalization)
-
         :param autoHistogramRange: flag which specifies whether the histogram
         widget is scaled to fit the data.
         """
@@ -163,15 +164,25 @@ class ImagePane(StatefulPane):
 
 
 def colors_from_cmap(cmap: ColorMap, ncolors: int):
-    return [cmap.map(x / ncolors, mode=ColorMap.QCOLOR) for x in range(ncolors)]
+    """
+    Return a list of QColor objects from the from the provided colormap.
+
+    :param cmap: ColorMap instance
+    :param ncolors: number of colors to return
+    :return: The list of QColor objects.
+    """
+    result: List[QtGui.QColor] = [
+        cmap.map(x / ncolors, mode=ColorMap.QCOLOR) for x in range(ncolors)
+    ]  # pyright: ignore
+    return result
 
 
 class BasePlot2DPane(StatefulPane):
     """
     The Base/Abstract class in which all 2D plotting panes are derived. The
     purpose of this class is merely to provide a basic set up for inheritors
-    and reduce the amount of typing required to add new 2D plot kinds in the
-    future.
+    and reduce the amount of typing required to add new kinds of 2D plots in
+    the future.
     """
 
     plot_item: pg.PlotItem
@@ -180,8 +191,27 @@ class BasePlot2DPane(StatefulPane):
     plot_args: Dict
 
     def __init__(self, callback: Callable, **kwargs) -> None:
+        """
+        Instantiate an instance of the class.
 
-        # prepare the graphics layout
+        :param callback: A callback function to update the rendered data.
+        :param kwargs: The keyword arguments are:
+            - `title` (str): Plot title
+            - `cmap` (str): Name of the desired colormap. Check PyQtGraph
+              colormap options for details.
+            - `ncolors` (int): Number of unique colors to use for plots with
+              multiple components (lines, scatters, etc.)
+            - `legend` (bool): A flag which specifies whether the legend is
+              displayed. IMPORTANT, this hasn't been thoroughly tested.
+            - `logx` (bool): A flag which specifies whether the x-axis is
+              displayed as a log scale.
+            - `logy` (bool): A flag which specifies whether the y-axis is
+              displayed as a log scale.
+            - `gridx` (bool): A flag which specifies whether the x-axis grid is
+              shown.
+            - `gridy` (bool): A flag which specifies whether the y-axis grid is
+              shown.
+        """
         self.plot_layout = GraphicsLayoutWidget()
         self.plot_item = self.plot_layout.addPlot(title=kwargs.pop("title", None))
 
@@ -200,19 +230,47 @@ class BasePlot2DPane(StatefulPane):
         super().__init__(callback, **kwargs)
         self.addWidget(self.plot_layout)
 
-    def nth_color(self, n):
+    def nth_color(self, n: int):
+        """
+        A convenience method which returns the nth QColor from the set of
+        available colors created during initialization using modulo arithmetic.
+
+        :param n: The nth color to be returned
+        :return: The nth QColor
+        """
         return self.cmap_colors[n % len(self.cmap_colors)]
 
     def set_xlabel(self, label: str, units: Optional[str] = None):
+        """
+        Set the x-axis label to the provided string.
+
+        :param label: New label value to be assigned
+        :param units: An optional unit value. If specified, the PyQtGraph will
+        format the value using the appropriate SI prefix based on the data
+        range.
+        """
         self.plot_item.setLabel(axis="bottom", text=label, units=units)
 
     def set_ylabel(self, label: str, units: Optional[str] = None):
+        """
+        Set the y-axis label to the provided string.
+
+        :param label: New label value to be assigned
+        :param units: An optional unit value. If specified, the PyQtGraph will
+        format the value using the appropriate SI prefix based on the data
+        range.
+        """
         self.plot_item.setLabel(axis="left", text=label, units=units)
 
     def set_title(self, title: str):
+        """
+        Set the plot title.
+
+        :param title: Title string to be assigned.
+        """
         self.plot_item.setTitle(title=title)
 
-    def plot_tailored(self, i: int, **kwargs):
+    def plot(self, i: int, **kwargs):
         """
         A method which executes a tailored version of the plotting function.
         Deriving classes are encouraged to override this function, especially
@@ -234,13 +292,13 @@ class BasePlot2DPane(StatefulPane):
         number currently known, reinitialize the curves collection such that it
         holds the required number of curve instances.
 
-        :param ncurves: the number of required curves to plot
+        :param ncurves: the number of required curves
         """
         for x in self.curves:
             self.plot_item.removeItem(x)
         self.curves = []
         for x in range(ncurves):
-            self.curves.append(self.plot_tailored(x))
+            self.curves.append(self.plot(x))
 
     def render_data(self, *args):
         """
@@ -267,16 +325,27 @@ class BasePlot2DPane(StatefulPane):
 class Plot2DLinePane(BasePlot2DPane):
     """
     Display a pane which draws all provided data as a set of one or more
-    lines/curves.
+    curves.
     """
 
-    def __init__(self, callback: Callable, **kwargs) -> None:
-        super().__init__(callback, **kwargs)
-        # self.plot_args["pen"] = 'g'
+    def __init__(self, callback: Callable, line_width: int = 1, fillLevel: Optional[float] = None, **kwargs) -> None:
+        """
+        Instantiate an instance of the class.
 
-    def plot_tailored(self, i, **_):
-        pen = self.nth_color(i)
-        return super().plot_tailored(i, pen=pen)
+        :param callback: A callback to update rendered data
+        :param line_width: The width of each line/curve in pixels
+        :param fillLevel: If specified, the area between the curve and
+        fillLevel is filled using a transparent version of the line color.
+        """
+        super().__init__(callback, **kwargs)
+        self.line_width = line_width
+        self.plot_args["fillLevel"] = fillLevel
+
+    def plot(self, i, **_):
+        color = self.nth_color(i)
+        fill_color = QtGui.QColor(color)
+        fill_color.setAlphaF(0.7)
+        return super().plot(i, pen=dict(color=color, width=self.line_width), fillBrush=fill_color)
 
 
 class Plot2DScatterPane(BasePlot2DPane):
@@ -285,16 +354,24 @@ class Plot2DScatterPane(BasePlot2DPane):
     scatter plots.
     """
 
-    def __init__(self, callback: Callable, **kwargs) -> None:
-        super().__init__(callback, **kwargs)
-        self.plot_args["pen"] = None
-        self.plot_args["symbol"] = 't'
-        self.plot_args["symbolSize"] = 10
-        # self.plot_args["symbolBrush"] = (0, 255, 0, 90)
+    def __init__(self, callback: Callable, symbol='t', symbolSize=10, **kwargs) -> None:
+        """
+        Instantiate an instance of the class.
 
-    def plot_tailored(self, i, **_):
-        symbolBrush = self.nth_color(i)
-        return super().plot_tailored(i, symbolBrush=symbolBrush)
+        :param callback: A callback to update rendered data
+        :param symbol: The symbol kind to use. Review the PyQtGraph
+        documentation for a list of options.
+        :param symbolSize: Size of each symbol to be drawn in pixels
+        """
+        super().__init__(callback, **kwargs)
+        self.plot_args["symbol"] = symbol
+        self.plot_args["symbolSize"] = symbolSize
+
+        # DO NOT CONNECT POINTS
+        self.plot_args["pen"] = None
+
+    def plot(self, i, **_):
+        return super().plot(i, symbolBrush=self.nth_color(i))
 
 
 # SWITCHING OVER TO PYVISTA FOR 3D GRAPHICS SOON

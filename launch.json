@@ -6,7 +6,7 @@
       "cwd": "${workspaceFolder}",
       "request": "launch",
       "name": "debug demo",
-      "args": ["debug"],
+      "args": [],
       "env": {},
       "program": "${workspaceFolder}/demo.py",
       "stopOnEntry": false

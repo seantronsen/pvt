@@ -1,5 +1,5 @@
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QCheckBox, QPushButton
+from PySide6.QtWidgets import QPushButton
 from pyqtgraph import LayoutWidget
 from qtviewer.panels import StatefulPane
 import numpy as np
@@ -80,8 +80,8 @@ class AnimatorControlBar(LayoutWidget):
         self.animator = animator
 
         self.b_reset = QPushButton("RESET")
-        self.b_one_forward = QPushButton("FORWARD FRAME: >")
-        self.b_one_reverse = QPushButton("< :BACKWARD FRAME")
+        self.b_one_forward = QPushButton(">")
+        self.b_one_reverse = QPushButton("<")
 
         self.b_reset.clicked.connect(self.animator.reset)
         self.b_one_forward.clicked.connect(self.animator.forward_one_step)
