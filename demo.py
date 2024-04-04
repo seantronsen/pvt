@@ -89,7 +89,27 @@ def demo_static_image_viewer():
     img_test = norm_uint8(cv2.cvtColor(img_test, cv2.COLOR_BGR2GRAY))
 
     image_viewer = Viewer()
-    ip = ImagePane(lambda **_: img_test)
+
+    # For the time being, specifying a "dummy" lambda is the best way to render
+    # static content. The downside being that if the pane is connected to the
+    # global state, the content is redrawn each and every time the state
+    # changes. While the cost is miniscule on the compute side, the same cannot
+    # be said for the rendering side where there is a real cost to repainting
+    # the window unnecessarily. Keep an eye on issue #43 for more information
+    # and changes related to improving the efficiency of static content. For
+    # now, take comfort by realizing the cost for images less than 8K
+    # resolution is still low enough that you shouldn't notice a difference
+    # (though you really should consider shrinking the images at that point
+    # just for faster processing in your own code).
+    #
+    # NOTE: Users can now specify a `border` keyword argument to automatically
+    # draw a border of the specified color around the image. This reduces the
+    # need to do it yourself and considering the scaling / width for arbitrary
+    # resolutions and is particularly useful for when the content being
+    # displayed has the same background color as the panel (which typically
+    # results in making it difficult to determine where the image begins and
+    # ends).
+    ip = ImagePane(lambda **_: img_test, border="red")
     image_viewer.add_panes(ip)
     image_viewer.run()
 

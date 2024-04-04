@@ -6,7 +6,7 @@ from qtviewer.decorators import performance_log
 from qtviewer.identifier import IdManager
 from qtviewer.state import State
 from qtviewer.widgets import StatefulWidget
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Any
 import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.opengl as pggl
@@ -141,7 +141,15 @@ class ImagePane(StatefulPane):
     displaypane: pg.ImageView
     dargs: Dict
 
-    def __init__(self, callback: Callable, autoRange=True, autoLevels=True, autoHistogramRange=True, **kwargs) -> None:
+    def __init__(
+        self,
+        callback: Callable,
+        autoRange=True,
+        autoLevels=True,
+        autoHistogramRange=True,
+        border: Optional[Any] = None,
+        **kwargs,
+    ) -> None:
         """
         Initialize an instance of the class.
 
@@ -158,9 +166,32 @@ class ImagePane(StatefulPane):
         self.dargs = dict(autoRange=autoRange, autoLevels=autoLevels, autoHistogramRange=autoHistogramRange)
         self.displaypane = pg.ImageView()
         self.addWidget(self.displaypane)
+        if border is not None:
+            self.set_border(border)
 
     def render_data(self, *args):
         self.displaypane.setImage(args[0], **self.dargs)
+
+    def set_border(self, border: Any):
+        """
+        A convenience wrapper function which can be used to draw a static color
+        border around the image displayed in the panel. It's nothing more then
+        a wrapper around the PyQtGraph function listed below.
+
+        ```
+        def set_border(self, b):
+            Defines the border drawn around the image. Accepts all arguments supported by
+            :func:`~pyqtgraph.mkPen`.
+            self.border = fn.mkPen(b)
+            self.update()
+        ```
+        :param border: Any argument style accepted by `pyqtgraph.mkPen`. Color
+        strings defined by the W3C should work (at least for simple ones like
+        "red") as well as hex strings or an integer list containing the RGB
+        values. For fancier features like `width`, check out the documentation
+        for the pen function discussed above.
+        """
+        self.displaypane.imageItem.setBorder(border)
 
 
 def colors_from_cmap(cmap: ColorMap, ncolors: int):
