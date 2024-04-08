@@ -201,6 +201,35 @@ def demo_3d_prototype():
     viewer.run()
 
 
+# NOTE: both this feature and demo are a work in progress. thus far, pyvista seems
+# like it has a lot that it could offer for this project. however, after doing
+# some performance testing for rather simple scenes, there are some concerns as
+# for whether it could maintain a suitable framerate for more complex scenes.
+# for reference, the pyvista prototype can animate it's demo at a max of around
+# 144 FPS. The PyQtGraph/OpenGL version can peak at well over 6,000 FPS based
+# on the log output.
+def demo_pvt3dplotter_prototype():
+    import pyvista as pv
+
+    viewer = Viewer("demo of pyvista animated noisy sphere mesh")
+
+    # define meshes, must be done prior to defining any callbacks which modify them
+    sphere = pv.Sphere()
+
+    def callback(**_):
+        sigma = 1e-3
+        noise = np.random.normal(loc=0, scale=sigma, size=np.prod(sphere.points.shape))
+        sphere.points += noise.reshape(*sphere.points.shape)
+
+    plotter = Pvt3DPlotPane(callback=callback)
+    plotter.add_mesh(sphere, cmap="magma")
+    anim = Animator(fps=144, contents=plotter)
+    bar = AnimatorControlBar(animator=anim)
+
+    viewer.add_panes(anim.animation_content, bar)
+    viewer.run()
+
+
 # For a simpler experience regarding choosing demos to run, pass the CLI call
 # an additional argument with the name of the demo.
 #
@@ -211,6 +240,7 @@ if __name__ == "__main__":
     options[demo_static_image_viewer.__name__] = demo_static_image_viewer
     options[demo_plot_viewer.__name__] = demo_plot_viewer
     options[demo_3d_prototype.__name__] = demo_3d_prototype
+    options[demo_pvt3dplotter_prototype.__name__] = demo_pvt3dplotter_prototype
     if len(sys.argv) >= 2:
         options[sys.argv[1]]()
     else:

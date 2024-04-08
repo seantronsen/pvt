@@ -11,6 +11,7 @@ import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.opengl as pggl
 from PySide6.QtWidgets import QLabel, QSizePolicy
+from pyvistaqt import BackgroundPlotter
 
 
 class StatefulPane(LayoutWidget):
@@ -403,6 +404,45 @@ class Plot2DScatterPane(BasePlot2DPane):
 
     def plot(self, i, **_):
         return super().plot(i, symbolBrush=self.nth_color(i))
+
+
+class Pvt3DPlotPane(StatefulPane):
+    """
+    This is a work in progress integration. One of the authors will add onto
+    and clean this up within the week (Sun Apr  7 06:32:06 PM MDT 2024) since
+    they require as a component of a project demonstration.
+
+
+    IMPORTANT: This is a **really** basic integration implementation which is
+    meant solely to get the ball rolling. There has been little in the way of
+    performance testing and/or quantification. In practice, the noisy sphere
+    demo reached a maximum of 144 FPS (rendering bottleneck, compute max was
+    almost 4,000 FPS). It allows the user to do whatever they want as long as
+    they know PyVista. The authors are working on learning more about this
+    library and additional abstractions / API simplifications will come with
+    time.
+    """
+
+    def __init__(self, callback: Optional[Callable] = None, **kwargs) -> None:
+        super().__init__(callback, **kwargs)
+        self.pvtp = BackgroundPlotter(
+            show=False,
+            update_app_icon=False,
+            allow_quit_keypress=False,
+            editor=False,
+            auto_update=False,
+            title=None,
+            menu_bar=False,
+        )
+        # self.addWidget(self.pvtp.main_menu)
+        self.addWidget(self.pvtp)
+
+    def __getattr__(self, attr: str):
+        return getattr(self.pvtp, attr)
+
+    def render_data(self, *_):
+        self.pvtp.update()
+        self.pvtp.render()
 
 
 # SWITCHING OVER TO PYVISTA FOR 3D GRAPHICS SOON
