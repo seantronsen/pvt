@@ -98,6 +98,8 @@ own and want to share the solution with others.
   things OpenCV in the virtual environment and reinstall the **headless**
   versions (e.g. `pip install opencv-contrib-python-headless`).
 
+- **`pyopengl-accelerate` compilation failure**: Although this is a helpful package which increases the performance of the OpenGL implementation for Python, there is no hard requirement for it to be installed. If you're working with a version that either has diverged from the main branch or an older version of the codebase, remove the requirement from the `pyproject.toml` file and the installation should proceed without any further errors. 
+
 - **Issues and Debugging**: Begin your debugging process by installing this
   package into a fresh `conda` environment enabled with `python==3.9` as this
   is the version used for development. From here, test out the implementations
