@@ -17,7 +17,7 @@ class MainWindow(QMainWindow):
 
     panel: LayoutWidget
 
-    def __init__(self, title: str = "qtviewer") -> None:
+    def __init__(self, title: str = "Python Data Visualizer & Algorithm Tuner") -> None:
         """
         Initialize a new instance of the class.
 

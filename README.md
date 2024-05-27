@@ -1,4 +1,4 @@
-# pvt -- Python Visualization & Algorithm Tuning
+# pvt -- Python Data Visualizer & Algorithm Tuner
 
 A small collection of real-time data viewing utilities, initially created to
 satisfy the goal of enabling algorithmic tuning with rapid feedback.
