@@ -8,10 +8,11 @@ than the renderer itself (looking at you JupyterLab \w `matplotlib`). In other
 words, this will render as quickly as your code can spit out the data.
 
 ## Early Development Notice
+
 Understand this project is in the early stages of development and while it
 remains quite functional, frequent changes should be expected when tracking the
 `main` branch. For this reason, the developer(s) recommend tracking one of the
-release tags for a more stable experience. 
+release tags for a more stable experience.
 
 ## Installation
 
@@ -22,7 +23,7 @@ release tags for a more stable experience.
 5. Run `make install-dev` to install this package into the virtual environment,
    enabling use in any project.
 6. Mess around with the demo: `python demo.py`.
-7. Mess around with `pyqtgraph`'s demos: `python -c "import qtviewer; qtviewer.run_pyqtgraph_examples()"`
+7. Mess around with `pyqtgraph`'s demos: `python -c "import pvt; pvt.run_pyqtgraph_examples()"`
 
 ## Visualization Workflow
 
@@ -98,7 +99,13 @@ own and want to share the solution with others.
   things OpenCV in the virtual environment and reinstall the **headless**
   versions (e.g. `pip install opencv-contrib-python-headless`).
 
-- **`pyopengl-accelerate` compilation failure**: Although this is a helpful package which increases the performance of the OpenGL implementation for Python, there is no hard requirement for it to be installed. If you're working with a version that either has diverged from the main branch or an older version of the codebase, remove the requirement from the `pyproject.toml` file and the installation should proceed without any further errors. 
+- **`pyopengl-accelerate` compilation failure**: Although this is a helpful
+  package which increases the performance of the OpenGL implementation for
+  Python, there is no hard requirement for it to be installed. If you're
+  working with a version that either has diverged from the main branch or an
+  older version of the codebase, remove the requirement from the
+  `pyproject.toml` file and the installation should proceed without any further
+  errors.
 
 - **Issues and Debugging**: Begin your debugging process by installing this
   package into a fresh `conda` environment enabled with `python==3.9` as this
