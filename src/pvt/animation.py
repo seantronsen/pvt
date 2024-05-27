@@ -1,7 +1,7 @@
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QPushButton
 from pyqtgraph import LayoutWidget
-from qtviewer.panels import StatefulPane
+from pvt.panels import StatefulPane
 import numpy as np
 
 

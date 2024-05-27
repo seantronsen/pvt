@@ -1,5 +1,5 @@
 from pytest import fixture
-from qtviewer.identifier import IdManager
+from pvt.identifier import IdManager
 
 
 @fixture

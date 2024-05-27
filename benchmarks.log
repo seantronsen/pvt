@@ -2,7 +2,7 @@
 platform linux -- Python 3.9.18, pytest-8.1.1, pluggy-1.4.0
 PySide6 6.6.2 -- Qt runtime 6.6.2 -- Qt compiled 6.6.2
 benchmark: 4.0.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
-rootdir: /home/sean/projects/qtviewer
+rootdir: /home/sean/projects/pvt
 configfile: pyproject.toml
 plugins: qt-4.4.0, benchmark-4.0.0, mock-3.14.0, xdist-3.5.0
 collected 120 items

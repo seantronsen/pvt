@@ -1,4 +1,4 @@
-from qtviewer import State
+from pvt import State
 from pytest import fixture
 from copy import deepcopy
 

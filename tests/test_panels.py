@@ -1,6 +1,6 @@
 from pytest import fixture, raises
-from qtviewer.panels import BasePlot2DPane, ImagePane, Plot2DLinePane, Plot2DScatterPane, Plot3DPane, StatefulPane
-from qtviewer.widgets import ParameterTrackbar
+from pvt.panels import BasePlot2DPane, ImagePane, Plot2DLinePane, Plot2DScatterPane, Plot3DPane, StatefulPane
+from pvt.widgets import ParameterTrackbar
 import numpy as np
 
 

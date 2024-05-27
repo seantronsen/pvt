@@ -4,8 +4,8 @@ from typing import List
 from PySide6.QtCore import QCoreApplication, QTimer
 from PySide6.QtWidgets import QHBoxLayout, QMainWindow, QWidget, QApplication
 from pyqtgraph import LayoutWidget
-from qtviewer.panels import StatefulPane
-from qtviewer.widgets import StatefulWidget
+from pvt.panels import StatefulPane
+from pvt.widgets import StatefulWidget
 from PySide6.QtWidgets import QSizePolicy
 
 

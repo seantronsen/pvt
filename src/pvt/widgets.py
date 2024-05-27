@@ -1,8 +1,8 @@
 from typing import List, Optional, Union
 from PySide6.QtWidgets import QCheckBox, QLabel
 from PySide6.QtCore import Qt
-from qtviewer.qtmods import Trackbar
-from qtviewer.state import State
+from pvt.qtmods import Trackbar
+from pvt.state import State
 from pyqtgraph import LayoutWidget
 
 

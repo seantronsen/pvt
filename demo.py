@@ -25,7 +25,7 @@ os.environ["VIEWER_PERF_LOG"] = "1"  # remove to disable performance logging
 # STANDARD IMPORTS
 import cv2
 import numpy as np
-from qtviewer import *
+from pvt import *
 import sys
 from demo_utils import *
 

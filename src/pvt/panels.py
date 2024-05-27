@@ -2,10 +2,10 @@ from PySide6 import QtGui
 from numpy.typing import NDArray
 from pyqtgraph import GraphicsLayoutWidget, LayoutWidget, PlotDataItem
 from pyqtgraph.colormap import ColorMap
-from qtviewer.decorators import performance_log
-from qtviewer.identifier import IdManager
-from qtviewer.state import State
-from qtviewer.widgets import StatefulWidget
+from pvt.decorators import performance_log
+from pvt.identifier import IdManager
+from pvt.state import State
+from pvt.widgets import StatefulWidget
 from typing import Callable, Dict, List, Optional, Any
 import numpy as np
 import pyqtgraph as pg

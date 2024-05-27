@@ -1,6 +1,6 @@
 from pytest import fixture, raises
-from qtviewer.widgets import *
-from qtviewer.state import State
+from pvt.widgets import *
+from pvt.state import State
 
 
 class TestStatefulWidget:
