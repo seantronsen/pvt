@@ -1,5 +1,5 @@
 [project]
-name = "qtviewer"
+name = "pvt"
 license = { file = "LICENSE" }
 version = "0.0.4"
 authors = [{ name = "Sean Tronsen", email = "sean.tronsen@gmail.com" }]
@@ -31,7 +31,7 @@ dependencies = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 [tool.hatch.version]
-path = "src/qtviewer/__about__.py"
+path = "src/pvt/__about__.py"
 
 [tool.hatch.envs.default]
 dependencies = ["coverage[toml]>=6.5", "pytest"]
@@ -56,14 +56,14 @@ skip-string-normalization = true
 
 
 [tool.coverage.run]
-source_pkgs = ["qtviewer", "tests"]
+source_pkgs = ["pvt", "tests"]
 branch = true
 parallel = true
-omit = ["src/qtviewer/__about__.py"]
+omit = ["src/pvt/__about__.py"]
 
 [tool.coverage.paths]
-qtviewer = ["src/qtviewer", "*/qtviewer/src/qtviewer"]
-tests = ["tests", "*/qtviewer/tests"]
+pvt = ["src/pvt", "*/pvt/src/pvt"]
+tests = ["tests", "*/pvt/tests"]
 
 [tool.coverage.report]
 exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]
