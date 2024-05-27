@@ -1,4 +1,4 @@
-# qtviewer
+# pvt -- Python Visualization & Algorithm Tuning
 
 A small collection of real-time data viewing utilities, initially created to
 satisfy the goal of enabling algorithmic tuning with rapid feedback.
