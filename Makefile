@@ -22,6 +22,26 @@ clean:
 hatch:
 	pip install hatch
 
+##################################################
+##################################################
+# RUNNABLES
+##################################################
+##################################################
+
+# todo: add the dev packages for testing in somehwhere
+# - pytest
+# - pytest-benchmark
+# - pytest-xdist # parallel testing
+# - pytest-qt
+# - pytest-mock
+run-tests:
+	pytest -n auto --benchmark-disable
+
+# currently segfaults.
+run-benchmarks:
+	pytest 
+	# echo "error: recipe not implemented"
+	# exit 1
 
 ##################################################
 ##################################################

@@ -1,7 +1,7 @@
 import signal
 import sys
 from typing import List
-from PySide6.QtCore import QCoreApplication, QTimer
+from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QHBoxLayout, QMainWindow, QWidget, QApplication
 from pyqtgraph import LayoutWidget
 from pvt.panels import StatefulPane
