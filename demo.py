@@ -147,7 +147,7 @@ def demo_plot_viewer():
     # fillLevel, which causes the area under any curve to be shaded between the
     # curve and this value. The default value is None which results in the area
     # under the curve not being shaded.
-    pl = Plot2DLinePane(callback, ncolors=3, cmap="plasma", line_width=1, fillLevel=0)
+    pl = Plot2DLinePane(callback, ncolors=3, cmap="plasma", line_width=1, fillLevel=None)  # 0)
     pl.set_title("Signal Aliasing: Labeled Graph")
     pl.set_xlabel("Sample Number")
     pl.set_ylabel("Amplitude")
@@ -235,13 +235,7 @@ def demo_pvt3dplotter_prototype():
 #
 # Example: `python demo.py demo_image_viewer`
 if __name__ == "__main__":
-    options = {}
-    options[demo_image_viewer.__name__] = demo_image_viewer
-    options[demo_static_image_viewer.__name__] = demo_static_image_viewer
-    options[demo_plot_viewer.__name__] = demo_plot_viewer
-    options[demo_3d_prototype.__name__] = demo_3d_prototype
-    options[demo_pvt3dplotter_prototype.__name__] = demo_pvt3dplotter_prototype
-    if len(sys.argv) >= 2:
-        options[sys.argv[1]]()
-    else:
+    if len(sys.argv) == 1:
         demo_plot_viewer()
+    else:
+        globals()[sys.argv[1]]()
