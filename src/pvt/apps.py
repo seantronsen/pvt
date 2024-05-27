@@ -93,7 +93,7 @@ class Skeleton(QApplication):
 class App(Skeleton):
     """
     A wrapper around QApplication which provides several creature comforts.
-    Serves as the base root element for any qtviewer GUI.
+    Serves as the base root element for any pvt GUI.
     """
 
     data_displays: List[StatefulPane]

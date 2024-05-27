@@ -174,8 +174,8 @@ def demo_plot_viewer():
     # at least not yet. Use caution if you are animating many windows at the
     # same time as the time to update each window will stack. Follow these
     # issues for updates on the features planned which solve this problem.
-    # - https://github.com/seantronsen/qtviewer/issues/14
-    # - https://github.com/seantronsen/qtviewer/issues/22
+    # - https://github.com/seantronsen/pvt/issues/14
+    # - https://github.com/seantronsen/pvt/issues/22
 
     viewer.add_mosaic([[pl, ps], [trackbar_n, trackbar_omega], [trackbar_phasem, trackbar_sigma]])
     viewer.run()
