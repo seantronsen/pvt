@@ -6,19 +6,11 @@ authors = [{ name = "Sean Tronsen", email = "sean.tronsen@gmail.com" }]
 description = "functions to re-use."
 readme = "README.md"
 requires-python = ">=3.8"
-classifiers = [
-  "Programming Language :: Python",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: 3.12",
-]
+classifiers = ["Programming Language :: Python :: 3.12"]
 
 dependencies = [
   "numpy==1.*",
   "opencv-contrib-python-headless==4.9.*",
-  # "pyopengl-accelerate==3.1.*",
   "pyopengl==3.1.*",
   "pyqtgraph==0.13.*",
   "pyside6==6.*",
@@ -42,7 +34,7 @@ cov-report = ["- coverage combine", "coverage report"]
 cov = ["test-cov", "cov-report"]
 
 [tool.hatch.envs.dev]
-dependencies = ["pytest", "pytest-benchmark", "pytest-qt"]
+dependencies = ["pytest", "pytest-benchmark", "pytest-qt", "pytest-xdist", "pytest-mock"]
 
 
 [[tool.hatch.envs.all.matrix]]
