@@ -12,3 +12,5 @@ typings/
 **v*env/
 **/__pycache__/
 debug.py
+
+src/pvt.egg-info
