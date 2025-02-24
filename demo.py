@@ -1,6 +1,6 @@
 ##################################################
 # FILE: demo.py
-# AUTHOR: SEAN TRONSEN (LANL)
+# AUTHOR: SEAN TRONSEN
 #
 # SUMMARY:
 # The contents of this file are written with the intent to illustrate basic
