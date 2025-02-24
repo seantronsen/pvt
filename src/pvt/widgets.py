@@ -4,6 +4,7 @@ from PySide6.QtCore import Qt
 from pvt.qtmods import Trackbar
 from pvt.state import State
 from pyqtgraph import LayoutWidget
+from time import time
 
 
 class StatefulWidget(LayoutWidget):
@@ -65,11 +66,14 @@ class StatefulWidget(LayoutWidget):
         :param value: [TODO:description]
         :raises KeyError: fails when not attached to state
         """
+        tstart = time()
         for x in self.states:
             x[self.key] = value
 
         for x in self.states:
             x.flush()
+
+        print(f"updates (Hz): {1 / (time()  - tstart)}")
 
 
 class ParameterToggle(StatefulWidget):

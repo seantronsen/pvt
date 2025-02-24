@@ -5,7 +5,7 @@ OBJS=dist
 .PHONY: all clean install install-dev uninstall
 
 environment:
-	conda create -n pvt-dev python=3.9 -c conda-forge -y; conda activate pvt-dev && make install-dev
+	conda create -n pvt-old python=3.9 -c conda-forge -y; conda activate pvt-dev && make install-dev
 
 install-dev:
 	pip install -e .
