@@ -2,10 +2,10 @@ from dataclasses import dataclass
 from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 from abc import abstractmethod
-from .pvt_experimental.decorators import perflog
-from .pvt_experimental.identifier import IdManager
-from .pvt_experimental.qtmods import LabeledTrackbar, TrackbarRange
-from .pvt_experimental.state import VisualizerControlSignal
+from .decorators import perflog
+from .identifier import IdManager
+from .qtmods import LabeledTrackbar, TrackbarRange
+from .state import VisualizerControlSignal
 
 # todo: all stateful composition based controls should not have padding or margin spacing
 # todo: consider a "widget base" since both controls and displays share some arbitrary bullshit

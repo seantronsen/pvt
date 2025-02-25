@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout, QWidget
-from pvt_experimental.controls import STP, StatefulTrackbar
+from .controls import STP, StatefulTrackbar
 
 
 class VSliderGroup(QFrame):

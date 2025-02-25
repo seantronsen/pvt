@@ -1,8 +1,8 @@
 from PySide6.QtWidgets import QHBoxLayout, QLayout, QVBoxLayout, QWidget
-from .pvt_experimental.controls import StatefulControl
-from .pvt_experimental.displays import StatefulDisplay
-from .pvt_experimental.state import VisualizerState
-from .pvt_experimental.utils import find_children_of_types
+from .controls import StatefulControl
+from .displays import StatefulDisplay
+from .state import VisualizerState
+from .utils import find_children_of_types
 
 
 def configure_state(
