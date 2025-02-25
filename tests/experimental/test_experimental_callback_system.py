@@ -1,3 +1,4 @@
+# valid as of commit: #79a129f
 import pytest
 from pytest_benchmark.fixture import BenchmarkFixture
 from pytestqt.qtbot import QtBot
