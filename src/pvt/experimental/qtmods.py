@@ -2,7 +2,7 @@ from PySide6.QtCore import QObject, Qt, Signal, Slot
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QSlider, QVBoxLayout, QWidget
 from decimal import Decimal
 from numpy.typing import NDArray
-from pvt_experimental.identifier import IdManager
+from .identifier import IdManager
 import numpy as np
 import os
 

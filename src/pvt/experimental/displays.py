@@ -1,8 +1,8 @@
 from PySide6.QtCore import Slot
 from PySide6.QtWidgets import QLabel, QSizePolicy, QVBoxLayout, QWidget
 from typing import Callable, Dict, Optional, Any
-from pvt_experimental.decorators import perflog
-from pvt_experimental.identifier import IdManager
+from .decorators import perflog
+from .identifier import IdManager
 import pyqtgraph as pg
 
 

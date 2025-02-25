@@ -56,3 +56,7 @@ benchmark:
 	echo "error: benchmarks need to be reconfigured..."
 	exit 1
 	# pytest # currently segfaults.
+	#
+
+benchmark-experimental:
+	pytest -vvv ./tests/experimental
