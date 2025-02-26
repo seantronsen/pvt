@@ -245,3 +245,4 @@ class LabeledTrackbar(QWidget):
 
     def value(self):
         return self.w_trackbar.value()
+

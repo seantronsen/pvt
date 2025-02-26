@@ -1,8 +1,12 @@
+from PySide6 import QtGui
 from PySide6.QtCore import Slot
 from PySide6.QtWidgets import QLabel, QSizePolicy, QVBoxLayout, QWidget
-from typing import Callable, Dict, Optional, Any
-from .decorators import perflog
-from .identifier import IdManager
+from numpy.typing import NDArray
+from pvt.decorators import perflog
+from pvt.identifier import IdManager
+from pyqtgraph import GraphicsLayoutWidget, PlotDataItem
+from pyqtgraph.colormap import ColorMap
+from typing import Callable
 import pyqtgraph as pg
 
 
@@ -135,21 +139,6 @@ class StatefulImageView(StatefulDisplay):
 
     def set_border(self, border: Any):
         self.displaypane.imageItem.setBorder(border)
-
-
-
-from PySide6 import QtGui
-from numpy.typing import NDArray
-from pyqtgraph import GraphicsLayoutWidget, LayoutWidget, PlotDataItem
-from pyqtgraph.colormap import ColorMap
-from pvt.decorators import performance_log
-from pvt.identifier import IdManager
-from pvt.state import State
-from pvt.widgets import StatefulWidget
-from typing import Callable, Dict, List, Optional, Any
-import pyqtgraph as pg
-from PySide6.QtWidgets import QLabel, QSizePolicy
-
 
 
 class ImagePane(StatefulPane):
@@ -428,4 +417,3 @@ class Plot2DScatterPane(BasePlot2DPane):
 
     def plot(self, i, **_):
         return super().plot(i, symbolBrush=self.nth_color(i))
-

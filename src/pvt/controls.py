@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from PySide6.QtCore import Signal, Slot
-from PySide6.QtWidgets import QVBoxLayout, QWidget
+from PySide6.QtWidgets import QCheckBox, QVBoxLayout, QWidget
 from abc import abstractmethod
 from .decorators import perflog
 from .identifier import IdManager
@@ -108,10 +108,11 @@ class StatefulTrackbar(StatefulControl):
         return self._labeled_trackbar.value()
 
 
+# todo: create a qtmod adapter class for the underlying qtcheckbox class.
 class ParameterToggle(StatefulWidget):
     s: QCheckBox
 
-    def __init__(self, key: str, init: bool, label: Optional[str] = None) -> None:
+    def __init__(self, key: str, init: bool, label: str | None = None) -> None:
         """
         Instantiate a new stateful checkbox / toggle widget in a detached state
         (relative to the parent pane). Due to the functional interface
