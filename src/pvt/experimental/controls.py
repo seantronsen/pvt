@@ -106,3 +106,37 @@ class StatefulTrackbar(StatefulControl):
 
     def value(self):
         return self._labeled_trackbar.value()
+
+
+class ParameterToggle(StatefulWidget):
+    s: QCheckBox
+
+    def __init__(self, key: str, init: bool, label: Optional[str] = None) -> None:
+        """
+        Instantiate a new stateful checkbox / toggle widget in a detached state
+        (relative to the parent pane). Due to the functional interface
+        requirements of the Qt library, all *value* related parameters must be
+        integers for the slider.
+
+        :param label: the label to appear on the right side of the slider.
+        :param start: minimum slider value
+        :param stop: maximum slider value
+        :param step: change in value (delta) for one tick of slider movement.
+        :param init: initial slider value / position
+        :param key: optional key for the state. if not specified, the label is the key.
+        """
+
+        # fill in the optionals
+        label = label if label is not None else key
+        super().__init__(key, init)
+
+        # set up the control
+        self.s = QCheckBox(label)
+        self.s.setFocusPolicy(Qt.StrongFocus)  # pyright: ignore
+        self.s.setChecked(init)
+        self.s.stateChanged.connect(self.on_change)
+        self.addWidget(self.s)
+
+    def on_change(self, *_):
+        value = int(self.s.isChecked())
+        self.state_update(value)
