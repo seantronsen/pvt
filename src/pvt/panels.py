@@ -7,11 +7,8 @@ from pvt.identifier import IdManager
 from pvt.state import State
 from pvt.widgets import StatefulWidget
 from typing import Callable, Dict, List, Optional, Any
-import numpy as np
 import pyqtgraph as pg
-# import pyqtgraph.opengl as pggl
 from PySide6.QtWidgets import QLabel, QSizePolicy
-# from pyvistaqt import BackgroundPlotter
 
 
 class StatefulPane(LayoutWidget):
@@ -404,108 +401,3 @@ class Plot2DScatterPane(BasePlot2DPane):
 
     def plot(self, i, **_):
         return super().plot(i, symbolBrush=self.nth_color(i))
-
-
-# class Pvt3DPlotPane(StatefulPane):
-#     """
-#     This is a work in progress integration. One of the authors will add onto
-#     and clean this up within the week (Sun Apr  7 06:32:06 PM MDT 2024) since
-#     they require as a component of a project demonstration.
-# 
-# 
-#     IMPORTANT: This is a **really** basic integration implementation which is
-#     meant solely to get the ball rolling. There has been little in the way of
-#     performance testing and/or quantification. In practice, the noisy sphere
-#     demo reached a maximum of 144 FPS (rendering bottleneck, compute max was
-#     almost 4,000 FPS). It allows the user to do whatever they want as long as
-#     they know PyVista. The authors are working on learning more about this
-#     library and additional abstractions / API simplifications will come with
-#     time.
-#     """
-# 
-#     def __init__(self, callback: Optional[Callable] = None, **kwargs) -> None:
-#         super().__init__(callback, **kwargs)
-#         self.pvtp = BackgroundPlotter(
-#             show=False,
-#             update_app_icon=False,
-#             allow_quit_keypress=False,
-#             editor=False,
-#             auto_update=False,
-#             title=None,
-#             menu_bar=False,
-#         )
-#         # self.addWidget(self.pvtp.main_menu)
-#         self.addWidget(self.pvtp)
-# 
-#     def __getattr__(self, attr: str):
-#         return getattr(self.pvtp, attr)
-# 
-#     def render_data(self, *_):
-#         self.pvtp.update()
-#         self.pvtp.render()
-# 
-# 
-# # SWITCHING OVER TO PYVISTA FOR 3D GRAPHICS SOON
-# # unfortunately, I just don't have the time to create a full 3D solution and
-# # integrating a new library which shares a ton of features with ParaView seems
-# # like an obvious choice.
-# class Plot3DPane(StatefulPane):
-#     """
-#     An OpenGL-enabled 3D plotting pane. The current documentation for PyQtGraph
-#     reveals features related to this plotting technique remain in early
-#     development and will improve over time.
-# 
-#     Quoting the current capabilities within the backticks:
-# 
-#     ```
-#     - 3D view widget with zoom/rotate controls (mouse drag and wheel)
-#     - Scenegraph allowing items to be added/removed from scene with per-item
-#       transformations and parent/child relationships.
-#     - Triangular meshes
-#     - Basic mesh computation functions: isosurfaces, per-vertex normals
-#     - Volumetric rendering item
-#     - Grid/axis items
-# 
-#     ```
-#     """
-# 
-#     plot_space: pggl.GLViewWidget
-#     plot_surface: pggl.GLSurfacePlotItem
-# 
-#     def __init__(self, callback: Callable, **kwargs) -> None:
-#         """
-#         borrowed" directly from the demos"
-#         needs:
-#             - auto scale grid sizes to data.
-#         """
-#         super().__init__(callback, **kwargs)
-#         self.plot_space = pggl.GLViewWidget()
-#         self.plot_space.setCameraPosition(distance=100)
-#         gx = pggl.GLGridItem()
-#         gx.rotate(90, 0, 1, 0)
-#         gx.translate(-10, 0, 10)
-#         # gx.scale(x,y,z)
-#         # g.setDepthValue(10)  # draw grid after surfaces since they may be translucent
-#         self.plot_space.addItem(gx)
-#         gy = pggl.GLGridItem()
-#         gy.rotate(90, 1, 0, 0)
-#         gy.translate(0, -10, 10)
-#         self.plot_space.addItem(gy)
-#         gz = pggl.GLGridItem()
-#         # gz.translate(0, 0, -10)
-#         self.plot_space.addItem(gz)
-#         self.plot_surface = pggl.GLSurfacePlotItem(
-#             shader='heightColor', color=(0, 0.5, 0, 0.9), computeNormals=False, smooth=True, glOptions="additive"
-#         )
-#         self.plot_space.addItem(self.plot_surface)
-#         self.addWidget(self.plot_space)
-# 
-#     def render_data(self, *args):
-#         if len(args) == 3:
-#             x, y, z = args
-#             self.plot_surface.setData(x=x, y=y, z=z)
-#         else:
-#             z = args[0]
-#             x = np.arange(z.shape[1]) - 10
-#             y = np.arange(z.shape[0]) - 10
-#             self.plot_surface.setData(x=x, y=y, z=args[0])
