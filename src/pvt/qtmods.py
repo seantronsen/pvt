@@ -1,3 +1,4 @@
+from typing import Any
 from PySide6.QtCore import QObject, Qt, Signal, Slot
 from PySide6.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QSizePolicy, QSlider, QVBoxLayout, QWidget
 from decimal import Decimal
@@ -34,7 +35,7 @@ import numpy as np
 class TrackbarConfig:
 
     init_index: int
-    value_range: NDArray
+    value_range: NDArray[Any]
 
     def __init__(
         self,

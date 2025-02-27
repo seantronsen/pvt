@@ -1,14 +1,11 @@
+from dataclasses import dataclass
 from PySide6.QtCore import Slot
 from PySide6.QtWidgets import QLabel, QSizePolicy, QVBoxLayout, QWidget
+from numpy.typing import NDArray
 from pvt.decorators import perflog
 from pvt.identifier import IdManager
-from typing import Callable
+from typing import Any, Callable
 import pyqtgraph as pg
-
-# from PySide6 import QtGui
-# from numpy.typing import NDArray
-# from pyqtgraph import GraphicsLayoutWidget, PlotDataItem
-# from pyqtgraph.colormap import ColorMap
 
 
 class StatefulDisplay(QWidget):
@@ -35,9 +32,10 @@ class StatefulDisplay(QWidget):
         self.__callback = callback
 
         # todo: abstract this shit into superclass. also shared by controls
-        self.setLayout(QVBoxLayout())
-        self.layout().setContentsMargins(0, 0, 0, 0)
-        self.layout().setSpacing(0)
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        self.setLayout(layout)
 
         self.identifier = f"{self.__class__.__name__}-{IdManager().generate_identifier()}".lower()
         self.identifier_label = QLabel(self.identifier)
@@ -55,7 +53,8 @@ class StatefulDisplay(QWidget):
     def _add_widget(self, w: QWidget):
         self.layout().addWidget(w)
 
-    @Slot(dict)
+    # fucking pyright and qt slots...
+    @Slot(dict[str, Any])
     def on_viewer_state_changed(self, kwargs_as_dict: dict[str, object]):
         """
         This function is an event handler which executes the user specified
@@ -70,14 +69,14 @@ class StatefulDisplay(QWidget):
         self.__render_data(data)
 
     @perflog(event="callback-compute")
-    def __compute_data(self, **kwargs):
+    def __compute_data(self, **kwargs: Any):
         return self.__callback(**kwargs)
 
     @perflog(event="pyqtgraph-render")
-    def __render_data(self, *args):
+    def __render_data(self, *args: Any):
         self._render_data(*args)
 
-    def _render_data(self, *args):
+    def _render_data(self, *args: Any) -> None:
         """
         IMPORTANT: Stateful display derivations must override this method with
         the logic required for Qt to display any data to be rendered..
@@ -143,6 +142,11 @@ class StatefulImageView(StatefulDisplay):
 
 
 # TODO: FIX THIS OLD SHIT AND PORT TO THE NEW DESIGN
+#
+# from PySide6 import QtGui
+# from numpy.typing import NDArray
+# from pyqtgraph import GraphicsLayoutWidget, PlotDataItem
+# from pyqtgraph.colormap import ColorMap
 # class ImagePane(StatefulPane):
 #     """
 #     A pane which can be used to display and analyze image data with a fast

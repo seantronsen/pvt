@@ -36,9 +36,10 @@ class StatefulControl(QWidget):
         """
         super().__init__()
         self.key, self._initial_value = key, initial_value
-        self.setLayout(QVBoxLayout())
-        self.layout().setContentsMargins(0, 0, 0, 0)
-        self.layout().setSpacing(0)
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        self.setLayout(layout)
         self.identifier = f"{self.__class__.__name__}-{IdManager().generate_identifier()}".lower()
 
     def _add_widget(self, w: QWidget):

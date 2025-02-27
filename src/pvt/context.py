@@ -64,8 +64,8 @@ class VisualizerContext(QWidget):
         self.setLayout(layout)
         interesting_nodes = find_children_of_types(self, StatefulDisplay, StatefulControl)
         self.state = configure_state(
-            displays=interesting_nodes.get(StatefulDisplay, []),
-            controls=interesting_nodes.get(StatefulControl, []),
+            displays=interesting_nodes.get(StatefulDisplay, []),  # pyright: ignore
+            controls=interesting_nodes.get(StatefulControl, []),  # pyright: ignore
             state=state,
         )
         self.state.setParent(self)
@@ -99,10 +99,15 @@ class VisualizerContext(QWidget):
         assert len(mosaic) != 0 and type(mosaic[0]) == list
         main_layout = QVBoxLayout()
         for row in mosaic:
-            wrapper = QWidget()
-            wrapper.setLayout(QHBoxLayout())
+            # todo: skip the wrapper and use `.addLayout`, though from past
+            # experience that tends to not work as advertised. still, try
+            # again. maybe it's fixed finally.
+            sub_layout = QHBoxLayout()
+
             for element in row:
-                wrapper.layout().addWidget(element)
+                sub_layout.addWidget(element)
+            wrapper = QWidget()
+            wrapper.setLayout(sub_layout)
             main_layout.addWidget(wrapper)
 
         return VisualizerContext(layout=main_layout, state=state)

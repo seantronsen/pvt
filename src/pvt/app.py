@@ -31,8 +31,8 @@ class MainWindow(QMainWindow):
         Add a widget to the layout used by the window.
         :param widget: Widget to add to the layout.
         """
-        self.panel.addWidget(widget) # pyright: ignore
-        self.panel.nextRow() # pyright: ignore
+        self.panel.addWidget(widget)  # pyright: ignore
+        self.panel.nextRow()  # pyright: ignore
 
 
 class Skeleton(QApplication):
@@ -54,9 +54,9 @@ class Skeleton(QApplication):
         self.main_window = MainWindow(title=title)
 
         # enable terminate on sigint / ctrl-c
-        signal.signal(signal.SIGINT, self.sigint) # pyright: ignore
+        signal.signal(signal.SIGINT, self.sigint)  # pyright: ignore
         self.timer = QTimer(parent=self)
-        self.timer.timeout.connect(lambda **_: None) # pyright: ignore
+        self.timer.timeout.connect(lambda **_: None)  # pyright: ignore
         self.timer.start(100)
 
     def sigint(self, *_):
@@ -133,6 +133,9 @@ class App(Skeleton):
             wrapper = QWidget(parent=self.main_window)
             wrapper.setLayout(QHBoxLayout())
             for element in row:
+                # todo: skip the wrapper and use `.addLayout`, though from past
+                # experience that tends to not work as advertised. still, try
+                # again. maybe it's fixed finally.
                 wrapper.layout().addWidget(element)
             self.main_window.addWidget(wrapper)
 
