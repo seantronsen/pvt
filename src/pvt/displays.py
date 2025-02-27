@@ -87,6 +87,14 @@ class StatefulDisplay(QWidget):
         raise NotImplementedError
 
 
+@dataclass
+class ImageViewConfig:
+    autoRange: bool = True
+    autoLevels: bool = True
+    autoHistogramRange: bool = True
+    border_color: str | None = None
+
+
 class StatefulImageView(StatefulDisplay):
     """
     A pane which can be used to display and analyze image data with a fast
@@ -100,17 +108,12 @@ class StatefulImageView(StatefulDisplay):
     """
 
     displaypane: pg.ImageView
-    dargs: Dict
 
     def __init__(
         self,
-        callback: Callable,
-        autoRange=True,
-        autoLevels=True,
-        autoHistogramRange=True,
-        border: Optional[Any] = None,
+        callback: Callable[..., object],
         title: str | None = None,
-        **kwargs,
+        config: ImageViewConfig = ImageViewConfig(),
     ) -> None:
         """
         Initialize an instance of the class.
@@ -125,20 +128,23 @@ class StatefulImageView(StatefulDisplay):
             widget is scaled to fit the data.
         :param title: an optional title to render as a label above the display
         """
-        super().__init__(callback, title=title, **kwargs)
-        self.dargs = dict(autoRange=autoRange, autoLevels=autoLevels, autoHistogramRange=autoHistogramRange)
+        super().__init__(callback, title=title)
+        self._config = config
         self.displaypane = pg.ImageView()
-        self.displaypane.layout().setContentsMargins(0, 0, 0, 0)
-        self.displaypane.layout().setSpacing(0)
+        self.displaypane.layout().setContentsMargins(0, 0, 0, 0)  # pyright: ignore
+        self.displaypane.layout().setSpacing(0)  # pyright: ignore
         self._add_widget(self.displaypane)
-        if border is not None:
-            self.set_border(border)
+        if self._config.border_color is not None:
+            self.displaypane.imageItem.setBorder(self._config.border_color)
 
-    def _render_data(self, *args):
-        self.displaypane.setImage(args[0], **self.dargs)
-
-    def set_border(self, border: Any):
-        self.displaypane.imageItem.setBorder(border)
+    def _render_data(self, *args: Any):
+        image: NDArray[Any] = args[0]
+        self.displaypane.setImage(
+            image,
+            autoRange=self._config.autoRange,
+            autoLevels=self._config.autoLevels,
+            autoHistogramRange=self._config.autoHistogramRange,
+        )
 
 
 # TODO: FIX THIS OLD SHIT AND PORT TO THE NEW DESIGN
