@@ -31,8 +31,8 @@ class MainWindow(QMainWindow):
         Add a widget to the layout used by the window.
         :param widget: Widget to add to the layout.
         """
-        self.panel.addWidget(widget)
-        self.panel.nextRow()
+        self.panel.addWidget(widget) # pyright: ignore
+        self.panel.nextRow() # pyright: ignore
 
 
 class Skeleton(QApplication):
@@ -54,9 +54,9 @@ class Skeleton(QApplication):
         self.main_window = MainWindow(title=title)
 
         # enable terminate on sigint / ctrl-c
-        signal.signal(signal.SIGINT, self.sigint)
+        signal.signal(signal.SIGINT, self.sigint) # pyright: ignore
         self.timer = QTimer(parent=self)
-        self.timer.timeout.connect(lambda **_: None)
+        self.timer.timeout.connect(lambda **_: None) # pyright: ignore
         self.timer.start(100)
 
     def sigint(self, *_):

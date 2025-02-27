@@ -25,7 +25,7 @@ class StatefulControl(QWidget):
     """
 
     on_control_signal_changed = Signal(VisualizerControlSignal)
-    _key: str
+    key: str
     _initial_value: object
 
     def __init__(self, key: str, initial_value: object) -> None:
@@ -35,7 +35,7 @@ class StatefulControl(QWidget):
         :param init [Any]: an initial value
         """
         super().__init__()
-        self._key, self._initial_value = key, initial_value
+        self.key, self._initial_value = key, initial_value
         self.setLayout(QVBoxLayout())
         self.layout().setContentsMargins(0, 0, 0, 0)
         self.layout().setSpacing(0)
@@ -50,7 +50,7 @@ class StatefulControl(QWidget):
         self.on_control_signal_changed.emit(self.query_control_signal())
 
     def query_control_signal(self):
-        return VisualizerControlSignal(key=self._key, value=self.value())
+        return VisualizerControlSignal(key=self.key, value=self.value())
 
     @abstractmethod
     def value(self) -> object:

@@ -1,8 +1,8 @@
 from PySide6.QtWidgets import QHBoxLayout, QLayout, QVBoxLayout, QWidget
-from .controls import StatefulControl
-from .displays import StatefulDisplay
-from .state import VisualizerState
-from .utils import find_children_of_types
+from pvt.controls import StatefulControl
+from pvt.displays import StatefulDisplay
+from pvt.state import VisualizerState
+from pvt.utils import find_children_of_types
 
 
 def configure_state(
@@ -29,9 +29,9 @@ def configure_state(
     # land dictionaries says kwarg parameters can overwrite one another.
     keyset: set[str] = set()
     for c in controls:
-        if c._key in keyset:
-            raise ValueError(f"detected multiple controls sharing the same parameter key '{c._key}'")
-        keyset.add(c._key)
+        if c.key in keyset:
+            raise ValueError(f"detected multiple controls sharing the same parameter key '{c.key}'")
+        keyset.add(c.key)
         c.on_control_signal_changed.connect(state.modify_state)
         state.modify_state(c.query_control_signal())
 
