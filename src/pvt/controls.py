@@ -110,15 +110,19 @@ class StatefulTrackbar(StatefulControl):
 
 
 class StatefulToggle(StatefulControl):
+    """
+    Instantiate a new stateful checkbox / toggle widget to visualize the
+    result of a "binary" parameter input (two options only).
+    """
+
     def __init__(self, key: str, values: ToggleConfig | None = None, label: str | None = None) -> None:
         """
-        TODO: NEEDS UPDATED DOCS
-        # Instantiate a new stateful checkbox / toggle widget in a detached state
-        # (relative to the parent pane). Due to the functional interface
-        # requirements of the Qt library, all *value* related parameters must be
-        # integers for the slider.
-
+        :param key: key name for the state
+        :param values: toggle parameters and values associated with each state
+        :param label: optional label to appear on the right side of the toggle,
+            defaults to `key` if not assigned.
         """
+
         _values = values if values is not None else ToggleConfig()
         super().__init__(key, _values.initial_value)
         self._labeled_toggle = LabeledToggle(label=label if label is not None else key, values=_values)
