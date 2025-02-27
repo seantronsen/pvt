@@ -13,7 +13,6 @@ dependencies = [
   "opencv-contrib-python-headless==4.11.*",
   "pyside6==6.*",
   "pyqtgraph==0.13.*",
-  # "pyopengl==3.1.*",
 ]
 
 [project.optional-dependencies]
