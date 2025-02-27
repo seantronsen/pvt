@@ -1,9 +1,11 @@
-from dataclasses import dataclass
+from PySide6 import QtGui
 from PySide6.QtCore import Slot
 from PySide6.QtWidgets import QLabel, QSizePolicy, QVBoxLayout, QWidget
+from dataclasses import dataclass
 from numpy.typing import NDArray
 from pvt.decorators import perflog
 from pvt.identifier import IdManager
+from pyqtgraph.colormap import ColorMap
 from typing import Any, Callable
 import pyqtgraph as pg
 
@@ -148,6 +150,25 @@ class StatefulImageView(StatefulDisplay):
 
 
 # TODO: FIX THIS OLD SHIT AND PORT TO THE NEW DESIGN
+#
+
+
+def colors_from_cmap(cmap: ColorMap, ncolors: int):
+    """
+    Return a list of QColor objects from the from the provided colormap.
+
+    :param cmap: ColorMap instance
+    :param ncolors: number of colors to return
+    :return: The list of QColor objects.
+    """
+    result: list[QtGui.QColor] = [
+        cmap.map(x / ncolors, mode=ColorMap.QCOLOR) for x in range(ncolors)
+    ]  # pyright: ignore
+    return result
+
+
+# from numpy.typing import NDArray
+# from pyqtgraph import GraphicsLayoutWidget, PlotDataItem
 #
 # class BasePlot2DPane(StatefulPane):
 #     """
