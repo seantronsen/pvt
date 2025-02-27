@@ -1,37 +1,37 @@
 from PySide6.QtCore import QObject, Qt, Signal, Slot
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QSlider, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QSizePolicy, QSlider, QVBoxLayout, QWidget
 from decimal import Decimal
 from numpy.typing import NDArray
-from .identifier import IdManager
 import numpy as np
-import os
-
 
 # work in progress replace as a base widget.
 # idea is to override QWidget to implement some common things
 # also will allow for env var which specifies layout boundary display for
 # debugging (might need QFrame for that though)
-class QWidgetMod(QWidget):
+#
+# from pvt.identifier import IdManager
+# import os
+# class QWidgetMod(QWidget):
+#
+#     def __init__(self, remove_whitespace: bool = True) -> None:
+#         super().__init__()
+#
+#         self.setLayout(QVBoxLayout())
+#         if remove_whitespace:
+#             self.layout().setContentsMargins(0, 0, 0, 0)
+#             self.layout().setSpacing(0)
+#
+#         if os.getenv("VIEWER_DEBUG") == "1":
+#             self.identifier = f"{self.__class__.__name__}-{IdManager().generate_identifier()}".lower()
+#             self.identifier_label = QLabel(self.identifier)
+#             self.identifier_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
+#             self._add_widget(self.identifier_label)
+#
+#     def _add_widget(self, w: QWidget):
+#         self.layout().addWidget(w)
 
-    def __init__(self, remove_whitespace: bool = True) -> None:
-        super().__init__()
 
-        self.setLayout(QVBoxLayout())
-        if remove_whitespace:
-            self.layout().setContentsMargins(0, 0, 0, 0)
-            self.layout().setSpacing(0)
-
-        if os.getenv("VIEWER_DEBUG") == "1":
-            self.identifier = f"{self.__class__.__name__}-{IdManager().generate_identifier()}".lower()
-            self.identifier_label = QLabel(self.identifier)
-            self.identifier_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
-            self._add_widget(self.identifier_label)
-
-    def _add_widget(self, w: QWidget):
-        self.layout().addWidget(w)
-
-
-class TrackbarRange:
+class TrackbarConfig:
 
     init_index: int
     value_range: NDArray
@@ -81,7 +81,7 @@ class TrackbarSignals(QObject):
 class Trackbar(QSlider):
     """Derivation of QSlider class that allows both integer and float ranges."""
 
-    def __init__(self, tb_range: TrackbarRange, signals_mediator: TrackbarSignals | None = None):
+    def __init__(self, tb_range: TrackbarConfig, signals_mediator: TrackbarSignals | None = None):
         """
         Constructor function for the class.
 
@@ -155,7 +155,7 @@ class Trackbar(QSlider):
         else:
             super().setValue(idx)
 
-    def revise_range(self, tb_range: TrackbarRange):
+    def revise_range(self, tb_range: TrackbarConfig):
         self.tb_range = tb_range
         self.setMaximum(self.tb_range.value_range.size - 1)
         self.setValue(self.tb_range.init_index)
@@ -174,7 +174,7 @@ class Trackbar(QSlider):
 # todo: update docs for all tbar funcs/methods
 class LabeledTrackbar(QWidget):
 
-    def __init__(self, tb_range: TrackbarRange, label: str, signals_mediator: TrackbarSignals | None = None):
+    def __init__(self, tb_range: TrackbarConfig, label: str, signals_mediator: TrackbarSignals | None = None):
         """
         Instantiate a new stateful trackbar widget to visualize the results of
         a range of possible parameter inputs.
@@ -221,14 +221,24 @@ class LabeledTrackbar(QWidget):
         self.__set_orientation(is_horizontal=False)
 
     def set_label_value(self, value: float | int):
-        v = value if value is not None else self.w_trackbar.value()
-        self.w_label.setText(f"{self.label_text}: {v: 06.5f}")
+        self.w_label.setText(f"{self.label_text}: {value: 06.5f}")
 
     def __set_orientation(self, is_horizontal: bool):
-        if self.layout() is not None:
-            self.layout().removeWidget(self.w_trackbar)
-            self.layout().removeWidget(self.w_label)
-            QWidget().setLayout(self.layout())
+        layout_old = self.layout()
+        if layout_old is not None:
+            layout_old.removeWidget(self.w_trackbar)
+            layout_old.removeWidget(self.w_label)
+
+            # yeah this looks ridiculous, but it's the simplest way to get the
+            # python bindings for the Qt library to actually repaint the window
+            # properly when you change the display of subwidgets.
+            #
+            # yeah it's also true that a QStackedLayout could provide similar
+            # functionality, but the previous layout should be deallocated, not
+            # retained.
+            # TODO: need to link to the stackoverflow forum post which
+            # discusses this bullshit line below.
+            QWidget().setLayout(layout_old)
 
         if is_horizontal:
             layout = QHBoxLayout()
@@ -239,10 +249,110 @@ class LabeledTrackbar(QWidget):
 
         layout.addWidget(self.w_trackbar)
         layout.addWidget(self.w_label)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
         self.setLayout(layout)
-        self.layout().setContentsMargins(0, 0, 0, 0)
-        self.layout().setSpacing(0)
 
     def value(self):
         return self.w_trackbar.value()
 
+
+class ToggleConfig:
+
+    def __init__(
+        self,
+        checked: object | None = None,
+        unchecked: object | None = None,
+        init_checked: bool = False,
+    ) -> None:
+        self.value_checked = True if checked is None else checked
+        self.value_unchecked = False if unchecked is None else unchecked
+        self.__init_checked = init_checked
+
+    @property
+    def initial_value(self):
+        return self.value_at(self.__init_checked)
+
+    @property
+    def initial_state(self):
+        return self.__init_checked
+
+    def value_at(self, is_checked: bool):
+        return self.value_checked if is_checked else self.value_unchecked
+
+
+# todo: consider a "generic" signals mediator that applies to all mods.
+# result would be fewer definitions, but introduces potential for ambiguities
+class ToggleSignals(QObject):
+    value_changed = Signal(object)
+
+
+class Toggle(QCheckBox):
+
+    def __init__(self, values: ToggleConfig | None = None, signals_mediator: ToggleSignals | None = None):
+        super().__init__()
+        self._signals_mediator = signals_mediator if signals_mediator is not None else ToggleSignals()
+        self._values = values if values is not None else ToggleConfig()
+        self.setChecked(self._values.initial_state)
+        self.stateChanged.connect(self._on_value_changed)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+
+    @Slot(object)
+    def _on_value_changed(self, *_):
+        self._signals_mediator.value_changed.emit(self.value())
+
+    def value(self):
+        return self._values.value_at(self.isChecked())
+
+
+class LabeledToggle(QWidget):
+    """
+    TODO: NEEDS DOC UPDATES.
+    An adapter of Qt's QCheckBox for use as a labeled checkbox / toggle widget
+    in this library.
+
+    :param signals_mediator:
+    :param label_text:
+    :param w_label:
+    :param w_toggle:
+    """
+
+    def __init__(
+        self,
+        label: str,
+        values: ToggleConfig | None = None,
+        signals_mediator: ToggleSignals | None = None,
+    ):
+
+        super().__init__()
+        self.signals_mediator = signals_mediator if signals_mediator is not None else ToggleSignals()
+        self.label_text = label
+
+        # set up the controls
+        self.w_label = QLabel()
+        self.w_toggle = Toggle(values=values, signals_mediator=self.signals_mediator)
+        self.w_label.setText(self.label_text)
+        self.w_label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
+
+        # wire up signals/slots
+        self.signals_mediator.value_changed.connect(self._on_value_changed)
+
+        # set default orientation
+        layout = QHBoxLayout()
+        layout.addWidget(self.w_toggle)
+        layout.addWidget(self.w_label)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        self.setLayout(layout)
+
+    @Slot(object)
+    def _on_value_changed(self, *_):
+        """
+        Explicitly written to mirror look and feel of other class definitions
+        above. However, the label for this control doesn't need to be updated,
+        so this is just a verbose way of stating "squelch".
+        """
+        pass
+
+    def value(self):
+        return self.w_toggle.value()

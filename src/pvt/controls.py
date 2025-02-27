@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 from PySide6.QtCore import Signal, Slot
-from PySide6.QtWidgets import QCheckBox, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QVBoxLayout, QWidget
 from abc import abstractmethod
-from .decorators import perflog
-from .identifier import IdManager
-from .qtmods import LabeledTrackbar, TrackbarRange
-from .state import VisualizerControlSignal
+from pvt.decorators import perflog
+from pvt.identifier import IdManager
+from pvt.qtmods import LabeledToggle, LabeledTrackbar, ToggleConfig, TrackbarConfig
+from pvt.state import VisualizerControlSignal
 
 # todo: all stateful composition based controls should not have padding or margin spacing
 # todo: consider a "widget base" since both controls and displays share some arbitrary bullshit
@@ -61,7 +61,7 @@ class StatefulControl(QWidget):
 class STP:
     """Class representation for `StatefulTrackbar` parameters"""
 
-    tb_range: TrackbarRange
+    tb_range: TrackbarConfig
     key: str
     label: str | None = None
 
@@ -72,7 +72,7 @@ class STP:
 
 class StatefulTrackbar(StatefulControl):
 
-    def __init__(self, tb_range: TrackbarRange, key: str, label: str | None = None) -> None:
+    def __init__(self, tb_range: TrackbarConfig, key: str, label: str | None = None) -> None:
         """
         Instantiate a new stateful trackbar widget to visualize the results of
         a range of possible parameter inputs.
@@ -96,6 +96,9 @@ class StatefulTrackbar(StatefulControl):
         self._labeled_trackbar.signals_mediator.value_changed.connect(self._on_change)
         self._add_widget(self._labeled_trackbar)
 
+    def value(self):
+        return self._labeled_trackbar.value()
+
     @Slot()
     def set_orientation_horizontal(self):
         self._labeled_trackbar.set_orientation_horizontal()
@@ -104,40 +107,21 @@ class StatefulTrackbar(StatefulControl):
     def set_orientation_vertical(self):
         self._labeled_trackbar.set_orientation_vertical()
 
+
+class StatefulToggle(StatefulControl):
+    def __init__(self, key: str, values: ToggleConfig | None = None, label: str | None = None) -> None:
+        """
+        TODO: NEEDS UPDATED DOCS
+        # Instantiate a new stateful checkbox / toggle widget in a detached state
+        # (relative to the parent pane). Due to the functional interface
+        # requirements of the Qt library, all *value* related parameters must be
+        # integers for the slider.
+
+        """
+        _values = values if values is not None else ToggleConfig()
+        super().__init__(key, _values.initial_value)
+        self._labeled_toggle = LabeledToggle(label=label if label is not None else key, values=_values)
+        self._labeled_toggle.signals_mediator.value_changed.connect(self._on_change)
+
     def value(self):
-        return self._labeled_trackbar.value()
-
-
-# todo: create a qtmod adapter class for the underlying qtcheckbox class.
-class ParameterToggle(StatefulWidget):
-    s: QCheckBox
-
-    def __init__(self, key: str, init: bool, label: str | None = None) -> None:
-        """
-        Instantiate a new stateful checkbox / toggle widget in a detached state
-        (relative to the parent pane). Due to the functional interface
-        requirements of the Qt library, all *value* related parameters must be
-        integers for the slider.
-
-        :param label: the label to appear on the right side of the slider.
-        :param start: minimum slider value
-        :param stop: maximum slider value
-        :param step: change in value (delta) for one tick of slider movement.
-        :param init: initial slider value / position
-        :param key: optional key for the state. if not specified, the label is the key.
-        """
-
-        # fill in the optionals
-        label = label if label is not None else key
-        super().__init__(key, init)
-
-        # set up the control
-        self.s = QCheckBox(label)
-        self.s.setFocusPolicy(Qt.StrongFocus)  # pyright: ignore
-        self.s.setChecked(init)
-        self.s.stateChanged.connect(self.on_change)
-        self.addWidget(self.s)
-
-    def on_change(self, *_):
-        value = int(self.s.isChecked())
-        self.state_update(value)
+        return self._labeled_toggle.value()
