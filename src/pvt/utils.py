@@ -1,10 +1,12 @@
 from PySide6.QtCore import QObject
 from numpy.typing import NDArray
+from typing import Any
 import cv2
+import itertools
 import numpy as np
 
 
-def resize_by_ratio(image: NDArray, ratio: float) -> NDArray:
+def resize_by_ratio(image: NDArray[Any], ratio: float) -> NDArray[Any]:
     """
     Provided a fractional ratio in the form of a floating point number, resize
     the image dimensions (width, height) by scaling each axis by the ratio.
@@ -22,13 +24,13 @@ def resize_by_ratio(image: NDArray, ratio: float) -> NDArray:
     :param ratio: a positive floating point number representing the resize ratio
     """
     shape = image.shape[:2]
-    nshape = np.array(shape, dtype=np.float_) * ratio
-    nshape = nshape.astype(np.uintp)  # truncate to integer
-    nshape = tuple(nshape.tolist())
+    nshape = np.array(shape, dtype=np.float32) * ratio
+    nshape = nshape.astype(np.uint64)  # truncate to integer
+    nshape = tuple(itertools.chain.from_iterable(nshape))
     return np.asarray(cv2.resize(image, nshape[::-1], interpolation=cv2.INTER_CUBIC))
 
 
-def normalize_minmax(data: NDArray):
+def normalize_minmax(data: NDArray[Any]):
     """
     Applies min max norm to an NDArray
     There isn't much else to say.
@@ -40,7 +42,7 @@ def normalize_minmax(data: NDArray):
     return (d - dmin) / (drange + epsilon)
 
 
-def find_children_of_types(parent: QObject, *classes: type) -> dict[type, list]:
+def find_children_of_types(parent: QObject, *classes: type) -> dict[type, list[QObject]]:
     """
     WARNING: MADE BY THE CHATBOT
     Recursively traverse the QObject tree and collect instances of specified classes.
@@ -50,7 +52,7 @@ def find_children_of_types(parent: QObject, *classes: type) -> dict[type, list]:
     :param classes: Variable number of QObject subclasses to search for.
     :return: A dictionary where keys are class types and values are lists of instances satisfying the filter.
     """
-    cached_children: dict[type, list] = {cls: [] for cls in classes}
+    cached_children: dict[type, list[QObject]] = {cls: [] for cls in classes}
 
     def traverse(obj: QObject):
         for child in obj.children():
@@ -63,7 +65,7 @@ def find_children_of_types(parent: QObject, *classes: type) -> dict[type, list]:
     return cached_children
 
 
-def merge_cached_nodes(cached_list: list[dict[type, list]]) -> dict[type, list]:
+def merge_cached_nodes(cached_list: list[dict[type, list[QObject]]]) -> dict[type, list[QObject]]:
     """
     WARNING: MADE BY THE CHATBOT
     Merge multiple cached dictionaries into a single dictionary.
@@ -77,7 +79,7 @@ def merge_cached_nodes(cached_list: list[dict[type, list]]) -> dict[type, list]:
         >>> for cls, instances in merged.items():
         >>>     print(f"Total {cls.__name__} instances: {len(instances)}")
     """
-    merged: dict[type, list] = {}
+    merged: dict[type, list[QObject]] = {}
 
     for cached in cached_list:
         for cls, instances in cached.items():

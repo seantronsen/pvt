@@ -1,8 +1,8 @@
 from PySide6.QtWidgets import QHBoxLayout, QLayout, QVBoxLayout, QWidget
-from .controls import StatefulControl
-from .displays import StatefulDisplay
-from .state import VisualizerState
-from .utils import find_children_of_types
+from pvt.controls import StatefulControl
+from pvt.displays import StatefulDisplay
+from pvt.state import VisualizerState
+from pvt.utils import find_children_of_types
 
 
 def configure_state(
@@ -29,9 +29,9 @@ def configure_state(
     # land dictionaries says kwarg parameters can overwrite one another.
     keyset: set[str] = set()
     for c in controls:
-        if c._key in keyset:
-            raise ValueError(f"detected multiple controls sharing the same parameter key '{c._key}'")
-        keyset.add(c._key)
+        if c.key in keyset:
+            raise ValueError(f"detected multiple controls sharing the same parameter key '{c.key}'")
+        keyset.add(c.key)
         c.on_control_signal_changed.connect(state.modify_state)
         state.modify_state(c.query_control_signal())
 
@@ -64,8 +64,8 @@ class VisualizerContext(QWidget):
         self.setLayout(layout)
         interesting_nodes = find_children_of_types(self, StatefulDisplay, StatefulControl)
         self.state = configure_state(
-            displays=interesting_nodes.get(StatefulDisplay, []),
-            controls=interesting_nodes.get(StatefulControl, []),
+            displays=interesting_nodes.get(StatefulDisplay, []),  # pyright: ignore
+            controls=interesting_nodes.get(StatefulControl, []),  # pyright: ignore
             state=state,
         )
         self.state.setParent(self)
@@ -99,10 +99,15 @@ class VisualizerContext(QWidget):
         assert len(mosaic) != 0 and type(mosaic[0]) == list
         main_layout = QVBoxLayout()
         for row in mosaic:
-            wrapper = QWidget()
-            wrapper.setLayout(QHBoxLayout())
+            # todo: skip the wrapper and use `.addLayout`, though from past
+            # experience that tends to not work as advertised. still, try
+            # again. maybe it's fixed finally.
+            sub_layout = QHBoxLayout()
+
             for element in row:
-                wrapper.layout().addWidget(element)
+                sub_layout.addWidget(element)
+            wrapper = QWidget()
+            wrapper.setLayout(sub_layout)
             main_layout.addWidget(wrapper)
 
         return VisualizerContext(layout=main_layout, state=state)

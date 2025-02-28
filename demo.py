@@ -19,7 +19,7 @@ import os
 
 # NOTE: Performance logging can be enabled with this environment variable.
 # IMPORTANT: It must be set via the command line or prior to library import
-os.environ["VIEWER_PERF_LOG"] = "1"  # remove to disable performance logging
+os.environ["VIEWER_DEBUG"] = "1"  # remove to disable performance logging
 
 
 # STANDARD IMPORTS
@@ -178,55 +178,6 @@ def demo_plot_viewer():
     # - https://github.com/seantronsen/pvt/issues/22
 
     viewer.add_mosaic([[pl, ps], [trackbar_n, trackbar_omega], [trackbar_phasem, trackbar_sigma]])
-    viewer.run()
-
-
-def demo_3d_prototype():
-
-    def callback(animation_tick, sigma, **_):
-        gaussian = cv2.getGaussianKernel(20, sigma=sigma)
-        gaussian = gaussian * gaussian.T  # pyright: ignore
-        gaussian = gaussian / np.sum(gaussian)
-        return gaussian * ((animation_tick % 500) + 1) * 10
-
-    viewer = Viewer("Deprecated 3D prototype. We will soon integrate with PyVista for 3D data display features")
-    animator = Animator(fps=60, contents=Plot3DPane(callback))
-    d3plot = animator.animation_content
-
-    # Users can create their own animation controls or make use of Animation
-    # control bar widget we provide for convenience.
-    control_bar = AnimatorControlBar(animator=animator)
-    t_sigma = ParameterTrackbar("sigma", 0.1, 25, step=0.1, init=5)
-    viewer.add_panes(d3plot, control_bar, t_sigma)
-    viewer.run()
-
-
-# NOTE: both this feature and demo are a work in progress. thus far, pyvista seems
-# like it has a lot that it could offer for this project. however, after doing
-# some performance testing for rather simple scenes, there are some concerns as
-# for whether it could maintain a suitable framerate for more complex scenes.
-# for reference, the pyvista prototype can animate it's demo at a max of around
-# 144 FPS. The PyQtGraph/OpenGL version can peak at well over 6,000 FPS based
-# on the log output.
-def demo_pvt3dplotter_prototype():
-    import pyvista as pv
-
-    viewer = Viewer("demo of pyvista animated noisy sphere mesh")
-
-    # define meshes, must be done prior to defining any callbacks which modify them
-    sphere = pv.Sphere()
-
-    def callback(**_):
-        sigma = 1e-3
-        noise = np.random.normal(loc=0, scale=sigma, size=np.prod(sphere.points.shape))
-        sphere.points += noise.reshape(*sphere.points.shape)
-
-    plotter = Pvt3DPlotPane(callback=callback)
-    plotter.add_mesh(sphere, cmap="magma")
-    anim = Animator(fps=144, contents=plotter)
-    bar = AnimatorControlBar(animator=anim)
-
-    viewer.add_panes(anim.animation_content, bar)
     viewer.run()
 
 

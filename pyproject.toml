@@ -13,7 +13,6 @@ dependencies = [
   "opencv-contrib-python-headless==4.11.*",
   "pyside6==6.*",
   "pyqtgraph==0.13.*",
-  # "pyopengl==3.1.*",
 ]
 
 [project.optional-dependencies]
@@ -29,3 +28,20 @@ skip-string-normalization = true
 # [build-system]
 # requires = ["hatchling"]
 # build-backend = "hatchling.build"
+
+
+[tool.pyright]
+include = ["src", "tests"]
+exclude = ["**/node_modules", "**/__pycache__", "**.tar", "**.gz"]
+extraPaths = [""]
+stubPath = "typings"
+defineConstant = { DEBUG = true }
+reportMissingImports = true
+reportMissingTypeStubs = false
+reportImportCycles = true
+reportUnusedImport = true
+typeCheckingMode = "standard"                                        # "off", "basic", "strict"
+useLibraryCodeForTypes = true
+pythonVersion = "3.12"
+pythonPlatform = "Darwin"
+# executionEnvironments = [{ root = "scripts", extraPaths = ["src"] }]

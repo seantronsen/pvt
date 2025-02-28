@@ -11,6 +11,9 @@ class VSliderGroup(QFrame):
     def __init__(self, tparams: list[STP]) -> None:
         super().__init__()
         self.setLayout(QHBoxLayout())
+
+        # flip the setLayout order on these to get rid of the nuisance static
+        # typing warnings.
         self.layout().setContentsMargins(0, 0, 0, 0)
         self.layout().setSpacing(0)
 
@@ -32,6 +35,9 @@ class HSliderGroup(QFrame):
     def __init__(self, tparams: list[STP]) -> None:
         super().__init__()
         self.setLayout(QVBoxLayout())
+
+        # flip the setLayout order on these to get rid of the nuisance static
+        # typing warnings.
         self.layout().setContentsMargins(0, 0, 0, 0)
         self.layout().setSpacing(0)
 
