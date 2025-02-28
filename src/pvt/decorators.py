@@ -8,6 +8,52 @@ T = TypeVar("T", bound=Callable[..., Any])
 
 
 def perflog(*dargs: Any, **dkwargs: Any) -> Any:
+    """
+    A decorator for logging the performance (execution time) of functions and
+    methods. It supports two usage modes:
+
+    1. **without arguments:**
+       When used directly (e.g., `@perflog`), the decorator logs the execution time using the
+       function's qualified name (`__qualname__`) as the label.
+
+    2. **with arguments:**
+       When used with configuration options (e.g., `@perflog(label="Custom Label", extra_info="Info")`),
+       the provided `label` is used in the log message, and any additional information supplied via
+       `extra_info` is appended.
+
+    NOTE: There exists a priority order for which default labels are
+    overridden. At the bottom is the __qualname__ of the routine. However, if
+    the decorated routine is an instance method and said instance has an
+    attribute `identifier`, the label then becomes the value of that attribute.
+    At the top level, if `label` is provided as a kwarg to the decorator, it
+    will **always** override any previous definitions.
+
+
+    **Parameters:**
+      - *dkwargs*: Optional configuration parameters:
+          - `label` (Optional[str]): Custom label for the log output. Defaults
+            to the function's `__qualname__`.
+          - `event` (Optional[str]): Can be used to indicate in logs which
+            event category the routine belongs to (e.g., render, compute, etc.).
+
+    **Example:**
+
+        @perflog
+        def add(a: int, b: int) -> int:
+            return a + b
+
+        @perflog(label="Subtraction Routine", extra_info="Subtracting numbers")
+        def subtract(a: int, b: int) -> int:
+            return a - b
+
+        class MyClass:
+            def __init__(self, name: str) -> None:
+                self.name = name
+
+            @perflog
+            def multiply(self, a: int, b: int) -> int:
+                return a * b
+    """
 
     epsilon = 1e-9
     flag_should_log = os.getenv("VIEWER_DEBUG") == "1"

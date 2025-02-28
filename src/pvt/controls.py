@@ -1,11 +1,13 @@
-from dataclasses import dataclass
-from PySide6.QtCore import Signal, Slot
-from PySide6.QtWidgets import QVBoxLayout, QWidget
+from typing import cast
+from PySide6.QtCore import QTimer, Signal, Slot
+from PySide6.QtWidgets import QGridLayout, QPushButton, QVBoxLayout, QWidget
 from abc import abstractmethod
+from dataclasses import dataclass
 from pvt.decorators import perflog
 from pvt.identifier import IdManager
 from pvt.qtmods import LabeledToggle, LabeledTrackbar, ToggleConfig, TrackbarConfig
 from pvt.state import VisualizerControlSignal
+import numpy as np
 
 # todo: all stateful composition based controls should not have padding or margin spacing
 # todo: consider a "widget base" since both controls and displays share some arbitrary bullshit
@@ -132,99 +134,118 @@ class StatefulToggle(StatefulControl):
         return self._labeled_toggle.value()
 
 
+"""
+the idea of the animator is one global to the closest visualizer context in the
+hierarchy. meaning, if the user specifies an animator, all displays with
+callbacks known to that visualizer context will have their callbacks triggered
+for every time tick.
 
-from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QPushButton
-from pyqtgraph import LayoutWidget
-from pvt.displays import StatefulDisplay
-import numpy as np
+such is why it will be important to enable opt-in caching, especially if the
+user has displays which aren't meant to be animated.
+
+to have more than one animator where each modifies a unique set of displays, a
+new visualizer context will need to own all displays and controls unique to
+that animation.
+
+note: things that need to be set up in the future
+- parameter caching for callbacks. if the callback must execute with the same
+  parameters and cache is specified, then don't update, for this, we can likely
+  get away with caching the parameters yielded from state.
+
+- implementing some sort of way to share state updates between contexts. what
+  if the user wants a control to mutate multiple contexts? this should be as
+  simple as just setting up a context's ability to subscribe to signal
+  emissions for it's state.
 
 
-class Animator:
-    animation_content: StatefulDisplay
-    timer: QTimer
-    animation_tick: np.uintp
+"""
 
-    def __init__(self, contents: StatefulDisplay, fps: float) -> None:
-        assert not fps <= 0
-        super().__init__()
-        self.animation_content = contents
-        self.animation_content.pane_state.onUpdate = self.update
-        self.animation_tick = np.uint64(0)
-        self.timer = QTimer(parent=self.animation_content)
-        self.timer.timeout.connect(self.on_tick)
-        self.tick_time = int(round(1e3 / fps))
-        self.timer.start(self.tick_time)
 
-    def __getattr__(self, name):
-        return getattr(self.animation_content, name)
+class StatefulAnimator(StatefulControl):
+    """
+    Integrate a stateful animator into your visualizer context to enable time-based
+    updates. The animator supplies an extra parameter, animation_tick, to your
+    custom callbacks. You can use animation_tick to drive behaviors that change
+    over time—such as indexing into a series of frames to create a movie or
+    advancing simulation time steps in dynamic visualizations.
 
-    def content_flush(self):
-        self.animation_content.force_flush()
+    This feature is opt-in. Your callback must actively use the animation_tick
+    parameter to benefit from time-based updates. Otherwise, the visualizer will
+    simply continue displaying the previous frame’s data (unless your callback
+    includes other dynamic behaviors).
+    """
+
+    def __init__(self, ups: float, auto_start: bool = False) -> None:
+        """
+        :param ups: desired maximum number of updates per second (animation
+            ticks per second)
+        :param auto_start: flag which indicates whether the animation should
+            begin immediately upon start up (True) or wait for the user to
+            press the "play" button (False)
+        """
+        assert ups > 0
+
+        self._animation_tick = np.uint64(0)
+        self._tick_time = int(round(1e3 / ups))
+
+        self._timer = QTimer()
+        self._timer.timeout.connect(self.on_tick)
+
+        super().__init__(key="animation_tick", initial_value=self._animation_tick)
+
+        self.b_reset = QPushButton("RESET")
+        self.b_one_forward = QPushButton(">")
+        self.b_one_reverse = QPushButton("<")
+
+        self.b_reset.clicked.connect(self.reset)
+        self.b_one_forward.clicked.connect(self.forward)
+        self.b_one_reverse.clicked.connect(self.reverse)
+
+        self.b_toggle = QPushButton("PLAY")
+        self.b_toggle.setCheckable(True)
+        self.b_toggle.setChecked(auto_start)
+        self.b_toggle.clicked.connect(self.pause_play)
+
+        self.setLayout(QGridLayout())
+        self._add_widget(self.b_reset)
+        self._add_widget(self.b_one_reverse)
+        self._add_widget(self.b_toggle)
+        self._add_widget(self.b_one_forward)
+
+        if auto_start:
+            self._timer.start(self._tick_time)
+
+    def value(self) -> object:
+        return self._animation_tick
 
     def on_tick(self):
         """
         Exists to provide a timed update feature for animation / sequence data
         where new frames should be delivered at the specified interval.
         """
-        self.animation_tick += np.uintp(1)
-        self.content_flush()
+        self._animation_tick += np.uintp(1)
+        self._on_change()
 
-    def update(self, **kwargs):
-        """
-        This function is the callback provided to the State instance and is
-        executed on each state change. The user specified callback is executed
-        by this callback. If you wish to exist in user land, don't worry about
-        anything other than the one callback you're required to define.
-        """
+    def forward(self, *a, **k):
+        self._animation_tick += 1
+        self._on_change()
 
-        self.animation_content.update(animation_tick=int(self.animation_tick), **kwargs)
-
-    def is_running(self):
-        return self.timer.isActive()
-
-    def pause_toggle(self, *a, **k):
-        if self.is_running():
-            self.timer.stop()
-        else:
-            self.timer.start(self.tick_time)
-
-    def forward_one_step(self, *a, **k):
-        self.animation_tick += 1
-        self.content_flush()
-
-    def reverse_one_step(self, *a, **k):
-        self.animation_tick -= 1
-        self.content_flush()
+    def reverse(self, *a, **k):
+        self._animation_tick -= 1
+        self._on_change()
 
     def reset(self, *a, **k):
-        self.animation_tick = np.uintp(0)
-        self.content_flush()
+        self._animation_tick = np.uintp(0)
+        self._on_change()
 
+    def pause_play(self, *a, **k):
+        if self._timer.isActive():
+            self._timer.stop()
+        else:
+            self._timer.start(self._tick_time)
 
-class AnimatorControlBar(LayoutWidget):
-
-    animator: Animator
-
-    def __init__(self, animator: Animator):
-        super().__init__()
-        self.animator = animator
-
-        self.b_reset = QPushButton("RESET")
-        self.b_one_forward = QPushButton(">")
-        self.b_one_reverse = QPushButton("<")
-
-        self.b_reset.clicked.connect(self.animator.reset)
-        self.b_one_forward.clicked.connect(self.animator.forward_one_step)
-        self.b_one_reverse.clicked.connect(self.animator.reverse_one_step)
-
-        self.b_toggle = QPushButton("PLAY")
-        self.b_toggle.setCheckable(True)
-        self.b_toggle.setChecked(self.animator.is_running())
-        self.b_toggle.clicked.connect(self.animator.pause_toggle)
-
-        self.addWidget(self.b_reset, row=0, col=0)
-        self.addWidget(self.b_one_reverse, row=0, col=1)
-        self.addWidget(self.b_toggle, row=0, col=2)
-        self.addWidget(self.b_one_forward, row=0, col=3)
-
+    # todo: if we ever extend the base class, this needs to change to
+    # layout.addLayout relative to the original base class layout.
+    def _add_widget(self, w: QWidget):
+        layout = cast(QGridLayout, self.layout())
+        layout.addWidget(w, 1, layout.columnCount() + 1, 1, 1)
