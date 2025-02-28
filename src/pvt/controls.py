@@ -1,4 +1,3 @@
-from typing import cast
 from PySide6.QtCore import QTimer, Signal, Slot
 from PySide6.QtWidgets import QGridLayout, QPushButton, QVBoxLayout, QWidget
 from abc import abstractmethod
@@ -7,6 +6,7 @@ from pvt.decorators import perflog
 from pvt.identifier import IdManager
 from pvt.qtmods import LabeledToggle, LabeledTrackbar, ToggleConfig, TrackbarConfig
 from pvt.state import VisualizerControlSignal
+from typing import cast
 import numpy as np
 
 # todo: all stateful composition based controls should not have padding or margin spacing

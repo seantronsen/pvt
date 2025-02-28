@@ -1,8 +1,7 @@
-import time
-import os
-import functools
 from typing import Callable, TypeVar, Any
-
+import functools
+import os
+import time
 
 T = TypeVar("T", bound=Callable[..., Any])
 
