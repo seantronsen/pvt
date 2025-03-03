@@ -78,6 +78,7 @@ def demo_image_viewer():
         resized = resize_by_ratio(img_test, rho)
         noise_slice = noise_image[: resized.shape[0], : resized.shape[1]]
         result = resized + (noise_slice * sigma)
+        print(result.shape)
         return result
 
     def callback_1(sigma, **_):
@@ -101,13 +102,87 @@ def demo_image_viewer():
     app.run()
 
 
+#
+# # An example to showcase various plotting features
+# def demo_plot_viewer():
+#     def callback(nsamples, sigma, omega, phasem, animation_tick, **_):
+#         cphase = (animation_tick / (2 * np.pi)) * phasem
+#         sinusoid = np.sin((np.linspace(0, omega * 2 * np.pi, nsamples) + cphase))
+#         noise = np.random.randn(nsamples)
+#         result = sinusoid + (noise[:nsamples] * sigma)
+#         waves = 5
+#         return np.array([result] * waves) + (np.arange(waves).reshape(-1, 1) - ((waves - 1) / 2))
+#
+#     viewer = Viewer(title="Multiple Plots: A Visual Illustration of Signal Aliasing")
+#     trackbar_n = ParameterTrackbar("nsamples", 100, 1000, 100)
+#     trackbar_omega = ParameterTrackbar("omega", 1, 50, init=50)
+#     trackbar_sigma = ParameterTrackbar("sigma", 0, 3, 0.1)
+#     trackbar_phasem = ParameterTrackbar("phasem", 0.1, 10, 0.1, init=0.1)
+#
+#     # For any kind of 2D plot made available by this library, users may specify
+#     # a color map and the number of unique colors to use from that colormap. If
+#     # the number of colors specified is less than the number of curves /
+#     # featuers to be plotted, then modulo arithmetic is used to loop over the
+#     # available colors.
+#     #
+#     # NOTE: Check out PyQtGraph's examples which detail which colormaps are
+#     # available for a specific list of options with gradients displayed
+#     # alongside them. The available colormaps differ from other libraries and
+#     # only include extras like those from Matplotlib under certain
+#     # circumstances (which have yet to be tested).
+#     #
+#     # For line plots, users may also specify a line_width argument which sets
+#     # the width of any curve in pixels. The final option currently available is
+#     # fillLevel, which causes the area under any curve to be shaded between the
+#     # curve and this value. The default value is None which results in the area
+#     # under the curve not being shaded.
+#     pl = Plot2DLinePane(callback, ncolors=3, cmap="plasma", line_width=1, fillLevel=None)  # 0)
+#     pl.set_title("Signal Aliasing: Labeled Graph")
+#     pl.set_xlabel("Sample Number")
+#     pl.set_ylabel("Amplitude")
+#
+#     # Users can animate any display pane by wrapping the associated widget in
+#     # an `Animator`. Here, an fps value can be specified to limit the refresh
+#     # rate. Do note that the user specified callback must execute quickly
+#     # enough for the desired animation rate to be achievable. In addition, it
+#     # must provide a named parameter `animation_tick` which provides the
+#     # function the current tick value of the animation timer. This can be
+#     # paired up with modulo arithmetic (% operator) to loop over data sequences
+#     # or modify the output as "time" moves forward.
+#     pl = Animator(fps=60, contents=pl).animation_content
+#
+#     # Scatter panes are another feature provided by the current version of the
+#     # library. Like line plots, color maps can be specified here as well. In
+#     # addition, the user has be option to specify the size of each point symbol
+#     # as well as the kind of symbol drawn.
+#     # For a full list of symbols, visit the documentation for PyQtGraph and
+#     # review their resouces for scatter plots.
+#     ps = Animator(fps=60, contents=Plot2DScatterPane(callback, symbolSize=10, symbol="t", ncolors=2)).animation_content
+#
+#     # IMPORTANT: Rendering multiple animations does not occur simultaneously,
+#     # at least not yet. Use caution if you are animating many windows at the
+#     # same time as the time to update each window will stack. Follow these
+#     # issues for updates on the features planned which solve this problem.
+#     # - https://github.com/seantronsen/pvt/issues/14
+#     # - https://github.com/seantronsen/pvt/issues/22
+#
+#     viewer.add_mosaic([[pl, ps], [trackbar_n, trackbar_omega], [trackbar_phasem, trackbar_sigma]])
+#     viewer.run()
+
+
+################################################################################
+################################################################################
+# OLD - UPDATE AWACHES IMPLEMENTATION OF CACHING ENGINE
+################################################################################
+################################################################################
+#
 # # An example of how to display static / unchanging content
 # def demo_static_image_viewer():
 #     img_test = cv2.imread("sample-media/checkboard_non_planar.png").astype(np.uint8)
 #     img_test = norm_uint8(cv2.cvtColor(img_test, cv2.COLOR_BGR2GRAY))
-# 
+#
 #     image_viewer = Viewer()
-# 
+#
 #     # For the time being, specifying a "dummy" lambda is the best way to render
 #     # static content. The downside being that if the pane is connected to the
 #     # global state, the content is redrawn each and every time the state
@@ -130,73 +205,7 @@ def demo_image_viewer():
 #     ip = ImagePane(lambda **_: img_test, border="red")
 #     image_viewer.add_panes(ip)
 #     image_viewer.run()
-# 
-# 
-# # An example to showcase various plotting features
-# def demo_plot_viewer():
-#     def callback(nsamples, sigma, omega, phasem, animation_tick, **_):
-#         cphase = (animation_tick / (2 * np.pi)) * phasem
-#         sinusoid = np.sin((np.linspace(0, omega * 2 * np.pi, nsamples) + cphase))
-#         noise = np.random.randn(nsamples)
-#         result = sinusoid + (noise[:nsamples] * sigma)
-#         waves = 5
-#         return np.array([result] * waves) + (np.arange(waves).reshape(-1, 1) - ((waves - 1) / 2))
-# 
-#     viewer = Viewer(title="Multiple Plots: A Visual Illustration of Signal Aliasing")
-#     trackbar_n = ParameterTrackbar("nsamples", 100, 1000, 100)
-#     trackbar_omega = ParameterTrackbar("omega", 1, 50, init=50)
-#     trackbar_sigma = ParameterTrackbar("sigma", 0, 3, 0.1)
-#     trackbar_phasem = ParameterTrackbar("phasem", 0.1, 10, 0.1, init=0.1)
-# 
-#     # For any kind of 2D plot made available by this library, users may specify
-#     # a color map and the number of unique colors to use from that colormap. If
-#     # the number of colors specified is less than the number of curves /
-#     # featuers to be plotted, then modulo arithmetic is used to loop over the
-#     # available colors.
-#     #
-#     # NOTE: Check out PyQtGraph's examples which detail which colormaps are
-#     # available for a specific list of options with gradients displayed
-#     # alongside them. The available colormaps differ from other libraries and
-#     # only include extras like those from Matplotlib under certain
-#     # circumstances (which have yet to be tested).
-#     #
-#     # For line plots, users may also specify a line_width argument which sets
-#     # the width of any curve in pixels. The final option currently available is
-#     # fillLevel, which causes the area under any curve to be shaded between the
-#     # curve and this value. The default value is None which results in the area
-#     # under the curve not being shaded.
-#     pl = Plot2DLinePane(callback, ncolors=3, cmap="plasma", line_width=1, fillLevel=None)  # 0)
-#     pl.set_title("Signal Aliasing: Labeled Graph")
-#     pl.set_xlabel("Sample Number")
-#     pl.set_ylabel("Amplitude")
-# 
-#     # Users can animate any display pane by wrapping the associated widget in
-#     # an `Animator`. Here, an fps value can be specified to limit the refresh
-#     # rate. Do note that the user specified callback must execute quickly
-#     # enough for the desired animation rate to be achievable. In addition, it
-#     # must provide a named parameter `animation_tick` which provides the
-#     # function the current tick value of the animation timer. This can be
-#     # paired up with modulo arithmetic (% operator) to loop over data sequences
-#     # or modify the output as "time" moves forward.
-#     pl = Animator(fps=60, contents=pl).animation_content
-# 
-#     # Scatter panes are another feature provided by the current version of the
-#     # library. Like line plots, color maps can be specified here as well. In
-#     # addition, the user has be option to specify the size of each point symbol
-#     # as well as the kind of symbol drawn.
-#     # For a full list of symbols, visit the documentation for PyQtGraph and
-#     # review their resouces for scatter plots.
-#     ps = Animator(fps=60, contents=Plot2DScatterPane(callback, symbolSize=10, symbol="t", ncolors=2)).animation_content
-# 
-#     # IMPORTANT: Rendering multiple animations does not occur simultaneously,
-#     # at least not yet. Use caution if you are animating many windows at the
-#     # same time as the time to update each window will stack. Follow these
-#     # issues for updates on the features planned which solve this problem.
-#     # - https://github.com/seantronsen/pvt/issues/14
-#     # - https://github.com/seantronsen/pvt/issues/22
-# 
-#     viewer.add_mosaic([[pl, ps], [trackbar_n, trackbar_omega], [trackbar_phasem, trackbar_sigma]])
-#     viewer.run()
+#
 
 
 # For a simpler experience regarding choosing demos to run, pass the CLI call
