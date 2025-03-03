@@ -42,6 +42,17 @@ def normalize_minmax(data: NDArray[Any]):
     return (d - dmin) / (drange + epsilon)
 
 
+def norm_uint8(ndarray: NDArray) -> NDArray[np.uint8]:
+    """
+    Re-center the data between zero and one and then convert to 8-bit unsigned
+    integers after a scaling operation.
+
+    :param ndarray: any contiguous memory collection of ndarray encoded data
+    """
+    intermediates = normalize_minmax(ndarray)
+    return (255 * intermediates).astype(np.uint8)
+
+
 def find_children_of_types(parent: QObject, *classes: type) -> dict[type, list[QObject]]:
     """
     WARNING: MADE BY THE CHATBOT
