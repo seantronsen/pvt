@@ -75,7 +75,7 @@ class STP:
 
 class StatefulTrackbar(StatefulControl):
 
-    def __init__(self, tb_range: TrackbarConfig, key: str, label: str | None = None) -> None:
+    def __init__(self, key: str, tb_range: TrackbarConfig, label: str | None = None) -> None:
         """
         Instantiate a new stateful trackbar widget to visualize the results of
         a range of possible parameter inputs.
@@ -226,6 +226,8 @@ class StatefulAnimator(StatefulControl):
         self._animation_tick += np.uintp(1)
         self._on_change()
 
+    # todo: consider removing these old args. likely useless artifacts of the
+    # prev design.
     def forward(self, *a, **k):
         self._animation_tick += 1
         self._on_change()
