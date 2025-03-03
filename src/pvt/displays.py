@@ -72,7 +72,7 @@ class StatefulDisplay(QWidget):
         self.layout().addWidget(w)
 
     # fucking pyright and qt slots...
-    @Slot(dict[str, Any])
+    @Slot(object)
     def on_viewer_state_changed(self, kwargs_as_dict: dict[str, object]):
         """
         This function is an event handler which executes the user specified
