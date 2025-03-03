@@ -85,7 +85,7 @@ def demo_image_viewer():
         result = img_test_small + (noise_slice * sigma)
         return result
 
-    # define the viewer interface and run the application
+    # define interface and run application
     # happy tuning / visualizing!
     app = App(title="Example for Displaying Rapid Image Updates")
 

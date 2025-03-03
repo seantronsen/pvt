@@ -6,6 +6,7 @@ import time
 T = TypeVar("T", bound=Callable[..., Any])
 
 
+# todo: remove the `extra_info` from mention, replace with event as needed.
 def perflog(*dargs: Any, **dkwargs: Any) -> Any:
     """
     A decorator for logging the performance (execution time) of functions and
@@ -60,7 +61,7 @@ def perflog(*dargs: Any, **dkwargs: Any) -> Any:
     def decorator(func: T) -> T:
 
         label: str = dkwargs.get("label", func.__qualname__)
-        event: str = dkwargs.get("extra_info", "")
+        event: str = dkwargs.get("event", "")
 
         if not flag_should_log:
             return func

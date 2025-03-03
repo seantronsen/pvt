@@ -2,7 +2,6 @@ from PySide6.QtCore import QObject
 from numpy.typing import NDArray
 from typing import Any
 import cv2
-import itertools
 import numpy as np
 
 
@@ -25,9 +24,8 @@ def resize_by_ratio(image: NDArray[Any], ratio: float) -> NDArray[Any]:
     """
     shape = image.shape[:2]
     nshape = np.array(shape, dtype=np.float32) * ratio
-    nshape = nshape.astype(np.uint64)  # truncate to integer
-    nshape = tuple(itertools.chain.from_iterable(nshape))
-    return np.asarray(cv2.resize(image, nshape[::-1], interpolation=cv2.INTER_CUBIC))
+    nshape = nshape.astype(np.uint64)
+    return np.asarray(cv2.resize(image, nshape[::-1], interpolation=cv2.INTER_LINEAR))  # pyright: ignore
 
 
 def normalize_minmax(data: NDArray[Any]):
