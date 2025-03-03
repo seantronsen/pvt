@@ -192,6 +192,10 @@ class StatefulAnimator(StatefulControl):
         self._timer.timeout.connect(self.on_tick)
 
         super().__init__(key="animation_tick", initial_value=self._animation_tick)
+        if self.layout() is not None:
+            QWidget().setLayout(self.layout())
+
+        super().setLayout(QGridLayout())
 
         self.b_reset = QPushButton("RESET")
         self.b_one_forward = QPushButton(">")
@@ -246,8 +250,6 @@ class StatefulAnimator(StatefulControl):
         else:
             self._timer.start(self._tick_time)
 
-    # todo: if we ever extend the base class, this needs to change to
-    # layout.addLayout relative to the original base class layout.
     def _add_widget(self, w: QWidget):
         layout = cast(QGridLayout, self.layout())
         layout.addWidget(w, 1, layout.columnCount() + 1, 1, 1)

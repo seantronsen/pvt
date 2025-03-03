@@ -191,10 +191,10 @@ class PlotView2DConfig:
         If True, grid lines are shown along the y-axis. Defaults to False.
     title : str or None
         Title of the plot. Defaults to None.
-    label_x : bool
-        If True, the x-axis will be labeled. Defaults to False.
-    label_y : bool
-        If True, the y-axis will be labeled. Defaults to False.
+    label_x : str or None
+        Optional label to add to the x-axis
+    label_y : str or None
+        Optional label to add to the y-axis
     legend : bool
         If True, the plot legend is displayed. Defaults to False.
     """
@@ -213,8 +213,8 @@ class PlotView2DConfig:
     # descriptors
     title: str | None = None
     legend: bool = False
-    label_x: bool = False
-    label_y: bool = False
+    label_x: str | None = None
+    label_y: str | None = None
 
 
 @dataclass
@@ -354,7 +354,7 @@ class StatefulPlotView2D(StatefulDisplay):
 
         # todo: add slow legend logic bullshit
         self._canvas.clear()
-        for i, data_item in enumerate(args):
+        for i, data_item in enumerate(args[0]):
             kargs: dict[str, object] = dict(x=data_item.x, y=data_item.y)
             color = data_item.color if data_item.color else self._default_colors[i % len(self._default_colors)]
             if isinstance(data_item, PlotDataScatter):
