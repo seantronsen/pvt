@@ -3,11 +3,27 @@ from PySide6.QtCore import Slot
 from PySide6.QtWidgets import QLabel, QSizePolicy, QVBoxLayout, QWidget
 from dataclasses import dataclass
 from numpy.typing import NDArray
+from numpy.typing import NDArray
 from pvt.decorators import perflog
 from pvt.identifier import IdManager
+from pyqtgraph import GraphicsLayoutWidget, PlotItem
 from pyqtgraph.colormap import ColorMap
-from typing import Any, Callable
+from typing import Any, Callable, cast
 import pyqtgraph as pg
+
+
+def colors_from_cmap(cmap: ColorMap, ncolors: int):
+    """
+    Return a list of QColor objects from the from the provided colormap.
+
+    :param cmap: ColorMap instance
+    :param ncolors: number of colors to return
+    :return: The list of QColor objects.
+    """
+    result: list[QtGui.QColor] = [
+        cmap.map(x / ncolors, mode=ColorMap.QCOLOR) for x in range(ncolors)
+    ]  # pyright: ignore
+    return result
 
 
 class StatefulDisplay(QWidget):
@@ -149,219 +165,217 @@ class StatefulImageView(StatefulDisplay):
         )
 
 
-# TODO: FIX THIS OLD SHIT AND PORT TO THE NEW DESIGN
-#
-
-
-def colors_from_cmap(cmap: ColorMap, ncolors: int):
+@dataclass
+class PlotView2DConfig:
     """
-    Return a list of QColor objects from the from the provided colormap.
+    Configuration for a 2D plot view.
 
-    :param cmap: ColorMap instance
-    :param ncolors: number of colors to return
-    :return: The list of QColor objects.
+    Attributes
+    ----------
+    background_color : str
+        Background color for the plot. Defaults to "black".
+    auto_colors_cmap : str
+        Name of the colormap used for generating automatic colors.
+        Accepts any valid matplotlib colormap name if matplotlib is present in
+        the environment. Defaults to "CET-C7s".
+    auto_colors_nunique : int
+        Number of unique colors to generate before repeating the color sequence.
+        Colors are sampled equidistantly from the colormap gradient. Defaults to 9.
+    log_scale_x : bool
+        If True, the x-axis is displayed on a logarithmic scale. Defaults to False.
+    log_scale_y : bool
+        If True, the y-axis is displayed on a logarithmic scale. Defaults to False.
+    gridlines_x : bool
+        If True, grid lines are shown along the x-axis. Defaults to False.
+    gridlines_y : bool
+        If True, grid lines are shown along the y-axis. Defaults to False.
+    title : str or None
+        Title of the plot. Defaults to None.
+    label_x : bool
+        If True, the x-axis will be labeled. Defaults to False.
+    label_y : bool
+        If True, the y-axis will be labeled. Defaults to False.
+    legend : bool
+        If True, the plot legend is displayed. Defaults to False.
     """
-    result: list[QtGui.QColor] = [
-        cmap.map(x / ncolors, mode=ColorMap.QCOLOR) for x in range(ncolors)
-    ]  # pyright: ignore
-    return result
+
+    # colors
+    background_color: str = "black"
+    auto_colors_cmap: str = "CET-C7s"
+    auto_colors_nunique: int = 9
+
+    # graph characteristics
+    log_scale_x: bool = False
+    log_scale_y: bool = False
+    gridlines_x: bool = False
+    gridlines_y: bool = False
+
+    # descriptors
+    title: str | None = None
+    legend: bool = False
+    label_x: bool = False
+    label_y: bool = False
 
 
-# from numpy.typing import NDArray
-# from pyqtgraph import GraphicsLayoutWidget, PlotDataItem
-#
-# class BasePlot2DPane(StatefulPane):
-#     """
-#     The Base/Abstract class in which all 2D plotting panes are derived. The
-#     purpose of this class is merely to provide a basic set up for inheritors
-#     and reduce the amount of typing required to add new kinds of 2D plots in
-#     the future.
-#     """
-#
-#     plot_item: pg.PlotItem
-#     plot_layout: pg.GraphicsLayoutWidget
-#     curves: List[PlotDataItem]
-#     plot_args: Dict
-#
-#     def __init__(self, callback: Callable, **kwargs) -> None:
-#         """
-#         Instantiate an instance of the class.
-#
-#         :param callback: A callback function to update the rendered data.
-#         :param kwargs: The keyword arguments are:
-#             - `title` (str): Plot title
-#             - `cmap` (str): Name of the desired colormap. Check PyQtGraph
-#               colormap options for details.
-#             - `ncolors` (int): Number of unique colors to use for plots with
-#               multiple components (lines, scatters, etc.)
-#             - `legend` (bool): A flag which specifies whether the legend is
-#               displayed. IMPORTANT, this hasn't been thoroughly tested.
-#             - `logx` (bool): A flag which specifies whether the x-axis is
-#               displayed as a log scale.
-#             - `logy` (bool): A flag which specifies whether the y-axis is
-#               displayed as a log scale.
-#             - `gridx` (bool): A flag which specifies whether the x-axis grid is
-#               shown.
-#             - `gridy` (bool): A flag which specifies whether the y-axis grid is
-#               shown.
-#         """
-#         self.plot_layout = GraphicsLayoutWidget()
-#         self.plot_item = self.plot_layout.addPlot(title=kwargs.pop("title", None))
-#
-#         # prepare colors
-#         self.cmap = pg.colormap.get(kwargs.pop("cmap", "CET-C7s"))
-#         self.cmap_colors = colors_from_cmap(self.cmap, kwargs.pop("ncolors", 1))  # pyright: ignore
-#
-#         if kwargs.pop("legend", False):
-#             self.plot_item.addLegend()
-#
-#         self.plot_item.setLogMode(x=kwargs.pop("logx", False), y=kwargs.pop("logy", False))
-#         self.plot_item.showGrid(x=kwargs.pop("gridx", False), y=kwargs.pop("gridy", False))
-#         self.curves = []
-#         self.plot_args = {}
-#
-#         super().__init__(callback, **kwargs)
-#         self.addWidget(self.plot_layout)
-#
-#     def nth_color(self, n: int):
-#         """
-#         A convenience method which returns the nth QColor from the set of
-#         available colors created during initialization using modulo arithmetic.
-#
-#         :param n: The nth color to be returned
-#         :return: The nth QColor
-#         """
-#         return self.cmap_colors[n % len(self.cmap_colors)]
-#
-#     def set_xlabel(self, label: str, units: Optional[str] = None):
-#         """
-#         Set the x-axis label to the provided string.
-#
-#         :param label: New label value to be assigned
-#         :param units: An optional unit value. If specified, the PyQtGraph will
-#         format the value using the appropriate SI prefix based on the data
-#         range.
-#         """
-#         self.plot_item.setLabel(axis="bottom", text=label, units=units)
-#
-#     def set_ylabel(self, label: str, units: Optional[str] = None):
-#         """
-#         Set the y-axis label to the provided string.
-#
-#         :param label: New label value to be assigned
-#         :param units: An optional unit value. If specified, the PyQtGraph will
-#         format the value using the appropriate SI prefix based on the data
-#         range.
-#         """
-#         self.plot_item.setLabel(axis="left", text=label, units=units)
-#
-#     def set_title(self, title: str):
-#         """
-#         Set the plot title.
-#
-#         :param title: Title string to be assigned.
-#         """
-#         self.plot_item.setTitle(title=title)
-#
-#     def plot(self, i: int, **kwargs):
-#         """
-#         A method which executes a tailored version of the plotting function.
-#         Deriving classes are encouraged to override this function, especially
-#         for cases where different plot features (e.g. lines) must have
-#         different properties based on their order of appearance (e.g.
-#         coloring).
-#
-#         NOTE: By design, this method should only be called by __reinitialize
-#         curves. As such, if different behavior is desired, create a subclass
-#         that overrides the default design features.
-#
-#         :param i: index number of appearance in the plotting order.
-#         """
-#         return self.plot_item.plot(**self.plot_args, **kwargs)
-#
-#     def reinitialize_curves(self, ncurves: int):
-#         """
-#         If the number of curves to plot on the next render differs from the
-#         number currently known, reinitialize the curves collection such that it
-#         holds the required number of curve instances.
-#
-#         :param ncurves: the number of required curves
-#         """
-#         for x in self.curves:
-#             self.plot_item.removeItem(x)
-#         self.curves = []
-#         for x in range(ncurves):
-#             self.curves.append(self.plot(x))
-#
-#     def render_data(self, *args):
-#         """
-#         OVERRIDE: See parent definition.
-#         Use the provided data to update the curves on the 2D PlotView.
-#
-#         IMPORTANT: Ensure data provided to other methods is formatted
-#         appropriately. Valid formats are:
-#             - (M,N) -> M plots, each with N y-values (x generated as range(y_0, y_n-1))
-#             - (M,N,2) -> M plots, each with N x,y points
-#
-#         :param args[0]: an ndarray of data points
-#         """
-#         data: NDArray = args[0]
-#         n_curves = data.shape[0]
-#         if n_curves != len(self.curves):
-#             self.reinitialize_curves(n_curves)
-#
-#         for i in range(n_curves):
-#             self.curves[i].setData(data[i])
-#             # self.curves[i].setData(data)
-#
-#
-# class Plot2DLinePane(BasePlot2DPane):
-#     """
-#     Display a pane which draws all provided data as a set of one or more
-#     curves.
-#     """
-#
-#     def __init__(self, callback: Callable, line_width: int = 1, fillLevel: Optional[float] = None, **kwargs) -> None:
-#         """
-#         Instantiate an instance of the class.
-#
-#         :param callback: A callback to update rendered data
-#         :param line_width: The width of each line/curve in pixels
-#         :param fillLevel: If specified, the area between the curve and
-#         fillLevel is filled using a transparent version of the line color.
-#         """
-#         super().__init__(callback, **kwargs)
-#         self.line_width = line_width
-#         self.plot_args["fillLevel"] = fillLevel
-#
-#     def plot(self, i, **_):
-#         color = self.nth_color(i)
-#         fill_color = QtGui.QColor(color)
-#         fill_color.setAlphaF(0.7)
-#         return super().plot(i, pen=dict(color=color, width=self.line_width), fillBrush=fill_color)
-#
-#
-# class Plot2DScatterPane(BasePlot2DPane):
-#     """
-#     Display a pane which draws all provided data as a set of one or more
-#     scatter plots.
-#     """
-#
-#     def __init__(self, callback: Callable, symbol='t', symbolSize=10, **kwargs) -> None:
-#         """
-#         Instantiate an instance of the class.
-#
-#         :param callback: A callback to update rendered data
-#         :param symbol: The symbol kind to use. Review the PyQtGraph
-#         documentation for a list of options.
-#         :param symbolSize: Size of each symbol to be drawn in pixels
-#         """
-#         super().__init__(callback, **kwargs)
-#         self.plot_args["symbol"] = symbol
-#         self.plot_args["symbolSize"] = symbolSize
-#
-#         # DO NOT CONNECT POINTS
-#         self.plot_args["pen"] = None
-#
-#     def plot(self, i, **_):
-#         return super().plot(i, symbolBrush=self.nth_color(i))
+@dataclass
+class PlotDataBase:
+    """
+    Base data container for plot elements.
+
+    Attributes
+    ----------
+    x : NDArray[Any]
+        A one-dimensional array-like sequence of x-axis values.
+        The required shape is (N,) and must match the shape of y.
+        Lists are acceptable but not advised.
+    y : NDArray[Any]
+        A one-dimensional array-like sequence of y-axis values.
+        Must have the same shape as x. Lists are acceptable but not advised.
+    color : str or None, optional
+        Color specification for the plot element. If None, the parent plot view automatically
+        selects the next default color based on the assigned colormap.
+        If specified, the color can be one of: 'r', 'g', 'b', 'c', 'm', 'y', 'k', 'w',
+        an SVG color keyword, or a hex string (e.g., "#RRGGBB").
+    name : str or None, optional
+        The label used in the plot legend, if legends are enabled.
+    """
+
+    x: NDArray[Any]
+    y: NDArray[Any]
+    color: str | None = None
+    name: str | None = None
+
+
+@dataclass
+class PlotDataScatter(PlotDataBase):
+    """
+    Data container for scatter plot elements. Extends PlotDataBase with
+    additional options specific to scatter plots.
+
+    Attributes
+    ----------
+    marker : str
+        Marker style used for the scatter plot. Defaults to "o".
+        (TODO: Provide a comprehensive list or reference to all available marker options.)
+    marker_size : int
+        Size of the marker. Defaults to 10.
+
+    Marker Options:
+        - 'o': circle (default)
+        - 's': square
+        - 't': triangle
+        - 'd': diamond
+        - '+': plus
+        - 't1': triangle pointing upwards
+        - 't2': triangle pointing right side
+        - 't3': triangle pointing left side
+        - 'p': pentagon
+        - 'h': hexagon
+        - 'star': star
+        - '|': vertical line
+        - '_': horizontal line
+        - 'x': cross
+        - 'arrow_up': arrow pointing up
+        - 'arrow_right': arrow pointing right
+        - 'arrow_down': arrow pointing down
+        - 'arrow_left': arrow pointing left
+        - 'crosshair': crosshair
+    """
+
+    marker: str = "o"  # TODO: NEEDS A LIST OF ALL OPTIONS
+    marker_size: int = 10
+
+
+@dataclass
+class PlotDataLine(PlotDataBase):
+    """
+    Data container for line plot elements. Extends PlotDataBase with additional
+    options specific to line plots.
+
+    Attributes
+    ----------
+    line_width : int
+        Width of the line. It is recommended to keep this value at 1 since
+        other values will decrease performance.
+    marker : str or None
+        Optional marker style to accentuate individual data points along the line.
+        When specified, it effectively combines scatter and line plot features. Defaults to None.
+    marker_size : int or None
+        Size of the marker if markers are enabled. Defaults to None.
+    marker_color : str or None
+        Color for the marker. If None and markers are enabled, the marker color defaults to the
+        value of the `color` attribute from the base class.
+    """
+
+    line_width: int = 1
+    marker: str | None = None
+    marker_size: int | None = None
+    marker_color: str | None = None
+
+
+class StatefulPlotView2D(StatefulDisplay):
+    """
+    The Base/Abstract class in which all 2D plotting panes are derived. The
+    purpose of this class is merely to provide a basic set up for inheritors
+    and reduce the amount of typing required to add new kinds of 2D plots in
+    the future.
+    """
+
+    def __init__(
+        self,
+        callback: Callable[..., object] | None = None,
+        title: str | None = None,
+        config: PlotView2DConfig = PlotView2DConfig(),
+    ) -> None:
+        super().__init__(callback=callback, title=title)
+
+        # setup the underlying graphics
+        _w_graphics = GraphicsLayoutWidget()
+        self._canvas = cast(PlotItem, _w_graphics.addPlot(title=config.title))  # pyright: ignore
+        cmap = pg.colormap.get(config.auto_colors_cmap)
+        assert isinstance(cmap, ColorMap), f"'{config.auto_colors_cmap=}', either not valid or not findable."
+        self._default_colors = colors_from_cmap(cmap, config.auto_colors_nunique)
+
+        # todo: re-assign the _render_data method to avoid plotting overhead if
+        # no legend is requested
+        # configure graph appearance
+        # self._legend = self._canvas.addLegend() if config.legend else None
+        self._canvas.setLogMode(x=config.log_scale_x, y=config.log_scale_y)
+        self._canvas.showGrid(x=config.gridlines_x, y=config.gridlines_y)
+        if config.label_x:
+            self._canvas.setLabel(axis="bottom", text=config.label_x)
+
+        if config.label_y:
+            self._canvas.setLabel(axis="left", text=config.label_x)
+
+        self._add_widget(_w_graphics)
+
+    def _render_data(self, *args: PlotDataLine | PlotDataScatter) -> None:
+
+        # todo: add slow legend logic bullshit
+        self._canvas.clear()
+        for i, data_item in enumerate(args):
+            kargs: dict[str, object] = dict(x=data_item.x, y=data_item.y)
+            color = data_item.color if data_item.color else self._default_colors[i % len(self._default_colors)]
+            if isinstance(data_item, PlotDataScatter):
+                kargs["symbol"] = data_item.marker
+                kargs["symbolSize"] = data_item.marker_size
+                kargs["symbolBrush"] = color
+                self._canvas.plot(
+                    pen=None,  # otherwise connections are drawn
+                    **kargs,
+                )
+            elif isinstance(data_item, PlotDataLine):
+                if data_item.marker:
+                    kargs["symbol"] = data_item.marker
+                    kargs["symbolSize"] = data_item.marker_size
+                    kargs["symbolBrush"] = data_item.marker_color if data_item.marker_color else color
+                self._canvas.plot(
+                    pen=dict(
+                        color=color,
+                        width=data_item.line_width,
+                    ),
+                    **kargs,
+                )
+            else:
+                raise ValueError("unknown plot data item detected")
