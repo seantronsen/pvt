@@ -115,6 +115,7 @@ def demo_image_viewer():
 # An example to showcase various plotting features
 def demo_plot_viewer():
     N_WAVES = 5
+    AUTO_COLORS = 4
 
     def _callback_base(nsamples, sigma, omega, phasem, animation_tick, **_):
         cphase = (animation_tick / (2 * np.pi)) * phasem
@@ -159,10 +160,10 @@ def demo_plot_viewer():
         callback=callback_line,
         config=PlotView2DConfig(
             auto_colors_cmap="plasma",
-            auto_colors_nunique=3,
+            auto_colors_nunique=AUTO_COLORS,
             title="Signal Aliasing: Labeled Line Graph",
             label_x="Sample Number",
-            label_y="Amplitude",
+            label_y="Sample Height",
             legend=True,
         ),
         title="Line Plot Version",
@@ -172,10 +173,10 @@ def demo_plot_viewer():
         config=PlotView2DConfig(
             background_color="white",
             auto_colors_cmap="plasma",
-            auto_colors_nunique=3,
-            title="Signal Aliasing: Labeled Line Graph",
+            auto_colors_nunique=AUTO_COLORS,
+            title="Signal Aliasing: Labeled Scatter Graph",
             label_x="Sample Number",
-            label_y="Amplitude",
+            label_y="Sample Height",
         ),
         title="Line Plot Version",
     )
