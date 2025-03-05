@@ -16,7 +16,14 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "pytest-benchmark", "pytest-qt", "pytest-xdist", "pytest-mock"]
+dev = [
+  "pytest",
+  "pytest-benchmark",
+  "pytest-qt",
+  "pytest-xdist",
+  "pytest-mock",
+  "line_profiler",
+]
 
 
 [tool.black]
@@ -40,7 +47,7 @@ reportMissingImports = true
 reportMissingTypeStubs = false
 reportImportCycles = true
 reportUnusedImport = true
-typeCheckingMode = "standard"                                        # "off", "basic", "strict"
+typeCheckingMode = "standard"                                      # "off", "basic", "strict"
 useLibraryCodeForTypes = true
 pythonVersion = "3.12"
 pythonPlatform = "Darwin"
