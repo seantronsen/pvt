@@ -111,11 +111,13 @@ def demo_image_viewer():
     app.add_panes(context)
     app.run()
 
+from line_profiler import profile
 
 # An example to showcase various plotting features
 def demo_plot_viewer():
     N_WAVES = 5
 
+    @profile
     def _callback_base(nsamples, sigma, omega, phasem, animation_tick, **_):
         cphase = (animation_tick / (2 * np.pi)) * phasem
         sinusoid = np.sin((np.linspace(0, omega * 2 * np.pi, nsamples) + cphase))
@@ -127,6 +129,7 @@ def demo_plot_viewer():
     #     result = _callback_base(nsamples, sigma, omega, phasem, animation_tick, **_)
     #     return [PlotDataLine(x=np.arange(signal.size), y=signal) for signal in result]
 
+    @profile
     def callback_scatter_data(nsamples, sigma, omega, phasem, animation_tick, **_):
         result = _callback_base(nsamples, sigma, omega, phasem, animation_tick, **_)
         return [PlotDataScatter(x=np.arange(signal.size), y=signal, marker="x") for signal in result]

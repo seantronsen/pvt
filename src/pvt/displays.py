@@ -6,7 +6,7 @@ from numpy.typing import NDArray
 from numpy.typing import NDArray
 from pvt.decorators import perflog
 from pvt.identifier import IdManager
-from pyqtgraph import GraphicsLayoutWidget, PlotItem
+from pyqtgraph import GraphicsLayoutWidget, PlotDataItem, PlotItem
 from pyqtgraph.colormap import ColorMap
 from typing import Any, Callable, cast
 import pyqtgraph as pg
@@ -313,6 +313,9 @@ class PlotDataLine(PlotDataBase):
     marker_color: str | None = None
 
 
+from line_profiler import profile
+
+
 class StatefulPlotView2D(StatefulDisplay):
     """
     The Base/Abstract class in which all 2D plotting panes are derived. The
@@ -350,32 +353,70 @@ class StatefulPlotView2D(StatefulDisplay):
 
         self._add_widget(_w_graphics)
 
+        # state
+        self._curves: list[PlotDataItem] = []
+
+    @profile
     def _render_data(self, *args: PlotDataLine | PlotDataScatter) -> None:
 
         # todo: add slow legend logic bullshit
-        self._canvas.clear()
-        for i, data_item in enumerate(args[0]):
-            kargs: dict[str, object] = dict(x=data_item.x, y=data_item.y)
-            color = data_item.color if data_item.color else self._default_colors[i % len(self._default_colors)]
-            if isinstance(data_item, PlotDataScatter):
-                kargs["symbol"] = data_item.marker
-                kargs["symbolSize"] = data_item.marker_size
-                kargs["symbolBrush"] = color
-                self._canvas.plot(
-                    pen=None,  # otherwise connections are drawn
-                    **kargs,
-                )
-            elif isinstance(data_item, PlotDataLine):
-                if data_item.marker:
+        data_elements = args[0]
+        if len(data_elements) == len(self._curves):
+            for data_new, data_old in zip(data_elements, self._curves):
+                data_old.setData(x=data_new.x, y=data_new.y)
+        else:
+            self._canvas.clear()
+            for i, data_item in enumerate(data_elements):
+                kargs: dict[str, object] = dict(x=data_item.x, y=data_item.y)
+                color = data_item.color if data_item.color else self._default_colors[i % len(self._default_colors)]
+                if isinstance(data_item, PlotDataScatter):
                     kargs["symbol"] = data_item.marker
                     kargs["symbolSize"] = data_item.marker_size
-                    kargs["symbolBrush"] = data_item.marker_color if data_item.marker_color else color
-                self._canvas.plot(
-                    pen=dict(
-                        color=color,
-                        width=data_item.line_width,
-                    ),
-                    **kargs,
-                )
-            else:
-                raise ValueError("unknown plot data item detected")
+                    kargs["symbolBrush"] = color
+                    p = self._canvas.plot(
+                        pen=None,  # otherwise connections are drawn
+                        **kargs,
+                    )
+                    self._curves.append(p)
+                elif isinstance(data_item, PlotDataLine):
+                    if data_item.marker:
+                        kargs["symbol"] = data_item.marker
+                        kargs["symbolSize"] = data_item.marker_size
+                        kargs["symbolBrush"] = data_item.marker_color if data_item.marker_color else color
+                    p = self._canvas.plot(
+                        pen=dict(
+                            color=color,
+                            width=data_item.line_width,
+                        ),
+                        **kargs,
+                    )
+                    self._curves.append(p)
+                else:
+                    raise ValueError("unknown plot data item detected")
+
+        # self._canvas.clear()
+        # for i, data_item in enumerate(args[0]):
+        #     kargs: dict[str, object] = dict(x=data_item.x, y=data_item.y)
+        #     color = data_item.color if data_item.color else self._default_colors[i % len(self._default_colors)]
+        #     if isinstance(data_item, PlotDataScatter):
+        #         kargs["symbol"] = data_item.marker
+        #         kargs["symbolSize"] = data_item.marker_size
+        #         kargs["symbolBrush"] = color
+        #         self._canvas.plot(
+        #             pen=None,  # otherwise connections are drawn
+        #             **kargs,
+        #         )
+        #     elif isinstance(data_item, PlotDataLine):
+        #         if data_item.marker:
+        #             kargs["symbol"] = data_item.marker
+        #             kargs["symbolSize"] = data_item.marker_size
+        #             kargs["symbolBrush"] = data_item.marker_color if data_item.marker_color else color
+        #         self._canvas.plot(
+        #             pen=dict(
+        #                 color=color,
+        #                 width=data_item.line_width,
+        #             ),
+        #             **kargs,
+        #         )
+        #     else:
+        #         raise ValueError("unknown plot data item detected")
