@@ -169,6 +169,7 @@ def demo_plot_viewer():
     pv_b = StatefulPlotView2D(
         callback=callback_scatter_data,
         config=PlotView2DConfig(
+            background_color="white",
             auto_colors_cmap="plasma",
             auto_colors_nunique=3,
             title="Signal Aliasing: Labeled Line Graph",

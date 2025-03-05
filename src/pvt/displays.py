@@ -342,6 +342,7 @@ class StatefulPlotView2D(StatefulDisplay):
 
         # setup the underlying graphics
         _w_graphics = GraphicsLayoutWidget()
+        _w_graphics.setBackground(config.background_color)
         self._canvas = cast(PlotItem, _w_graphics.addPlot(title=config.title))  # pyright: ignore
         cmap = pg.colormap.get(config.auto_colors_cmap)
         assert isinstance(cmap, ColorMap), f"'{config.auto_colors_cmap=}', either not valid or not findable."
