@@ -17,6 +17,7 @@
 # IMPORTANT: It must be set via the command line or prior to importing the
 # library
 import os
+os.environ["VIEWER_DEBUG"] = "1"  # remove to disable performance logging
 
 from pvt.app import App
 from pvt.context import VisualizerContext
@@ -31,7 +32,6 @@ from pvt.displays import (
 )
 from pvt.qtmods import TrackbarConfig
 
-os.environ["VIEWER_DEBUG"] = "1"  # remove to disable performance logging
 
 
 # STANDARD IMPORTS
@@ -123,9 +123,9 @@ def demo_plot_viewer():
         result = sinusoid + (noise[:nsamples] * sigma)
         return np.array([result] * N_WAVES) + (np.arange(N_WAVES).reshape(-1, 1) - ((N_WAVES - 1) / 2))
 
-    def callback_line_data(nsamples, sigma, omega, phasem, animation_tick, **_):
-        result = _callback_base(nsamples, sigma, omega, phasem, animation_tick, **_)
-        return [PlotDataLine(x=np.arange(signal.size), y=signal) for signal in result]
+    # def callback_line_data(nsamples, sigma, omega, phasem, animation_tick, **_):
+    #     result = _callback_base(nsamples, sigma, omega, phasem, animation_tick, **_)
+    #     return [PlotDataLine(x=np.arange(signal.size), y=signal) for signal in result]
 
     def callback_scatter_data(nsamples, sigma, omega, phasem, animation_tick, **_):
         result = _callback_base(nsamples, sigma, omega, phasem, animation_tick, **_)
@@ -155,17 +155,17 @@ def demo_plot_viewer():
     # fillLevel, which causes the area under any curve to be shaded between the
     # curve and this value. The default value is None which results in the area
     # under the curve not being shaded.
-    pv_a = StatefulPlotView2D(
-        callback=callback_line_data,
-        config=PlotView2DConfig(
-            auto_colors_cmap="plasma",
-            auto_colors_nunique=3,
-            title="Signal Aliasing: Labeled Line Graph",
-            label_x="Sample Number",
-            label_y="Amplitude",
-        ),
-        title="Line Plot Version",
-    )
+    # pv_a = StatefulPlotView2D(
+    #     callback=callback_line_data,
+    #     config=PlotView2DConfig(
+    #         auto_colors_cmap="plasma",
+    #         auto_colors_nunique=3,
+    #         title="Signal Aliasing: Labeled Line Graph",
+    #         label_x="Sample Number",
+    #         label_y="Amplitude",
+    #     ),
+    #     title="Line Plot Version",
+    # )
     pv_b = StatefulPlotView2D(
         callback=callback_scatter_data,
         config=PlotView2DConfig(
@@ -202,7 +202,8 @@ def demo_plot_viewer():
     # - https://github.com/seantronsen/pvt/issues/22
     context = VisualizerContext.create_viewer_from_mosaic(
         [
-            [pv_a, pv_b],
+            # [pv_a, pv_b],
+            [pv_b],
             [animator],
             [trackbar_n, trackbar_omega],
             [trackbar_phasem, trackbar_sigma],
