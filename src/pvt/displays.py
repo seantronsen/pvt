@@ -197,6 +197,11 @@ class PlotView2DConfig:
         Optional label to add to the y-axis
     legend : bool
         If True, the plot legend is displayed. Defaults to False.
+    optimization_fixed_data_order : bool
+        If True, the tool assumes the data callback always returns the same number of items in a fixed order,
+        enabling reuse of existing plot components and achieving up to 10x faster performance.
+        If False, the canvas is cleared and repopulated with new data on each frame, which is significantly slower.
+        Defaults to True.
     """
 
     # colors
@@ -215,6 +220,9 @@ class PlotView2DConfig:
     legend: bool = False
     label_x: str | None = None
     label_y: str | None = None
+
+    # optimization settings
+    optimization_fixed_data_order: bool = True
 
 
 @dataclass
@@ -313,9 +321,6 @@ class PlotDataLine(PlotDataBase):
     marker_color: str | None = None
 
 
-from line_profiler import profile
-
-
 class StatefulPlotView2D(StatefulDisplay):
     """
     The Base/Abstract class in which all 2D plotting panes are derived. The
@@ -331,6 +336,9 @@ class StatefulPlotView2D(StatefulDisplay):
         config: PlotView2DConfig = PlotView2DConfig(),
     ) -> None:
         super().__init__(callback=callback, title=title)
+
+        # check for optimizations
+        self._optim_fixed_data_order = config.optimization_fixed_data_order
 
         # setup the underlying graphics
         _w_graphics = GraphicsLayoutWidget()
@@ -356,67 +364,39 @@ class StatefulPlotView2D(StatefulDisplay):
         # state
         self._curves: list[PlotDataItem] = []
 
-    @profile
+    # todo: add slow legend logic bullshit
     def _render_data(self, *args: PlotDataLine | PlotDataScatter) -> None:
 
-        # todo: add slow legend logic bullshit
-        data_elements = args[0]
-        if len(data_elements) == len(self._curves):
-            for data_new, data_old in zip(data_elements, self._curves):
-                data_old.setData(x=data_new.x, y=data_new.y)
-        else:
-            self._canvas.clear()
-            for i, data_item in enumerate(data_elements):
-                kargs: dict[str, object] = dict(x=data_item.x, y=data_item.y)
-                color = data_item.color if data_item.color else self._default_colors[i % len(self._default_colors)]
-                if isinstance(data_item, PlotDataScatter):
-                    kargs["symbol"] = data_item.marker
-                    kargs["symbolSize"] = data_item.marker_size
-                    kargs["symbolBrush"] = color
-                    p = self._canvas.plot(
-                        pen=None,  # otherwise connections are drawn
-                        **kargs,
-                    )
-                    self._curves.append(p)
-                elif isinstance(data_item, PlotDataLine):
-                    if data_item.marker:
-                        kargs["symbol"] = data_item.marker
-                        kargs["symbolSize"] = data_item.marker_size
-                        kargs["symbolBrush"] = data_item.marker_color if data_item.marker_color else color
-                    p = self._canvas.plot(
-                        pen=dict(
-                            color=color,
-                            width=data_item.line_width,
-                        ),
-                        **kargs,
-                    )
-                    self._curves.append(p)
-                else:
-                    raise ValueError("unknown plot data item detected")
+        # try to be cheap if the optimization is enabled...
+        data_updates: list[PlotDataLine | PlotDataScatter] = args[0]  # pyright: ignore
+        if self._optim_fixed_data_order and len(data_updates) == len(self._curves):
+            for data_new, plot_item in zip(data_updates, self._curves):
+                plot_item.setData(x=data_new.x, y=data_new.y)
+            return
 
-        # self._canvas.clear()
-        # for i, data_item in enumerate(args[0]):
-        #     kargs: dict[str, object] = dict(x=data_item.x, y=data_item.y)
-        #     color = data_item.color if data_item.color else self._default_colors[i % len(self._default_colors)]
-        #     if isinstance(data_item, PlotDataScatter):
-        #         kargs["symbol"] = data_item.marker
-        #         kargs["symbolSize"] = data_item.marker_size
-        #         kargs["symbolBrush"] = color
-        #         self._canvas.plot(
-        #             pen=None,  # otherwise connections are drawn
-        #             **kargs,
-        #         )
-        #     elif isinstance(data_item, PlotDataLine):
-        #         if data_item.marker:
-        #             kargs["symbol"] = data_item.marker
-        #             kargs["symbolSize"] = data_item.marker_size
-        #             kargs["symbolBrush"] = data_item.marker_color if data_item.marker_color else color
-        #         self._canvas.plot(
-        #             pen=dict(
-        #                 color=color,
-        #                 width=data_item.line_width,
-        #             ),
-        #             **kargs,
-        #         )
-        #     else:
-        #         raise ValueError("unknown plot data item detected")
+        # otherwise do an expensive repaint.
+        self._canvas.clear()
+        self._curves = []
+        for i, data in enumerate(data_updates):
+
+            # setup common keyword args for the plot call
+            color_auto = data.color if data.color else self._default_colors[i % len(self._default_colors)]
+            kargs: dict[str, object] = dict(x=data.x, y=data.y)
+
+            # pen=None required to avoid drawing connecting lines
+            if isinstance(data, PlotDataScatter):
+                kargs["symbol"] = data.marker
+                kargs["symbolSize"] = data.marker_size
+                kargs["symbolBrush"] = color_auto
+                self._curves.append(self._canvas.plot(pen=None, **kargs))
+
+            elif isinstance(data, PlotDataLine):
+                if data.marker:
+                    kargs["symbol"] = data.marker
+                    kargs["symbolSize"] = data.marker_size
+                    kargs["symbolBrush"] = data.marker_color if data.marker_color else color_auto
+
+                self._curves.append(self._canvas.plot(pen=dict(color=color_auto, width=data.line_width), **kargs))
+
+            else:
+                raise ValueError(f"unknown plot type received: '{type(data)}'")
