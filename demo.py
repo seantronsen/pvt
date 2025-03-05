@@ -123,11 +123,11 @@ def demo_plot_viewer():
         result = sinusoid + (noise[:nsamples] * sigma)
         return np.array([result] * N_WAVES) + (np.arange(N_WAVES).reshape(-1, 1) - ((N_WAVES - 1) / 2))
 
-    def callback_line_data(nsamples, sigma, omega, phasem, animation_tick, **_):
+    def callback_line(nsamples, sigma, omega, phasem, animation_tick, **_):
         result = _callback_base(nsamples, sigma, omega, phasem, animation_tick, **_)
-        return [PlotDataLine(x=np.arange(signal.size), y=signal) for signal in result]
+        return [PlotDataLine(x=np.arange(signal.size), y=signal, name=f"item: {i}") for i, signal in enumerate(result)]
 
-    def callback_scatter_data(nsamples, sigma, omega, phasem, animation_tick, **_):
+    def callback_scatter(nsamples, sigma, omega, phasem, animation_tick, **_):
         result = _callback_base(nsamples, sigma, omega, phasem, animation_tick, **_)
         return [PlotDataScatter(x=np.arange(signal.size), y=signal, marker="x") for signal in result]
 
@@ -156,18 +156,19 @@ def demo_plot_viewer():
     # curve and this value. The default value is None which results in the area
     # under the curve not being shaded.
     pv_a = StatefulPlotView2D(
-        callback=callback_line_data,
+        callback=callback_line,
         config=PlotView2DConfig(
             auto_colors_cmap="plasma",
             auto_colors_nunique=3,
             title="Signal Aliasing: Labeled Line Graph",
             label_x="Sample Number",
             label_y="Amplitude",
+            legend=True,
         ),
         title="Line Plot Version",
     )
     pv_b = StatefulPlotView2D(
-        callback=callback_scatter_data,
+        callback=callback_scatter,
         config=PlotView2DConfig(
             background_color="white",
             auto_colors_cmap="plasma",

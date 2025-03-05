@@ -348,10 +348,8 @@ class StatefulPlotView2D(StatefulDisplay):
         assert isinstance(cmap, ColorMap), f"'{config.auto_colors_cmap=}', either not valid or not findable."
         self._default_colors = colors_from_cmap(cmap, config.auto_colors_nunique)
 
-        # todo: re-assign the _render_data method to avoid plotting overhead if
-        # no legend is requested
         # configure graph appearance
-        # self._legend = self._canvas.addLegend() if config.legend else None
+        self._legend = self._canvas.addLegend() if config.legend else None
         self._canvas.setLogMode(x=config.log_scale_x, y=config.log_scale_y)
         self._canvas.showGrid(x=config.gridlines_x, y=config.gridlines_y)
         if config.label_x:
@@ -365,7 +363,6 @@ class StatefulPlotView2D(StatefulDisplay):
         # state
         self._curves: list[PlotDataItem] = []
 
-    # todo: add slow legend logic bullshit
     def _render_data(self, *args: PlotDataLine | PlotDataScatter) -> None:
 
         # try to be cheap if the optimization is enabled...
@@ -378,6 +375,9 @@ class StatefulPlotView2D(StatefulDisplay):
         # otherwise do an expensive repaint.
         self._canvas.clear()
         self._curves = []
+        if self._legend:
+            self._legend.clear()
+
         for i, data in enumerate(data_updates):
 
             # setup common keyword args for the plot call
@@ -401,3 +401,6 @@ class StatefulPlotView2D(StatefulDisplay):
 
             else:
                 raise ValueError(f"unknown plot type received: '{type(data)}'")
+
+            if self._legend and data.name:
+                self._legend.addItem(self._curves[-1], data.name)
