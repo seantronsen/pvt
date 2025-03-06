@@ -12,7 +12,7 @@ from typing import Any, Callable, cast
 import pyqtgraph as pg
 
 
-def __colors_from_cmap(cmap: ColorMap, ncolors: int):
+def _colors_from_cmap(cmap: ColorMap, ncolors: int):
     """
     Return a list of QColor objects from the from the provided colormap.
 
@@ -348,7 +348,7 @@ class StatefulPlotView2D(StatefulDisplay):
         self._canvas = cast(PlotItem, _w_graphics.addPlot(title=config.title))  # pyright: ignore
         cmap = pg.colormap.get(config.auto_colors_cmap)
         assert isinstance(cmap, ColorMap), f"'{config.auto_colors_cmap=}', either not valid or not findable."
-        self._default_colors = __colors_from_cmap(cmap, config.auto_colors_nunique)
+        self._default_colors = _colors_from_cmap(cmap, config.auto_colors_nunique)
 
         # configure graph appearance
         self._legend = self._canvas.addLegend() if config.legend else None
