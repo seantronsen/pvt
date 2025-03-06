@@ -96,7 +96,7 @@ def demo_image_viewer():
     # happy tuning / visualizing!
     app = App(title="Example for Displaying Rapid Image Updates")
 
-    trackbar_rho = StatefulTrackbar(key="rho", tb_range=TrackbarConfig(start=0.001, stop=1, step=0.001, init=0.5))
+    trackbar_rho = StatefulTrackbar(key="rho", config=TrackbarConfig(start=0.001, stop=1, step=0.001, init=0.5))
     trackbar_sigma = StatefulTrackbar("sigma", TrackbarConfig(0, 100, 2))
     ip_a = StatefulImageView(callback_0, title="resized image")
     ip_b = StatefulImageView(
@@ -134,10 +134,10 @@ def demo_plot_viewer():
 
     app = App(title="Multiple Plots: An Illustration of Signal Aliasing")
 
-    trackbar_n = StatefulTrackbar("nsamples", tb_range=TrackbarConfig(100, 1000, 100))
-    trackbar_omega = StatefulTrackbar("omega", tb_range=TrackbarConfig(1, 50, init=50))
-    trackbar_sigma = StatefulTrackbar("sigma", tb_range=TrackbarConfig(0, 3, 0.1))
-    trackbar_phasem = StatefulTrackbar("phasem", tb_range=TrackbarConfig(0.1, 10, 0.1, init=0.1))
+    trackbar_n = StatefulTrackbar("nsamples", config=TrackbarConfig(100, 1000, 100))
+    trackbar_omega = StatefulTrackbar("omega", config=TrackbarConfig(1, 50, init=50))
+    trackbar_sigma = StatefulTrackbar("sigma", config=TrackbarConfig(0, 3, 0.1))
+    trackbar_phasem = StatefulTrackbar("phasem", config=TrackbarConfig(0.1, 10, 0.1, init=0.1))
 
     # For any kind of 2D plot made available by this library, users may specify
     # a color map and the number of unique colors to use from that colormap. If

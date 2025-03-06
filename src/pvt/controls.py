@@ -9,20 +9,20 @@ from pvt.state import VisualizerControlSignal
 from typing import cast
 import numpy as np
 
-# todo: all stateful composition based controls should not have padding or margin spacing
-# todo: consider a "widget base" since both controls and displays share some arbitrary bullshit
-# and it could be useful for controls to be visually identifable too.
-
 
 class StatefulControl(QWidget):
     """
+    The base class for this library's control type widgets which encapsulates
+    logic common to all widgets of this type.
+
     "Stateful" controls are widgets the user can interact with to change the
     state of the application. Specifically, each control widget represents a
-    set of values for some parameter and allows the user to explore changes to
-    data displays which relate to changes in that parameter.
+    set of values for some parameter and allows the user to explore changes
+    through visualizations within data displays which subscribe to changes in
+    that parameter (see `context.py` and the demo for more details).
 
     IMPORTANT: Stateful control widget are instantiated in a detached state,
-    meaning they will not affect existing data displays until linked to a
+    meaning they will not affect existing data displays until wired into a
     VisualizerContext.
     """
 
@@ -34,7 +34,7 @@ class StatefulControl(QWidget):
         """
         :param key: key name for the state. must abide by python variable
             naming requirements.
-        :param init [Any]: an initial value
+        :param init: an initial value
         """
         super().__init__()
         self.key, self._initial_value = key, initial_value
@@ -62,9 +62,13 @@ class StatefulControl(QWidget):
 
 @dataclass
 class STP:
-    """Class representation for `StatefulTrackbar` parameters"""
+    """
+    Class representation for `StatefulTrackbar` parameters. It exists to
+    simplify the creation of a large group of sliders (see slider groups in the
+    `layouts.py` module.
+    """
 
-    tb_range: TrackbarConfig
+    config: TrackbarConfig
     key: str
     label: str | None = None
 
@@ -74,28 +78,28 @@ class STP:
 
 
 class StatefulTrackbar(StatefulControl):
+    """
+    A stateful trackbar widget which can be used to explore results from a
+    range of possible parameter inputs.
 
-    def __init__(self, key: str, tb_range: TrackbarConfig, label: str | None = None) -> None:
+    IMPORTANT: Understand there is a limit on the number of events which can be
+    emitting within a fixed time interval built-in to the Qt library. The
+    developers assert that it exists to ensure the widget/interface remains
+    response even when a large change of values has been detected. In other
+    words, if you near-instantly move the slider from 0 to 1,000 when the step
+    size is only one, only a fraction of the events will be processed and
+    result in callbacks being triggered to change the UI.
+    """
+
+    def __init__(self, key: str, config: TrackbarConfig, label: str | None = None) -> None:
         """
-        Instantiate a new stateful trackbar widget to visualize the results of
-        a range of possible parameter inputs.
-
-        IMPORTANT: Understand there is a limit on the number of events which
-        can be emitting within a fixed time interval built-in to the Qt
-        library. The developers assert that it exists to ensure the
-        widget/interface remains responsive as the frequency of changes
-        increases. In other words, if you near-instantly move the slider from 0
-        to 1,000 when the step size is only one, only a fraction of the events
-        will be processed and result in callbacks being triggered to change the
-        UI.
-
         :param key: key name for the state
-        :param tb_range: trackbar range parameters
+        :param config: trackbar range parameters
         :param label: optional label to appear on the right side of the slider
             defaults to `key` if not assigned.
         """
-        super().__init__(key, tb_range.initial_value)
-        self._labeled_trackbar = LabeledTrackbar(tb_range=tb_range, label=label if label is not None else key)
+        super().__init__(key, config.initial_value)
+        self._labeled_trackbar = LabeledTrackbar(config=config, label=label if label is not None else key)
         self._labeled_trackbar.signals_mediator.value_changed.connect(self._on_change)
         self._add_widget(self._labeled_trackbar)
 
@@ -113,19 +117,24 @@ class StatefulTrackbar(StatefulControl):
 
 class StatefulToggle(StatefulControl):
     """
-    Instantiate a new stateful checkbox / toggle widget to visualize the
-    result of a "binary" parameter input (two options only).
+    A stateful checkbox / toggle widget which can be used to explore the results of "binary"
+    parameter changes.
+
+    The implementation is defined agnostically such that both the "on" and
+    "off" states can be assigned arbitrary values. **However**, for the sake of
+    performance it's recommended to use simple objects or primitives (not giant
+    ndarray instances).
     """
 
-    def __init__(self, key: str, values: ToggleConfig | None = None, label: str | None = None) -> None:
+    def __init__(self, key: str, config: ToggleConfig | None = None, label: str | None = None) -> None:
         """
-        :param key: key name for the state
-        :param values: toggle parameters and values associated with each state
-        :param label: optional label to appear on the right side of the toggle,
+        :param key: a name to associate with the state value
+        :param config: control configuration
+        :param label: optional label to appear on the right side of the toggle.
             defaults to `key` if not assigned.
         """
 
-        _values = values if values is not None else ToggleConfig()
+        _values = config if config is not None else ToggleConfig()
         super().__init__(key, _values.initial_value)
         self._labeled_toggle = LabeledToggle(label=label if label is not None else key, values=_values)
         self._labeled_toggle.signals_mediator.value_changed.connect(self._on_change)
@@ -134,36 +143,9 @@ class StatefulToggle(StatefulControl):
         return self._labeled_toggle.value()
 
 
-"""
-the idea of the animator is one global to the closest visualizer context in the
-hierarchy. meaning, if the user specifies an animator, all displays with
-callbacks known to that visualizer context will have their callbacks triggered
-for every time tick.
-
-such is why it will be important to enable opt-in caching, especially if the
-user has displays which aren't meant to be animated.
-
-to have more than one animator where each modifies a unique set of displays, a
-new visualizer context will need to own all displays and controls unique to
-that animation.
-
-note: things that need to be set up in the future
-- parameter caching for callbacks. if the callback must execute with the same
-  parameters and cache is specified, then don't update, for this, we can likely
-  get away with caching the parameters yielded from state.
-
-- implementing some sort of way to share state updates between contexts. what
-  if the user wants a control to mutate multiple contexts? this should be as
-  simple as just setting up a context's ability to subscribe to signal
-  emissions for it's state.
-
-
-"""
-
-
 class StatefulAnimator(StatefulControl):
     """
-    Integrate a stateful animator into your visualizer context to enable time-based
+    Integrate a stateful animator into a visualizer context to enable timed
     updates. The animator supplies an extra parameter, animation_tick, to your
     custom callbacks. You can use animation_tick to drive behaviors that change
     over time—such as indexing into a series of frames to create a movie or
@@ -192,8 +174,13 @@ class StatefulAnimator(StatefulControl):
         self._timer.timeout.connect(self.on_tick)
 
         super().__init__(key="animation_tick", initial_value=self._animation_tick)
+
+        # todo: link to comment
+        # a janky way to get rid of a previous layout. there's a comment
+        # about why this is like this somewhere in this library. I think it's
+        # under the qtmods.py module.
         if self.layout() is not None:
-            QWidget().setLayout(self.layout())
+            QWidget().setLayout(self.layout())  # pyright: ignore
 
         super().setLayout(QGridLayout())
 
@@ -223,28 +210,22 @@ class StatefulAnimator(StatefulControl):
         return self._animation_tick
 
     def on_tick(self):
-        """
-        Exists to provide a timed update feature for animation / sequence data
-        where new frames should be delivered at the specified interval.
-        """
         self._animation_tick += np.uintp(1)
         self._on_change()
 
-    # todo: consider removing these old args. likely useless artifacts of the
-    # prev design.
-    def forward(self, *a, **k):
+    def forward(self):
         self._animation_tick += 1
         self._on_change()
 
-    def reverse(self, *a, **k):
+    def reverse(self):
         self._animation_tick -= 1
         self._on_change()
 
-    def reset(self, *a, **k):
+    def reset(self):
         self._animation_tick = np.uintp(0)
         self._on_change()
 
-    def pause_play(self, *a, **k):
+    def pause_play(self):
         if self._timer.isActive():
             self._timer.stop()
         else:

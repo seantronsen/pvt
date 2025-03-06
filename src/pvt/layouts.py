@@ -18,7 +18,7 @@ class VSliderGroup(QFrame):
         self.layout().setSpacing(0)
 
         for p in tparams:
-            tbar = StatefulTrackbar(p.tb_range, p.key, p.label)
+            tbar = StatefulTrackbar(key=p.key, config=p.config, label=p.label)
             tbar.set_orientation_vertical()
             self._add_widget(tbar)
 
@@ -42,7 +42,7 @@ class HSliderGroup(QFrame):
         self.layout().setSpacing(0)
 
         for p in tparams:
-            tbar = StatefulTrackbar(p.tb_range, p.key, p.label)
+            tbar = StatefulTrackbar(key=p.key, config=p.config, label=p.label)
             tbar.set_orientation_horizontal()
             self._add_widget(tbar)
 

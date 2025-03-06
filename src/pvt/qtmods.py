@@ -82,7 +82,7 @@ class TrackbarSignals(QObject):
 class Trackbar(QSlider):
     """Derivation of QSlider class that allows both integer and float ranges."""
 
-    def __init__(self, tb_range: TrackbarConfig, signals_mediator: TrackbarSignals | None = None):
+    def __init__(self, config: TrackbarConfig, signals_mediator: TrackbarSignals | None = None):
         """
         Constructor function for the class.
 
@@ -112,7 +112,7 @@ class Trackbar(QSlider):
 
         super().__init__()
         self.signals_mediator = signals_mediator if signals_mediator is not None else TrackbarSignals()
-        self.revise_range(tb_range)
+        self.revise_range(config)
 
         # IMPORTANT: No ticks is much faster for trackbar ranges of any size
         # where as trackbars with ticks become obnoxiously slow when more than
@@ -156,10 +156,10 @@ class Trackbar(QSlider):
         else:
             super().setValue(idx)
 
-    def revise_range(self, tb_range: TrackbarConfig):
-        self.tb_range = tb_range
-        self.setMaximum(self.tb_range.value_range.size - 1)
-        self.setValue(self.tb_range.init_index)
+    def revise_range(self, config: TrackbarConfig):
+        self.config = config
+        self.setMaximum(self.config.value_range.size - 1)
+        self.setValue(self.config.init_index)
 
     def value(self) -> int:
         """
@@ -169,16 +169,16 @@ class Trackbar(QSlider):
         to the caller.
         :return: the value at index referenced by the trackbar position
         """
-        return self.tb_range.value_at(super().value())
+        return self.config.value_at(super().value())
 
 
 # todo: update docs for all tbar funcs/methods
 class LabeledTrackbar(QWidget):
 
-    def __init__(self, tb_range: TrackbarConfig, label: str, signals_mediator: TrackbarSignals | None = None):
+    def __init__(self, config: TrackbarConfig, label: str, signals_mediator: TrackbarSignals | None = None):
         """
-        Instantiate a new stateful trackbar widget to visualize the results of
-        a range of possible parameter inputs.
+        A stateful trackbar widget which can be used to explore results from a
+        range of possible parameter inputs.
 
         IMPORTANT: Understand there is a limit on the number of events which
         can be emitting within a fixed time interval built-in to the Qt
@@ -189,8 +189,8 @@ class LabeledTrackbar(QWidget):
         processed and result in callbacks being triggered to change the UI.
 
         :param key: key name for the state
-        :param label: optional label to appear on the right side of the slider
-        defaults to `key` if not assigned.
+        :param label: optional label to appear on the right side of the slider.
+            defaults to `key` if not assigned.
         """
 
         super().__init__()
@@ -199,7 +199,7 @@ class LabeledTrackbar(QWidget):
         # set up the controls
         self.label_text = label
         self.w_label = QLabel()
-        self.w_trackbar = Trackbar(tb_range, signals_mediator=self.signals_mediator)
+        self.w_trackbar = Trackbar(config, signals_mediator=self.signals_mediator)
         self.set_label_value(self.w_trackbar.value())
         self.w_label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
 
@@ -259,6 +259,11 @@ class LabeledTrackbar(QWidget):
 
 
 class ToggleConfig:
+    """
+    An encapsulation of the toggle control widget config parameters. It's
+    defined like this primarily for organization and to simplify any necessary
+    future updates.
+    """
 
     def __init__(
         self,
@@ -266,6 +271,12 @@ class ToggleConfig:
         unchecked: object | None = None,
         init_checked: bool = False,
     ) -> None:
+        """
+        :param checked: value to associate with the "checked" (on) state
+        :param unchecked: value to associate with the "unchecked" (off) state
+        :param init_checked: flag which determines whether the toggle is
+            in the checked state upon creation
+        """
         self.value_checked = True if checked is None else checked
         self.value_unchecked = False if unchecked is None else unchecked
         self.__init_checked = init_checked

@@ -11,8 +11,9 @@ def configure_state(
     state: VisualizerState | None = None,
 ) -> VisualizerState:
     """
-    Link controls and data displays to a common exchange such that none of the
-    parties involved are truly aware of the existence of the others.
+    Link controls and data displays to a common exchange (e.g., bus) such that
+    none of the parties involved are truly aware of the existence of the
+    others.
 
     :param displays: a list of widgets which consume state updates
     :param controls: a list of widgets that produce state updates
