@@ -32,6 +32,7 @@ from pvt.displays import (
     StatefulPlotView2D,
 )
 from pvt.qtmods import TrackbarConfig
+from pvt.decorators import add_callback_optimizations
 
 
 # STANDARD IMPORTS
@@ -87,6 +88,7 @@ def demo_image_viewer():
         result = resized + (noise_slice * sigma)
         return result
 
+    @add_callback_optimizations(track_parameters_include=["sigma"])
     def callback_1(sigma, **_):
         noise_slice = noise_image[: img_test_small.shape[0], : img_test_small.shape[1]]
         result = img_test_small + (noise_slice * sigma)
@@ -108,6 +110,47 @@ def demo_image_viewer():
     # IMPORTANT: add all display and control elements to a context so they can communicate
     # this helper function also creates a mosaic (grid-like) layout of the widgets
     context = VisualizerContext.create_viewer_from_mosaic([[ip_a, ip_b], [trackbar_rho, trackbar_sigma]])
+    app.add_panes(context)
+    app.run()
+
+
+def demo_static_image_viewer():
+
+    # EXAMPLE: callback optimizations can be applied with the decorator below.
+    # In this example, we will explore "fake caching" where users can specify
+    # which parameters should trigger a new frame to be computed, then rendered
+    # on the data display.
+    #
+    # There are two options for tracking:
+    # - inclusive tracking:
+    # - exclusive tracking
+    #
+    # only one type can be selected for this kind of optimization.
+    #
+    # NOTE: this is most useful for if you have an animator in the same context
+    # as several displays, but not all of the displays need to be updated on
+    # each animation tick.
+    #
+    # IMPORTANT: ANY NAMED PARAMETERS **NOT** DEFINED BY YOUR CALLBACK FUNCTION
+    # ARE NOT USED. Meaning, if you've created several display widgets and each
+    # of which uses a different subset of parameters (named arguments), meaning
+    # the extra args from the callback engine go into kwargs, that there is no
+    # need to worry about anything in kwargs. the optimizations handle that for
+    # you automatically.
+
+    img_test = norm_uint8(cv2.imread("sample-media/checkboard_non_planar.png"))
+
+    @add_callback_optimizations(track_parameters_exclude="all")
+    def callback(**_):
+        return img_test
+
+    app = App(title="Example: Static Images")
+    trackbar_sigma = StatefulTrackbar("sigma", TrackbarConfig(0, 100, 2))
+    ip_b = StatefulImageView(callback, config=ImageViewConfig())
+
+    # IMPORTANT: add all display and control elements to a context so they can communicate
+    # this helper function also creates a mosaic (grid-like) layout of the widgets
+    context = VisualizerContext.create_viewer_from_mosaic([[ip_b], [trackbar_sigma]])
     app.add_panes(context)
     app.run()
 
@@ -170,15 +213,7 @@ def demo_plot_viewer():
     )
     pv_b = StatefulPlotView2D(
         callback=callback_scatter,
-        config=PlotView2DConfig(
-            background_color="white",
-            auto_colors_cmap="plasma",
-            auto_colors_nunique=AUTO_COLORS,
-            title="Signal Aliasing: Labeled Scatter Graph",
-            label_x="Sample Number",
-            label_y="Sample Height",
-        ),
-        title="Line Plot Version",
+        config=PlotView2DConfig(background_color="white", title="Signal Aliasing: Labeled Scatter Graph"),
     )
     # Users can animate any display pane by wrapping the associated widget in
     # an `Animator`. Here, an fps value can be specified to limit the refresh
@@ -215,51 +250,14 @@ def demo_plot_viewer():
     app.run()
 
 
-################################################################################
-################################################################################
-# OLD - UPDATE AWACHES IMPLEMENTATION OF CACHING ENGINE
-################################################################################
-################################################################################
-#
-# # An example of how to display static / unchanging content
-# def demo_static_image_viewer():
-#     img_test = cv2.imread("sample-media/checkboard_non_planar.png").astype(np.uint8)
-#     img_test = norm_uint8(cv2.cvtColor(img_test, cv2.COLOR_BGR2GRAY))
-#
-#     image_viewer = Viewer()
-#
-#     # For the time being, specifying a "dummy" lambda is the best way to render
-#     # static content. The downside being that if the pane is connected to the
-#     # global state, the content is redrawn each and every time the state
-#     # changes. While the cost is miniscule on the compute side, the same cannot
-#     # be said for the rendering side where there is a real cost to repainting
-#     # the window unnecessarily. Keep an eye on issue #43 for more information
-#     # and changes related to improving the efficiency of static content. For
-#     # now, take comfort by realizing the cost for images less than 8K
-#     # resolution is still low enough that you shouldn't notice a difference
-#     # (though you really should consider shrinking the images at that point
-#     # just for faster processing in your own code).
-#     #
-#     # NOTE: Users can now specify a `border` keyword argument to automatically
-#     # draw a border of the specified color around the image. This reduces the
-#     # need to do it yourself and considering the scaling / width for arbitrary
-#     # resolutions and is particularly useful for when the content being
-#     # displayed has the same background color as the panel (which typically
-#     # results in making it difficult to determine where the image begins and
-#     # ends).
-#     ip = ImagePane(lambda **_: img_test, border="red")
-#     image_viewer.add_panes(ip)
-#     image_viewer.run()
-#
-
-
 # For a simpler experience regarding choosing demos to run, pass the CLI call
 # an additional argument with the name of the demo.
 #
 # Example: `python demo.py demo_image_viewer`
 if __name__ == "__main__":
     if len(sys.argv) == 1:
-        demo_plot_viewer()
-        # demo_image_viewer()
+        demo_image_viewer()
+        # demo_plot_viewer()
+        # demo_static_image_viewer()
     else:
         globals()[sys.argv[1]]()

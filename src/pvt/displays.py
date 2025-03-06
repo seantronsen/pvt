@@ -3,7 +3,7 @@ from PySide6.QtCore import Slot
 from PySide6.QtWidgets import QLabel, QSizePolicy, QVBoxLayout, QWidget
 from dataclasses import dataclass
 from numpy.typing import NDArray
-from numpy.typing import NDArray
+from pvt.callback import Callback
 from pvt.decorators import perflog
 from pvt.identifier import IdManager
 from pyqtgraph import GraphicsLayoutWidget, PlotDataItem, PlotItem
@@ -12,7 +12,7 @@ from typing import Any, Callable, cast
 import pyqtgraph as pg
 
 
-def colors_from_cmap(cmap: ColorMap, ncolors: int):
+def __colors_from_cmap(cmap: ColorMap, ncolors: int):
     """
     Return a list of QColor objects from the from the provided colormap.
 
@@ -36,16 +36,17 @@ class StatefulDisplay(QWidget):
     IMPORTANT: Callback functions should be stateless.
     """
 
-    __callback: Callable[..., object]
-
-    def __init__(self, callback: Callable[..., object] | None = None, title: str | None = None) -> None:
+    def __init__(self, callback: Callable[..., Any], title: str | None = None) -> None:
         """
         Initialize an instance of the class.
 
         :param callback: A callback for updating the rendered data on state changes.
         :param title: an optional title to render as a label above the display
         """
-        assert callback is not None
+        assert callable(callback)
+        if not isinstance(callback, Callback):
+            callback = Callback(func=callback)
+
         super().__init__()
         self.__callback = callback
 
@@ -83,8 +84,9 @@ class StatefulDisplay(QWidget):
             current value held by that same control.
         :type kwargs: kwargs dict
         """
-        data = self.__compute_data(**kwargs_as_dict)
-        self.__render_data(data)
+        if self.__callback.should_run(**kwargs_as_dict):
+            data = self.__compute_data(**kwargs_as_dict)
+            self.__render_data(data)
 
     @perflog(event="callback-compute")
     def __compute_data(self, **kwargs: Any):
@@ -331,7 +333,7 @@ class StatefulPlotView2D(StatefulDisplay):
 
     def __init__(
         self,
-        callback: Callable[..., object] | None = None,
+        callback: Callable[..., object],
         title: str | None = None,
         config: PlotView2DConfig = PlotView2DConfig(),
     ) -> None:
@@ -346,7 +348,7 @@ class StatefulPlotView2D(StatefulDisplay):
         self._canvas = cast(PlotItem, _w_graphics.addPlot(title=config.title))  # pyright: ignore
         cmap = pg.colormap.get(config.auto_colors_cmap)
         assert isinstance(cmap, ColorMap), f"'{config.auto_colors_cmap=}', either not valid or not findable."
-        self._default_colors = colors_from_cmap(cmap, config.auto_colors_nunique)
+        self._default_colors = __colors_from_cmap(cmap, config.auto_colors_nunique)
 
         # configure graph appearance
         self._legend = self._canvas.addLegend() if config.legend else None
