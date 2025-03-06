@@ -8,6 +8,8 @@ from pvt.experimental.displays import StatefulDisplay as ExperimentalStatefulDis
 from pvt.panels import StatefulPane as OldStatefulDisplay
 from pvt.widgets import StatefulWidget as OldStatefulControl
 
+# todo: need to add a commit hash for when this was valid
+
 N_WARMUPS = 100
 N_REPEAT = 1000
 
