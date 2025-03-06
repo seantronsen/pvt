@@ -6,7 +6,6 @@ import time
 T = TypeVar("T", bound=Callable[..., Any])
 
 
-# todo: remove the `extra_info` from mention, replace with event as needed.
 def perflog(*dargs: Any, **dkwargs: Any) -> Any:
     """
     A decorator for logging the performance (execution time) of functions and
@@ -14,20 +13,18 @@ def perflog(*dargs: Any, **dkwargs: Any) -> Any:
 
     1. **without arguments:**
        When used directly (e.g., `@perflog`), the decorator logs the execution time using the
-       function's qualified name (`__qualname__`) as the label.
+       routine's qualified name (`__qualname__`) as the primary label.
+
+       **However**, if the decorated routine is an instance method and that
+       same instance has an attribute named `identifier`, the value referenced
+       by the attribute will override the original default. This situation
+       typically applies only to widget's in this library whose names are
+       prefixed with `Stateful`.
 
     2. **with arguments:**
-       When used with configuration options (e.g., `@perflog(label="Custom Label", extra_info="Info")`),
-       the provided `label` is used in the log message, and any additional information supplied via
-       `extra_info` is appended.
-
-    NOTE: There exists a priority order for which default labels are
-    overridden. At the bottom is the __qualname__ of the routine. However, if
-    the decorated routine is an instance method and said instance has an
-    attribute `identifier`, the label then becomes the value of that attribute.
-    At the top level, if `label` is provided as a kwarg to the decorator, it
-    will **always** override any previous definitions.
-
+       When used with configuration options (e.g., `@perflog(label="Custom
+       Label", event="compute")`), the arguments provided will override any
+       afformentioned default values.
 
     **Parameters:**
       - *dkwargs*: Optional configuration parameters:
@@ -38,17 +35,11 @@ def perflog(*dargs: Any, **dkwargs: Any) -> Any:
 
     **Example:**
 
-        @perflog
-        def add(a: int, b: int) -> int:
-            return a + b
-
-        @perflog(label="Subtraction Routine", extra_info="Subtracting numbers")
+        @perflog(label="Subtraction Routine", event="compute")
         def subtract(a: int, b: int) -> int:
             return a - b
 
         class MyClass:
-            def __init__(self, name: str) -> None:
-                self.name = name
 
             @perflog
             def multiply(self, a: int, b: int) -> int:
