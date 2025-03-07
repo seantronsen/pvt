@@ -1,4 +1,4 @@
-from pvt.callback import Callback, CallbackConfig
+from pvt.callback import Callback
 from typing import Callable, Literal, TypeVar, Any
 import functools
 import inspect
@@ -8,6 +8,12 @@ import time
 T = TypeVar("T", bound=Callable[..., Any])
 
 
+# todo: consider letting users decorate their callbacks with a perf logger
+# such that regardless of whether the debug flag is set, it displays to them
+# the max ups, they can possibly achieve on the compute side.
+#
+# of course, a mention of render costs must also be made so they aren't
+# thinking a compute ups of 20K means an actual possible FPS of 20K.
 def perflog(*dargs: Any, **dkwargs: Any) -> Any:
     """
     A decorator for logging the performance (execution time) of functions and
@@ -92,31 +98,34 @@ def perflog(*dargs: Any, **dkwargs: Any) -> Any:
         return decorator
 
 
-def add_callback_optimizations(
+def use_parameter_cache(
     func: Callable[..., Any] | None = None,
     /,
     *,
-    track_parameters_include: list[str] = list(),
-    track_parameters_exclude: list[str] | Literal["all"] = list(),
+    whitelist: list[str] = list(),
+    blacklist: list[str] | Literal["all"] = list(),
 ) -> Any:
     """
+    cache masking cases:
+        - no masking strategy is specified => whitelist all (useful for same
+            context displays with different parameters)
+        - whitelist not empty => watch only the mentioned variables
+        - blacklist not empty => watch all variables, excluding members of the blacklist
+        - blacklist = all => blacklist all (useful only for static content)
 
-    :param func:
-    :param track_parameters_include:
-    :param track_parameters_exclude:
     :raises ValueError:
     :return: An optimized instance of the `Callback` class.
     """
-    assert not track_parameters_exclude or not track_parameters_include, "choose one or the other, not both"
-    _skip_tracking = True if track_parameters_include == track_parameters_exclude == None else False
+    assert not (whitelist and blacklist), "multiple strategies were specified"
+    assert isinstance(whitelist, list)
+    assert isinstance(blacklist, list) or (blacklist == "all")
 
-    config = CallbackConfig()
+    def check_param_name(p: str, paramset: set[str]):
+        if p not in paramset:
+            raise ValueError(f"`{func.__qualname__}` has no parameter `{p}`. {paramset=}")
 
     def decorator(func: Callable[..., Any]) -> Callback:
-
-        def check_param_name(p: str, params_valid: tuple[str, ...]):
-            if p not in params_valid:
-                raise ValueError(f"`{func.__qualname__}` has no parameter `{p}`. {params_valid=}")
+        config = Callback.Config()
 
         if isinstance(func, Callback):
             raise ValueError(
@@ -129,31 +138,32 @@ def add_callback_optimizations(
                 )
             )
 
-        if not _skip_tracking:
-            param_kind_mask = (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
-            named_parameters = tuple(
-                name for name, param in inspect.signature(func).parameters.items() if param.kind not in param_kind_mask
-            )
-            tracked_parameters: list[str] = []
-            if track_parameters_include:
-                assert isinstance(track_parameters_include, list)
-                tracked_parameters.extend(track_parameters_include)
-                for p in track_parameters_include:
-                    check_param_name(p, params_valid=named_parameters)
+        cached_parameters: list[str] = []
+        callback_paramset = {
+            name
+            for name, param in inspect.signature(func).parameters.items()
+            if param.kind not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
+        }
 
-            elif track_parameters_exclude and track_parameters_exclude != "all":
-                assert isinstance(track_parameters_exclude, list)
-                tracked_parameters.extend([p for p in named_parameters if p not in track_parameters_exclude])
-                for p in track_parameters_exclude:
-                    check_param_name(p, params_valid=named_parameters)
+        # implement the four cases described in the docstring
+        if not (whitelist or blacklist):
+            cached_parameters = list(callback_paramset)
+        elif whitelist:
+            for p in whitelist:
+                check_param_name(p, callback_paramset)
+            cached_parameters = list(whitelist)
+        elif blacklist:
+            if blacklist == "all":
+                cached_parameters = list(callback_paramset)
+            else:
+                for p in blacklist:
+                    check_param_name(p, callback_paramset)
+                cached_parameters = [p for p in callback_paramset if p not in set(blacklist)]
+        else:
+            raise Exception
 
-            if tracked_parameters:
-                config.cache_type_for_parameters = CallbackConfig.CacheType.Fake
-                config.cached_parameters = tuple(tracked_parameters)
-            elif not tracked_parameters or track_parameters_exclude == "all":
-                config.cache_type_for_parameters = CallbackConfig.CacheType.Fake
-                config.cached_parameters = tuple()
-
+        config.cache_type = Callback.Config.CacheType.Fake
+        config.cached_parameters = tuple(cached_parameters)
         return Callback(func=func, config=config)
 
     if func is not None and callable(func):

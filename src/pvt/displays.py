@@ -12,20 +12,6 @@ from typing import Any, Callable, cast
 import pyqtgraph as pg
 
 
-def _colors_from_cmap(cmap: ColorMap, ncolors: int):
-    """
-    Return a list of QColor objects from the from the provided colormap.
-
-    :param cmap: ColorMap instance
-    :param ncolors: number of colors to return
-    :return: The list of QColor objects.
-    """
-    result: list[QtGui.QColor] = [
-        cmap.map(x / ncolors, mode=ColorMap.QCOLOR) for x in range(ncolors)
-    ]  # pyright: ignore
-    return result
-
-
 class StatefulDisplay(QWidget):
     """
     A base data display class which subscribes to application state changes via
@@ -105,6 +91,20 @@ class StatefulDisplay(QWidget):
         not apply to methods overridden in a derived class.
         """
         raise NotImplementedError
+
+
+def _colors_from_cmap(cmap: ColorMap, ncolors: int):
+    """
+    Return a list of QColor objects from the from the provided colormap.
+
+    :param cmap: ColorMap instance
+    :param ncolors: number of colors to return
+    :return: The list of QColor objects.
+    """
+    result: list[QtGui.QColor] = [
+        cmap.map(x / ncolors, mode=ColorMap.QCOLOR) for x in range(ncolors)
+    ]  # pyright: ignore
+    return result
 
 
 @dataclass

@@ -32,7 +32,7 @@ from pvt.displays import (
     StatefulPlotView2D,
 )
 from pvt.qtmods import TrackbarConfig
-from pvt.decorators import add_callback_optimizations
+from pvt.decorators import use_parameter_cache
 
 
 # STANDARD IMPORTS
@@ -82,14 +82,30 @@ def demo_image_viewer():
     img_test = resize_by_ratio(img_test, 10)
     noise_image = np.random.randn(*(img_test.shape)).astype(np.int8)  # pyright: ignore
 
-    def callback_0(rho, sigma, **_):
+    # todo: we can probably remove the requirement for kwargs with a little
+    # extra designing. of course that comes with a perf cost, but we can decide
+    # on that later.
+    def callback_a(rho, sigma, **_):
         resized = resize_by_ratio(img_test, rho)
         noise_slice = noise_image[: resized.shape[0], : resized.shape[1]]
         result = resized + (noise_slice * sigma)
         return result
 
-    @add_callback_optimizations(track_parameters_include=["sigma"])
-    def callback_1(sigma, **_):
+    # the default config for this decorator is to whitelist all **named**
+    # parameters. Regardless of the configuration options applied, it will
+    # always exclude positional parameters (*args), and exclude keyword
+    # parameters (**kwargs). Per the design of this library, only kwargs is
+    # acceptable and it's only purpose in these callback functions is to house
+    # arguments used by other arguments in the same context that this specific
+    # callback function doesn't care for. In this example, `rho` will be in the
+    # **kwargs dict since this function does not directly specify it as a named
+    # parameter. remember in this library, kwargs is a way of ignoring
+    # unnecessary arguments provided by the execution engine.
+    #
+    # based on the comments above, an equivalent decorator config would be
+    # @use_parameter_cache(whitelist=["sigma"])
+    @use_parameter_cache
+    def callback_b(sigma, **_):
         noise_slice = noise_image[: img_test_small.shape[0], : img_test_small.shape[1]]
         result = img_test_small + (noise_slice * sigma)
         return result
@@ -100,9 +116,9 @@ def demo_image_viewer():
 
     trackbar_rho = StatefulTrackbar(key="rho", config=TrackbarConfig(start=0.001, stop=1, step=0.001, init=0.5))
     trackbar_sigma = StatefulTrackbar("sigma", TrackbarConfig(0, 100, 2))
-    ip_a = StatefulImageView(callback_0, title="resized image")
+    ip_a = StatefulImageView(callback_a, title="resized image")
     ip_b = StatefulImageView(
-        callback_1,
+        callback_b,
         config=ImageViewConfig(border_color="red", autoRange=False),
         title="small image for perf",
     )
@@ -140,19 +156,36 @@ def demo_static_image_viewer():
 
     img_test = norm_uint8(cv2.imread("sample-media/checkboard_non_planar.png"))
 
-    @add_callback_optimizations(track_parameters_exclude="all")
+    @use_parameter_cache(blacklist="all")
     def callback(**_):
         return img_test
 
     app = App(title="Example: Static Images")
     trackbar_sigma = StatefulTrackbar("sigma", TrackbarConfig(0, 100, 2))
-    ip_b = StatefulImageView(callback, config=ImageViewConfig())
+    ip = StatefulImageView(callback, config=ImageViewConfig())
 
     # IMPORTANT: add all display and control elements to a context so they can communicate
     # this helper function also creates a mosaic (grid-like) layout of the widgets
-    context = VisualizerContext.create_viewer_from_mosaic([[ip_b], [trackbar_sigma]])
+    context = VisualizerContext.create_viewer_from_mosaic(
+        [
+            [ip],
+            [trackbar_sigma],
+        ],
+    )
     app.add_panes(context)
     app.run()
+
+
+# todo: need to add a demo showing how use_parameter_cache(blacklist="animation_tick")
+# can be used to force a data display to ignore animation tick updates. this is
+# useful when only one display requires an animation and the others should
+# ignore it. though, I suppose we could also just use the default whitelist all
+# for a function that doesn't name animation tick as a parameter.
+#
+# really starting to get into the land of hiding complexities away from the
+# user. not sure if that's something I entirely want. while they may want to
+# not know about the shared state, that invites them to assume many behaviors
+# about the engine which may or may not be true.
 
 
 # An example to showcase various plotting features

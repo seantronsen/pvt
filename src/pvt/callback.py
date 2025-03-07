@@ -4,25 +4,25 @@ from typing import Any, Callable
 import functools
 
 
-@dataclass
-class CallbackConfig:
-    class CacheType(Enum):
-        Fake = 0
-
-    cached_parameters: tuple[str, ...] = tuple()
-    cache_type_for_parameters: CacheType | None = None
-
-
 class Callback:
     """
     Users should not be creating this class directly. Use one of the decorators
     provided by this library instead.
     """
 
-    def __init__(self, func: Callable[..., Any], config: CallbackConfig = CallbackConfig()) -> None:
+    @dataclass
+    class Config:
+        class CacheType(Enum):
+            Fake = 0
+
+        cache_type: CacheType | None = None
+        cached_parameters: tuple[str, ...] = tuple()
+
+    def __init__(self, func: Callable[..., Any], config: Config = Config()) -> None:
         self._func = func
         self._config = config
         self._parameter_cache: dict[str, object] = {p: None for p in self._config.cached_parameters}
+
         functools.update_wrapper(wrapper=self, wrapped=func)
 
     def __call__(self, *args: Any, **kwds: Any) -> Any:
@@ -44,7 +44,7 @@ class Callback:
 
         # forbidden bullshit can be useful sometimes
         self.should_run = lambda *a, **k: True
-        if self._config.cache_type_for_parameters:
+        if self._config.cache_type == Callback.Config.CacheType.Fake:
             self.should_run = self._should_run
 
         # always compute and render the first frame at the very least
