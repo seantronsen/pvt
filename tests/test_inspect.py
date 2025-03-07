@@ -1,6 +1,5 @@
 # valid as of commit: #79a129f
 from functools import lru_cache
-import pytest
 import inspect
 from pytest_benchmark.fixture import BenchmarkFixture
 
@@ -236,20 +235,3 @@ class TestBenchmark_CachedFindNamedArgs:
     def test_fake_method_named_args_and_star_args_and_kwargs(self, benchmark: BenchmarkFixture):
         faker = Fake()
         benchmark(lru_cache(maxsize=None)(find_named_args), faker.method_named_args_and_star_args_and_kwargs)
-
-
-#
-# def test_callback_engine_experimental_single(qtbot: QtBot, benchmark: BenchmarkFixture):
-#
-#     display = MockExperimentalStatefulDisplay()
-#     control = MockExperimentalStatefulControl()
-#     context = MockExperimentalVisContext.create_viewer_with_vertical_layout([display, control])
-#
-#     for _ in range(N_WARMUPS):
-#         control.complain()
-#
-#     assert display.render_call_counter != 0
-#     n_total = display.render_call_counter
-#     benchmark(control.complain)
-#     assert display.render_call_counter > n_total
-#

@@ -15,9 +15,10 @@ class VisualizerControlSignal:
         signal. If the callback the user provides to a display widget has a
         parameter which shares the same name as this key, it will automatically
         receive the updated value when the control's state changes (a slider
-        slides). 
+        slides).
     :param value: the new state value
     """
+
     key: str
     value: object
 
@@ -30,7 +31,7 @@ class VisualizerState(QObject):
     """
     An abstract collection of state created using simple python dictionaries.
     Changes in state trigger the emission of a Qt signal which passes the
-    current state to callbacks defined by subscribers. 
+    current state to callbacks defined by subscribers.
 
     Links the behaviors between control widgets and data display panes.
     """
@@ -39,18 +40,12 @@ class VisualizerState(QObject):
 
     def __init__(self) -> None:
         super().__init__()
-        self.__storage: dict[str, object] = dict()
-
-    def __getitem__(self, key: str):
-        return self.__storage.get(key)
-
-    def __setitem__(self, key: str, value: object):
-        self.__storage[key] = value
+        self._storage: dict[str, object] = dict()
 
     @Slot(VisualizerControlSignal)
     def modify_state(self, arg: VisualizerControlSignal):
-        self.__storage[arg.key] = arg.value
-        self.state_changed.emit(self.__storage)
+        self._storage[arg.key] = arg.value
+        self.state_changed.emit(self._storage)
 
     def flush(self):
-        self.state_changed.emit(self.__storage)
+        self.state_changed.emit(self._storage)

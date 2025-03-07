@@ -41,7 +41,7 @@ environment: ${CONDA_ENV_FILE}
 ##################################################
 .PHONY: test benchmark
 test:
-	pytest -n auto --benchmark-disable
+	pytest -n auto --benchmark-disable -vvv
 
 
 # pytest-benchmark is our typical use case, but too many things need to be
