@@ -1,5 +1,6 @@
+import time
 from PySide6.QtCore import QTimer, Signal, Slot
-from PySide6.QtWidgets import QGridLayout, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QGridLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 from abc import abstractmethod
 from dataclasses import dataclass
 from pvt.decorators import perflog
@@ -157,7 +158,12 @@ class StatefulAnimator(StatefulControl):
     includes other dynamic behaviors).
     """
 
-    def __init__(self, ups: float, auto_start: bool = False) -> None:
+    def __init__(
+        self,
+        ups: float,
+        auto_start: bool = False,
+        show_ups_info: bool = False,
+    ) -> None:
         """
         :param ups: desired maximum number of updates per second (animation
             ticks per second)
@@ -168,10 +174,8 @@ class StatefulAnimator(StatefulControl):
         assert ups > 0
 
         self._animation_tick = np.uint64(0)
+        self._time_of_previous_render = 0
         self._tick_time = int(round(1e3 / ups))
-
-        self._timer = QTimer()
-        self._timer.timeout.connect(self.on_tick)
 
         super().__init__(key="animation_tick", initial_value=self._animation_tick)
 
@@ -203,15 +207,40 @@ class StatefulAnimator(StatefulControl):
         self._add_widget(self.b_toggle)
         self._add_widget(self.b_one_forward)
 
+        self.on_tick = self._on_tick
+
+        if show_ups_info:
+            self._w_label_ups = QLabel()
+            layout_current = cast(QGridLayout, self.layout())
+            layout_current.addWidget(self._w_label_ups, 1, 2, 1, 1)
+            self.on_tick = self._on_tick_w_ups_diagnostics
+
+        self._timer = QTimer(self)
+        self._timer.timeout.connect(self.on_tick)
         if auto_start:
             self._timer.start(self._tick_time)
 
     def value(self) -> object:
         return self._animation_tick
 
-    def on_tick(self):
+    def on_tick(self): ...
+
+    def _on_tick(self):
         self._animation_tick += np.uintp(1)
         self._on_change()
+
+    def _on_tick_w_ups_diagnostics(self):
+        # minimal perf capture
+        tstart = time.perf_counter_ns()
+        self._on_tick()
+        tstop = time.perf_counter_ns()
+
+        # update diagnostic label
+        ups_current = 1.0 / ((tstop - self._time_of_previous_render) / 1e9)
+        ups_max = 1.0 / ((tstop - tstart) / 1e9)
+        content = f"Approx. UPS: {ups_current: 05.01f} Max Possible UPS: {ups_max:05.01f}"
+        self._w_label_ups.setText(content)
+        self._time_of_previous_render = tstop
 
     def forward(self):
         self._animation_tick += 1
@@ -233,4 +262,4 @@ class StatefulAnimator(StatefulControl):
 
     def _add_widget(self, w: QWidget):
         layout = cast(QGridLayout, self.layout())
-        layout.addWidget(w, 1, layout.columnCount() + 1, 1, 1)
+        layout.addWidget(w, 2, layout.columnCount() + 1, 1, 1)
