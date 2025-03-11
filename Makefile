@@ -41,7 +41,7 @@ environment: ${CONDA_ENV_FILE}
 ##################################################
 .PHONY: test benchmark
 test:
-	pytest -n auto --benchmark-disable -vvv
+	pytest -vvv -n 8 --benchmark-disable 
 
 
 # pytest-benchmark is our typical use case, but too many things need to be
@@ -55,8 +55,13 @@ test:
 benchmark:
 	echo "error: benchmarks need to be reconfigured..."
 	exit 1
-	# pytest # currently segfaults.
-	#
 
-benchmark-experimental:
-	pytest -vvv ./tests/experimental
+define benchmark-common-args
+		-vvv --benchmark-verbose  --benchmark-name=long  --benchmark-group-by=fullname
+endef
+
+benchmark-and-save:
+	pytest tests/controls/ $(benchmark-common-args) --benchmark-autosave --benchmark-save-data
+
+benchmark-compare:
+	pytest tests/controls/ $(benchmark-common-args) --benchmark-compare
