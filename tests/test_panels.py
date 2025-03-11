@@ -1,7 +1,7 @@
+from PySide6.QtWidgets import QHBoxLayout, QWidget
+from pvt.context import VisualizerContext
+from pvt.controls import StatefulAnimator
 from pytest import fixture, raises
-from pvt.panels import BasePlot2DPane, ImagePane, Plot2DLinePane, Plot2DScatterPane, Plot3DPane, StatefulPane
-from pvt.widgets import ParameterTrackbar
-import numpy as np
 
 
 class TestStatefulPane:
