@@ -256,7 +256,7 @@ def demo_plot_viewer():
     # function the current tick value of the animation timer. This can be
     # paired up with modulo arithmetic (% operator) to loop over data sequences
     # or modify the output as "time" moves forward.
-    animator = StatefulAnimator(ups=60, auto_start=True)
+    animator = StatefulAnimator(ups=60, auto_start=True, show_ups_info=True)
 
     # Scatter panes are another feature provided by the current version of the
     # library. Like line plots, color maps can be specified here as well. In
