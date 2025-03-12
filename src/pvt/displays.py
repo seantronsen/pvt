@@ -11,6 +11,7 @@ from pyqtgraph.colormap import ColorMap
 from typing import Any, Callable, cast
 import pyqtgraph as pg
 
+import time
 
 class StatefulDisplay(QWidget):
     """
@@ -107,6 +108,32 @@ def _colors_from_cmap(cmap: ColorMap, ncolors: int):
     return result
 
 
+def instrument_paint_events(widget):
+    """
+    Recursively wraps the paintEvent method of every QWidget in the widget's hierarchy.
+    The new paintEvent logs the widget's class name before calling the original paintEvent.
+    """
+    if not isinstance(widget, QWidget):
+        return
+
+    if getattr(widget, '_paint_instrumented', False):
+        return
+
+    widget._paint_instrumented = True # pyright: ignore
+    original_paint_event = widget.paintEvent
+    def new_paint_event(event, orig=original_paint_event, widget=widget):
+        start = time.perf_counter()
+        orig(event)
+        elapsed = time.perf_counter() - start
+        print(f"paintEvent for {widget.__class__.__module__}.{widget.__class__.__name__} took {elapsed * 1000:.2f} ms")
+    
+    widget.paintEvent = new_paint_event
+
+    # recurse
+    for child in widget.findChildren(QWidget):
+        instrument_paint_events(child)
+
+
 @dataclass
 class ImageViewConfig:
     autoRange: bool = True
@@ -151,9 +178,11 @@ class StatefulImageView(StatefulDisplay):
         super().__init__(callback, title=title)
         self._config = config
         self.displaypane = pg.ImageView()
+        # profile(self.displaypane.setImage)
         self.displaypane.layout().setContentsMargins(0, 0, 0, 0)  # pyright: ignore
         self.displaypane.layout().setSpacing(0)  # pyright: ignore
         self._add_widget(self.displaypane)
+        instrument_paint_events(self.displaypane)
         if self._config.border_color is not None:
             self.displaypane.imageItem.setBorder(self._config.border_color)
 

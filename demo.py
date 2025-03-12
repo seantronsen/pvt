@@ -186,7 +186,6 @@ def test_rgb_image_render_speed():
     # img_test = cv2.cvtColor(img_test, cv2.COLOR_BGR2RGB)
 
     def callback(**_):
-        print(img_test.shape)
         return img_test
 
     app = App(title="Test RGB Render Speed")
