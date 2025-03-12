@@ -14,6 +14,13 @@ remains quite functional, frequent changes should be expected when tracking the
 `main` branch. For this reason, the developer(s) recommend tracking one of the
 release tags for a more stable experience.
 
+**this document is hilariously out of date**
+
+**for development specific to pyqtgraph optimiations or profiling, one must
+clone down the repository for pyqtgraph and checkout the version tag used by
+this library. From there, an editable install must be performed using
+`pip -e <path/to/local/pyqtgraph>`**
+
 ## Installation
 
 1. Review the requirements and suggestions below.
@@ -23,28 +30,29 @@ release tags for a more stable experience.
 5. Run `make install-dev` to install this package into the virtual environment,
    enabling use in any project.
 6. Mess around with the demo: `python demo.py`.
-7. Mess around with `pyqtgraph`'s demos: `python -c "import pvt; pvt.run_pyqtgraph_examples()"`
+7. Mess around with `pyqtgraph`'s demos:
+   `python -c "import pvt; pvt.run_pyqtgraph_examples()"`
 
 ## Visualization Workflow
 
 1. Create an application instance (e.g. `VisionViewer`) as a QtApplication
    instance must exist before instantiating any widgets.
 
-2. Create all control widgets. Provide all instances with a key which will
-   later be used to reference a unique element in the application state.
-   Interacting with the widget will cause any subscribing display panes to be
-   updated. Note that subscription occurs automatically when data and control
-   panes are added to the viewer instance.
+2. Create all control widgets. Provide all instances with a key which will later
+   be used to reference a unique element in the application state. Interacting
+   with the widget will cause any subscribing display panes to be updated. Note
+   that subscription occurs automatically when data and control panes are added
+   to the viewer instance.
 
-3. Create all display panes (e.g. `ImagePane`), passing each a callback
-   function to generate new frames for display. To make use of the application
-   state, the arguments of the callback must share the same names as the key
-   values provided to the control widgets created in step 2. Note the order of
-   defined arguments doesn't matter nor do all possible arguments need to be
-   specified if the function declares a `**kwargs` parameter. If there is no
-   need to update the display, specify a default callback which performs no
-   processing and merely returns the data to be displayed. Detailed examples
-   are provided in the `demo.py` file.
+3. Create all display panes (e.g. `ImagePane`), passing each a callback function
+   to generate new frames for display. To make use of the application state, the
+   arguments of the callback must share the same names as the key values
+   provided to the control widgets created in step 2. Note the order of defined
+   arguments doesn't matter nor do all possible arguments need to be specified
+   if the function declares a `**kwargs` parameter. If there is no need to
+   update the display, specify a default callback which performs no processing
+   and merely returns the data to be displayed. Detailed examples are provided
+   in the `demo.py` file.
 
 4. Add all panes to the viewer instance and execute the `run` method.
 
@@ -67,7 +75,8 @@ Should work out of the box without any issues.
 
 **MacOS Users**
 
-- A Qt installation: MacOS uses cocoa and metal by default (jeers and boos allowed).
+- A Qt installation: MacOS uses cocoa and metal by default (jeers and boos
+  allowed).
 
 ```bash
 
@@ -101,24 +110,22 @@ own and want to share the solution with others.
 
 - **`pyopengl-accelerate` compilation failure**: Although this is a helpful
   package which increases the performance of the OpenGL implementation for
-  Python, there is no hard requirement for it to be installed. If you're
-  working with a version that either has diverged from the main branch or an
-  older version of the codebase, remove the requirement from the
-  `pyproject.toml` file and the installation should proceed without any further
-  errors.
+  Python, there is no hard requirement for it to be installed. If you're working
+  with a version that either has diverged from the main branch or an older
+  version of the codebase, remove the requirement from the `pyproject.toml` file
+  and the installation should proceed without any further errors.
 
 - **Issues and Debugging**: Begin your debugging process by installing this
-  package into a fresh `conda` environment enabled with `python==3.9` as this
-  is the version used for development. From here, test out the implementations
+  package into a fresh `conda` environment enabled with `python==3.9` as this is
+  the version used for development. From here, test out the implementations
   provided in `demo.py`. If the demos run appropriate with this set up, an
   incompatibility exists in your target environment. Based on past experience,
   this typically occurs from an ambiguous reference to multiple Qt libraries.
 
-- **GitHub Issues**: If all else fails, don't hesitate to browse through
-  current and past GitHub issues to see if anyone else has found the same
-  problem (and potentially a solution). If there's nothing useful to be found,
-  don't hesitate to open a new issue and so we work though the problem
-  together.
+- **GitHub Issues**: If all else fails, don't hesitate to browse through current
+  and past GitHub issues to see if anyone else has found the same problem (and
+  potentially a solution). If there's nothing useful to be found, don't hesitate
+  to open a new issue and so we work though the problem together.
 
 ## Acknowledgements
 
