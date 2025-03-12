@@ -176,6 +176,33 @@ def demo_static_image_viewer():
     app.run()
 
 
+def test_rgb_image_render_speed():
+
+    img_test = norm_uint8(cv2.imread("sample-media/checkboard_non_planar.png"))
+    # img_test = cv2.applyColorMap(img_test, colormap=cv2.COLORMAP_MAGMA)
+    img_test = cv2.GaussianBlur(img_test, ksize=(17, 17), sigmaX=9, sigmaY=9)
+    img_test = resize_by_ratio(img_test, ratio=30)
+    img_test = cv2.cvtColor(img_test, cv2.COLOR_BGR2GRAY)
+    # img_test = cv2.cvtColor(img_test, cv2.COLOR_BGR2RGB)
+
+    def callback(**_):
+        print(img_test.shape)
+        return img_test
+
+    app = App(title="Test RGB Render Speed")
+    animator = StatefulAnimator(ups=120, auto_start=True, show_ups_info=True)
+    ip = StatefulImageView(callback, config=ImageViewConfig())
+
+    context = VisualizerContext.create_viewer_from_mosaic(
+        [
+            [ip],
+            [animator],
+        ],
+    )
+    app.add_panes(context)
+    app.run()
+
+
 # todo: need to add a demo showing how use_parameter_cache(blacklist="animation_tick")
 # can be used to force a data display to ignore animation tick updates. this is
 # useful when only one display requires an animation and the others should
