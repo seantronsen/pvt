@@ -9,8 +9,9 @@ requires-python = ">=3.12"
 classifiers = ["Programming Language :: Python :: 3.12"]
 
 dependencies = [
-  "numpy==2.*",
   "opencv-contrib-python-headless==4.11.*",
+  "numpy==2.*",
+  "numba",
   "pyside6==6.*",
   "pyqtgraph==0.13.*",
 ]
@@ -40,7 +41,7 @@ skip-string-normalization = true
 [tool.pyright]
 include = ["src", "tests"]
 exclude = ["**/node_modules", "**/__pycache__", "**.tar", "**.gz"]
-extraPaths = [""]
+extraPaths = ["../pyqtgraph"]
 stubPath = "typings"
 defineConstant = { DEBUG = true }
 reportMissingImports = true

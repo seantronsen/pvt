@@ -4,7 +4,10 @@
 
 import pyqtgraph as pg
 
-pg.setConfigOption('imageAxisOrder', 'row-major')  # best performance
+# todo: consider adding something for cupy at a later date to take advantage of
+# GPU computations
+# configuration for best performance
+pg.setConfigOptions(imageAxisOrder='row-major', useNumba=True)
 
 
 def run_pyqtgraph_examples():
