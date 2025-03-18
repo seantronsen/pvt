@@ -29,6 +29,7 @@ from pvt.displays import (
     PlotDataScatter,
     PlotView2DConfig,
     StatefulImageView,
+    StatefulImageViewFaster,
     StatefulPlotView2D,
 )
 from pvt.qtmods import TrackbarConfig
@@ -178,19 +179,19 @@ def demo_static_image_viewer():
 
 def test_rgb_image_render_speed():
 
-    img_test = norm_uint8(cv2.imread("sample-media/checkboard_non_planar.png"))
-    # img_test = cv2.applyColorMap(img_test, colormap=cv2.COLORMAP_MAGMA)
+    img_test = norm_uint8(cv2.imread("sample-media/checkboard_non_planar.png", cv2.IMREAD_GRAYSCALE))
+    img_test = cv2.applyColorMap(img_test, colormap=cv2.COLORMAP_MAGMA)
     img_test = cv2.GaussianBlur(img_test, ksize=(17, 17), sigmaX=9, sigmaY=9)
     img_test = resize_by_ratio(img_test, ratio=30)
-    img_test = cv2.cvtColor(img_test, cv2.COLOR_BGR2GRAY)
-    # img_test = cv2.cvtColor(img_test, cv2.COLOR_BGR2RGB)
+    img_test = np.asarray(cv2.cvtColor(img_test, cv2.COLOR_BGR2RGB), dtype=np.uint8)
 
     def callback(**_):
         return img_test
 
     app = App(title="Test RGB Render Speed")
     animator = StatefulAnimator(ups=120, auto_start=True, show_ups_info=True)
-    ip = StatefulImageView(callback, config=ImageViewConfig())
+    # ip = StatefulImageView(callback, config=ImageViewConfig())
+    ip = StatefulImageViewFaster(callback, config=ImageViewConfig())
 
     context = VisualizerContext.create_viewer_from_mosaic(
         [

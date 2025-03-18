@@ -6,12 +6,13 @@ from numpy.typing import NDArray
 from pvt.callback import Callback
 from pvt.decorators import perflog
 from pvt.identifier import IdManager
-from pyqtgraph import GraphicsLayoutWidget, PlotDataItem, PlotItem
+from pyqtgraph import GraphicsLayoutWidget, GraphicsView, ImageItem, PlotDataItem, PlotItem, ViewBox
 from pyqtgraph.colormap import ColorMap
 from typing import Any, Callable, cast
 import pyqtgraph as pg
 
 import time
+
 
 class StatefulDisplay(QWidget):
     """
@@ -119,14 +120,15 @@ def instrument_paint_events(widget):
     if getattr(widget, '_paint_instrumented', False):
         return
 
-    widget._paint_instrumented = True # pyright: ignore
+    widget._paint_instrumented = True  # pyright: ignore
     original_paint_event = widget.paintEvent
+
     def new_paint_event(event, orig=original_paint_event, widget=widget):
         start = time.perf_counter()
         orig(event)
         elapsed = time.perf_counter() - start
         print(f"paintEvent for {widget.__class__.__module__}.{widget.__class__.__name__} took {elapsed * 1000:.2f} ms")
-    
+
     widget.paintEvent = new_paint_event
 
     # recurse
@@ -178,7 +180,6 @@ class StatefulImageView(StatefulDisplay):
         super().__init__(callback, title=title)
         self._config = config
         self.displaypane = pg.ImageView()
-        # profile(self.displaypane.setImage)
         self.displaypane.layout().setContentsMargins(0, 0, 0, 0)  # pyright: ignore
         self.displaypane.layout().setSpacing(0)  # pyright: ignore
         self._add_widget(self.displaypane)
@@ -193,6 +194,38 @@ class StatefulImageView(StatefulDisplay):
             autoRange=self._config.autoRange,
             autoLevels=self._config.autoLevels,
             autoHistogramRange=self._config.autoHistogramRange,
+        )
+
+
+class StatefulImageViewFaster(StatefulDisplay):
+
+    def __init__(
+        self,
+        callback: Callable[..., object],
+        title: str | None = None,
+        config: ImageViewConfig = ImageViewConfig(),
+    ) -> None:
+        super().__init__(callback, title=title)
+        self._config = config
+        gv = GraphicsView()
+        vb = ViewBox()
+        ii = ImageItem()
+
+        gv.setCentralItem(vb)
+        vb.setAspectLocked()
+        vb.addItem(ii)
+        self._add_widget(gv)
+        self.ii = ii
+        instrument_paint_events(gv)
+
+    def _render_data(self, *args: Any):
+        image: NDArray[Any] = args[0]
+        self.ii.setImage(
+            image,
+            # autoRange=False,
+            # autoLevels=False,
+            # autoHistogramRange=False,
+            # autoLevels=True, # this is the fucking culprit... all this time.
         )
 
 
