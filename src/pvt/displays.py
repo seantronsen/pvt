@@ -222,9 +222,7 @@ class StatefulImageViewFaster(StatefulDisplay):
         image: NDArray[Any] = args[0]
         self.ii.setImage(
             image,
-            # autoRange=False,
-            # autoLevels=False,
-            # autoHistogramRange=False,
+            autoLevels=False,
             # autoLevels=True, # this is the fucking culprit... all this time.
         )
 
