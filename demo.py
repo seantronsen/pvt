@@ -24,12 +24,11 @@ from pvt.app import App
 from pvt.context import VisualizerContext
 from pvt.controls import StatefulAnimator, StatefulTrackbar
 from pvt.displays import (
-    ImageViewConfig,
     PlotDataLine,
     PlotDataScatter,
     PlotView2DConfig,
     StatefulImageView,
-    StatefulImageViewFaster,
+    StatefulImageViewLightweight,
     StatefulPlotView2D,
 )
 from pvt.qtmods import TrackbarConfig
@@ -163,7 +162,7 @@ def demo_static_image_viewer():
 
     app = App(title="Example: Static Images")
     trackbar_sigma = StatefulTrackbar("sigma", TrackbarConfig(0, 100, 2))
-    ip = StatefulImageView(callback, config=ImageViewConfig())
+    ip = StatefulImageView(callback, config=StatefulImageView.Config())
 
     # IMPORTANT: add all display and control elements to a context so they can communicate
     # this helper function also creates a mosaic (grid-like) layout of the widgets
@@ -183,23 +182,19 @@ def test_rgb_image_render_speed():
     img_test = cv2.applyColorMap(img_test, colormap=cv2.COLORMAP_MAGMA)
     img_test = cv2.GaussianBlur(img_test, ksize=(17, 17), sigmaX=9, sigmaY=9)
     img_test = resize_by_ratio(img_test, ratio=30)
-    # img_test = img_test.max(axis=-1)
     img_test = np.asarray(cv2.cvtColor(img_test, cv2.COLOR_BGR2RGB), dtype=np.uint8)
 
     def callback(**_):
         return img_test
 
     app = App(title="Test RGB Render Speed")
-    animator = StatefulAnimator(ups=120, auto_start=True, show_ups_info=True)
-    ip = StatefulImageView(callback, config=ImageViewConfig(autoHistogramRange=False, autoLevels=False, autoRange=False))
-    # ip = StatefulImageViewFaster(callback, config=ImageViewConfig())
-
-    context = VisualizerContext.create_viewer_from_mosaic(
-        [
-            [ip],
-            [animator],
-        ],
+    animator = StatefulAnimator(ups=240, auto_start=True, show_ups_info=True)
+    ip = StatefulImageViewLightweight(
+        callback,
+        config=StatefulImageViewLightweight.Config(border_color="red"),
     )
+
+    context = VisualizerContext.create_viewer_from_mosaic([[ip], [animator]])
     app.add_panes(context)
     app.run()
 

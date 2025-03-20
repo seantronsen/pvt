@@ -137,10 +137,8 @@ def instrument_paint_events(widget):
 
 
 @dataclass
-class ImageViewConfig:
-    autoRange: bool = True
-    autoLevels: bool = True
-    autoHistogramRange: bool = True
+class _ImageViewConfigBase:
+    on_render_reset_viewport: bool = True
     border_color: str | None = None
 
 
@@ -156,13 +154,16 @@ class StatefulImageView(StatefulDisplay):
     u8 uint8 uchar, etc.).
     """
 
-    displaypane: pg.ImageView
+    @dataclass
+    class Config(_ImageViewConfigBase):
+        on_render_rescale_intensity: bool = True
+        on_render_reset_histogram_range: bool = True
 
     def __init__(
         self,
         callback: Callable[..., object],
         title: str | None = None,
-        config: ImageViewConfig = ImageViewConfig(),
+        config: Config = Config(),
     ) -> None:
         """
         Initialize an instance of the class.
@@ -183,47 +184,78 @@ class StatefulImageView(StatefulDisplay):
         self.displaypane.layout().setContentsMargins(0, 0, 0, 0)  # pyright: ignore
         self.displaypane.layout().setSpacing(0)  # pyright: ignore
         self._add_widget(self.displaypane)
-        instrument_paint_events(self.displaypane)
         if self._config.border_color is not None:
             self.displaypane.imageItem.setBorder(self._config.border_color)
 
+        # instrument_paint_events(self.displaypane)
+
     def _render_data(self, *args: Any):
-        image: NDArray[Any] = args[0]
         self.displaypane.setImage(
-            image,
-            autoRange=self._config.autoRange,
-            autoLevels=self._config.autoLevels,
-            autoHistogramRange=self._config.autoHistogramRange,
+            args[0],
+            autoRange=self._config.on_render_reset_viewport,
+            autoLevels=self._config.on_render_rescale_intensity,
+            autoHistogramRange=self._config.on_render_reset_histogram_range,
         )
 
 
-class StatefulImageViewFaster(StatefulDisplay):
+class StatefulImageViewLightweight(StatefulDisplay):
+    """
+    This widget is the lightweight variant of the standard image view and only
+    supports ndarray images with dtype=np.uint8. It assumes that any image data
+    provided is already within the [0, 255] range and scaled as desired within
+    that range. In other words, fancier features like input data type
+    flexibility and live intensity rescaling are left to the developer/user to
+    implement.
+
+    In exchange, the widget minimizes rendering overhead—-a cost that can
+    increase significantly with image size. The primary purpose of this
+    implementation is to facilitate fast rendering of large RGB images.
+    PyQtGraph is highly optimized for single-channel image visualization, which
+    allows the standard image view widget to include a wide range of features
+    while still delivering high render speeds regardless of image dimensions.
+    One key optimization is offloading certain tasks directly to Qt.
+
+    For single-channel grayscale images, when the user modifies the intensity
+    histogram, PyQtGraph generates a lookup table (LUT) and passes both the
+    image and the LUT to Qt. For images that are not single-channel ubytes, the
+    most computationally expensive step is rescaling the image to the desired
+    range. Even if auto-level adjustments are disabled, the default behavior of
+    the histogram LUT widget still incurs this cost by setting the image-view
+    levels.
+
+    See `pyqtgraph.functions_qtimage._combine_levels_and_lut` for additional
+    details on the rendering costs involved.
+    """
+
+    @dataclass
+    class Config(_ImageViewConfigBase): ...
 
     def __init__(
         self,
         callback: Callable[..., object],
         title: str | None = None,
-        config: ImageViewConfig = ImageViewConfig(),
+        config: Config = Config(),
     ) -> None:
         super().__init__(callback, title=title)
         self._config = config
-        gv = GraphicsView()
-        vb = ViewBox()
-        ii = ImageItem()
+        self.ii = ImageItem()
+        if self._config.border_color is not None:
+            self.ii.setBorder(self._config.border_color)
 
-        gv.setCentralItem(vb)
+        gv, vb = GraphicsView(), ViewBox()
+        vb.addItem(self.ii)
         vb.setAspectLocked()
-        vb.addItem(ii)
+        gv.setCentralItem(vb)
+
         self._add_widget(gv)
-        self.ii = ii
+
         instrument_paint_events(gv)
 
     def _render_data(self, *args: Any):
-        image: NDArray[Any] = args[0]
         self.ii.setImage(
-            image,
-            autoLevels=False,
-            # autoLevels=True, # this is the fucking culprit... all this time.
+            args[0],
+            autoLevels=False,  # enabling this will make rgb renders extremely slow
+            levels=None,  # assigning levels does the same thing, because it rescales your data to that range
         )
 
 
