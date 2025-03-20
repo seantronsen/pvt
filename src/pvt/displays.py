@@ -260,67 +260,7 @@ class StatefulImageViewLightweight(StatefulDisplay):
 
 
 @dataclass
-class PlotView2DConfig:
-    """
-    Configuration for a 2D plot view.
-
-    Attributes
-    ----------
-    background_color : str
-        Background color for the plot. Defaults to "black".
-    auto_colors_cmap : str
-        Name of the colormap used for generating automatic colors.
-        Accepts any valid matplotlib colormap name if matplotlib is present in
-        the environment. Defaults to "CET-C7s".
-    auto_colors_nunique : int
-        Number of unique colors to generate before repeating the color sequence.
-        Colors are sampled equidistantly from the colormap gradient. Defaults to 9.
-    log_scale_x : bool
-        If True, the x-axis is displayed on a logarithmic scale. Defaults to False.
-    log_scale_y : bool
-        If True, the y-axis is displayed on a logarithmic scale. Defaults to False.
-    gridlines_x : bool
-        If True, grid lines are shown along the x-axis. Defaults to False.
-    gridlines_y : bool
-        If True, grid lines are shown along the y-axis. Defaults to False.
-    title : str or None
-        Title of the plot. Defaults to None.
-    label_x : str or None
-        Optional label to add to the x-axis
-    label_y : str or None
-        Optional label to add to the y-axis
-    legend : bool
-        If True, the plot legend is displayed. Defaults to False.
-    optimization_fixed_data_order : bool
-        If True, the tool assumes the data callback always returns the same number of items in a fixed order,
-        enabling reuse of existing plot components and achieving up to 10x faster performance.
-        If False, the canvas is cleared and repopulated with new data on each frame, which is significantly slower.
-        Defaults to True.
-    """
-
-    # colors
-    background_color: str = "black"
-    auto_colors_cmap: str = "CET-C7s"
-    auto_colors_nunique: int = 9
-
-    # graph characteristics
-    log_scale_x: bool = False
-    log_scale_y: bool = False
-    gridlines_x: bool = False
-    gridlines_y: bool = False
-
-    # descriptors
-    title: str | None = None
-    legend: bool = False
-    label_x: str | None = None
-    label_y: str | None = None
-
-    # optimization settings
-    optimization_fixed_data_order: bool = True
-
-
-@dataclass
-class PlotDataBase:
+class _PlotDataBase:
     """
     Base data container for plot elements.
 
@@ -348,73 +288,6 @@ class PlotDataBase:
     name: str | None = None
 
 
-@dataclass
-class PlotDataScatter(PlotDataBase):
-    """
-    Data container for scatter plot elements. Extends PlotDataBase with
-    additional options specific to scatter plots.
-
-    Attributes
-    ----------
-    marker : str
-        Marker style used for the scatter plot. Defaults to "o".
-        (TODO: Provide a comprehensive list or reference to all available marker options.)
-    marker_size : int
-        Size of the marker. Defaults to 10.
-
-    Marker Options:
-        - 'o': circle (default)
-        - 's': square
-        - 't': triangle
-        - 'd': diamond
-        - '+': plus
-        - 't1': triangle pointing upwards
-        - 't2': triangle pointing right side
-        - 't3': triangle pointing left side
-        - 'p': pentagon
-        - 'h': hexagon
-        - 'star': star
-        - '|': vertical line
-        - '_': horizontal line
-        - 'x': cross
-        - 'arrow_up': arrow pointing up
-        - 'arrow_right': arrow pointing right
-        - 'arrow_down': arrow pointing down
-        - 'arrow_left': arrow pointing left
-        - 'crosshair': crosshair
-    """
-
-    marker: str = "o"  # TODO: NEEDS A LIST OF ALL OPTIONS
-    marker_size: int = 10
-
-
-@dataclass
-class PlotDataLine(PlotDataBase):
-    """
-    Data container for line plot elements. Extends PlotDataBase with additional
-    options specific to line plots.
-
-    Attributes
-    ----------
-    line_width : int
-        Width of the line. It is recommended to keep this value at 1 since
-        other values will decrease performance.
-    marker : str or None
-        Optional marker style to accentuate individual data points along the line.
-        When specified, it effectively combines scatter and line plot features. Defaults to None.
-    marker_size : int or None
-        Size of the marker if markers are enabled. Defaults to None.
-    marker_color : str or None
-        Color for the marker. If None and markers are enabled, the marker color defaults to the
-        value of the `color` attribute from the base class.
-    """
-
-    line_width: int = 1
-    marker: str | None = None
-    marker_size: int | None = None
-    marker_color: str | None = None
-
-
 class StatefulPlotView2D(StatefulDisplay):
     """
     The Base/Abstract class in which all 2D plotting panes are derived. The
@@ -423,11 +296,135 @@ class StatefulPlotView2D(StatefulDisplay):
     the future.
     """
 
+    @dataclass
+    class Config:
+        """
+        Configuration for a 2D plot view.
+
+        Attributes
+        ----------
+        background_color : str
+            Background color for the plot. Defaults to "black".
+        auto_colors_cmap : str
+            Name of the colormap used for generating automatic colors.
+            Accepts any valid matplotlib colormap name if matplotlib is present in
+            the environment. Defaults to "CET-C7s".
+        auto_colors_nunique : int
+            Number of unique colors to generate before repeating the color sequence.
+            Colors are sampled equidistantly from the colormap gradient. Defaults to 9.
+        log_scale_x : bool
+            If True, the x-axis is displayed on a logarithmic scale. Defaults to False.
+        log_scale_y : bool
+            If True, the y-axis is displayed on a logarithmic scale. Defaults to False.
+        gridlines_x : bool
+            If True, grid lines are shown along the x-axis. Defaults to False.
+        gridlines_y : bool
+            If True, grid lines are shown along the y-axis. Defaults to False.
+        title : str or None
+            Title of the plot. Defaults to None.
+        label_x : str or None
+            Optional label to add to the x-axis
+        label_y : str or None
+            Optional label to add to the y-axis
+        legend : bool
+            If True, the plot legend is displayed. Defaults to False.
+        optimization_fixed_data_order : bool
+            If True, the tool assumes the data callback always returns the same number of items in a fixed order,
+            enabling reuse of existing plot components and achieving up to 10x faster performance.
+            If False, the canvas is cleared and repopulated with new data on each frame, which is significantly slower.
+            Defaults to True.
+        """
+
+        # colors
+        background_color: str = "black"
+        auto_colors_cmap: str = "CET-C7s"
+        auto_colors_nunique: int = 9
+
+        # graph characteristics
+        log_scale_x: bool = False
+        log_scale_y: bool = False
+        gridlines_x: bool = False
+        gridlines_y: bool = False
+
+        # descriptors
+        title: str | None = None
+        legend: bool = False
+        label_x: str | None = None
+        label_y: str | None = None
+
+        # optimization settings
+        optimization_fixed_data_order: bool = True
+
+    @dataclass
+    class Scatter(_PlotDataBase):
+        """
+        Data container for scatter plot elements. Extends PlotDataBase with
+        additional options specific to scatter plots.
+
+        Attributes
+        ----------
+        marker : str
+            Marker style used for the scatter plot. Defaults to "o".
+            (TODO: Provide a comprehensive list or reference to all available marker options.)
+        marker_size : int
+            Size of the marker. Defaults to 10.
+
+        Marker Options:
+            - 'o': circle (default)
+            - 's': square
+            - 't': triangle
+            - 'd': diamond
+            - '+': plus
+            - 't1': triangle pointing upwards
+            - 't2': triangle pointing right side
+            - 't3': triangle pointing left side
+            - 'p': pentagon
+            - 'h': hexagon
+            - 'star': star
+            - '|': vertical line
+            - '_': horizontal line
+            - 'x': cross
+            - 'arrow_up': arrow pointing up
+            - 'arrow_right': arrow pointing right
+            - 'arrow_down': arrow pointing down
+            - 'arrow_left': arrow pointing left
+            - 'crosshair': crosshair
+        """
+
+        marker: str = "o"   
+        marker_size: int = 10
+
+    @dataclass
+    class Line(_PlotDataBase):
+        """
+        Data container for line plot elements. Extends PlotDataBase with additional
+        options specific to line plots.
+
+        Attributes
+        ----------
+        line_width : int
+            Width of the line. It is recommended to keep this value at 1 since
+            other values will decrease performance.
+        marker : str or None
+            Optional marker style to accentuate individual data points along the line.
+            When specified, it effectively combines scatter and line plot features. Defaults to None.
+        marker_size : int or None
+            Size of the marker if markers are enabled. Defaults to None.
+        marker_color : str or None
+            Color for the marker. If None and markers are enabled, the marker color defaults to the
+            value of the `color` attribute from the base class.
+        """
+
+        line_width: int = 1
+        marker: str | None = None
+        marker_size: int | None = None
+        marker_color: str | None = None
+
     def __init__(
         self,
         callback: Callable[..., object],
         title: str | None = None,
-        config: PlotView2DConfig = PlotView2DConfig(),
+        config: Config = Config(),
     ) -> None:
         super().__init__(callback=callback, title=title)
 
@@ -457,10 +454,10 @@ class StatefulPlotView2D(StatefulDisplay):
         # state
         self._curves: list[PlotDataItem] = []
 
-    def _render_data(self, *args: PlotDataLine | PlotDataScatter) -> None:
+    def _render_data(self, *args: list[Line | Scatter]) -> None:
 
         # try to be cheap if the optimization is enabled...
-        data_updates: list[PlotDataLine | PlotDataScatter] = args[0]  # pyright: ignore
+        data_updates: list[StatefulPlotView2D.Line | StatefulPlotView2D.Scatter] = args[0]
         if self._optim_fixed_data_order and len(data_updates) == len(self._curves):
             for data_new, plot_item in zip(data_updates, self._curves):
                 plot_item.setData(x=data_new.x, y=data_new.y)
@@ -479,13 +476,13 @@ class StatefulPlotView2D(StatefulDisplay):
             kargs: dict[str, object] = dict(x=data.x, y=data.y)
 
             # pen=None required to avoid drawing connecting lines
-            if isinstance(data, PlotDataScatter):
+            if isinstance(data, StatefulPlotView2D.Scatter):
                 kargs["symbol"] = data.marker
                 kargs["symbolSize"] = data.marker_size
                 kargs["symbolBrush"] = color_auto
                 self._curves.append(self._canvas.plot(pen=None, **kargs))
 
-            elif isinstance(data, PlotDataLine):
+            elif isinstance(data, StatefulPlotView2D.Line):
                 if data.marker:
                     kargs["symbol"] = data.marker
                     kargs["symbolSize"] = data.marker_size
