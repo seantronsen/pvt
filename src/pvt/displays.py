@@ -1,4 +1,3 @@
-from PySide6 import QtGui
 from PySide6.QtCore import Slot
 from PySide6.QtWidgets import QLabel, QSizePolicy, QVBoxLayout, QWidget
 from dataclasses import dataclass
@@ -6,12 +5,11 @@ from numpy.typing import NDArray
 from pvt.callback import Callback
 from pvt.decorators import perflog
 from pvt.identifier import IdManager
+from pvt.utils import colors_from_cmap
 from pyqtgraph import GraphicsLayoutWidget, GraphicsView, ImageItem, PlotDataItem, PlotItem, ViewBox
 from pyqtgraph.colormap import ColorMap
 from typing import Any, Callable, cast
 import pyqtgraph as pg
-
-import time
 
 
 class StatefulDisplay(QWidget):
@@ -95,47 +93,6 @@ class StatefulDisplay(QWidget):
         raise NotImplementedError
 
 
-def _colors_from_cmap(cmap: ColorMap, ncolors: int):
-    """
-    Return a list of QColor objects from the from the provided colormap.
-
-    :param cmap: ColorMap instance
-    :param ncolors: number of colors to return
-    :return: The list of QColor objects.
-    """
-    result: list[QtGui.QColor] = [
-        cmap.map(x / ncolors, mode=ColorMap.QCOLOR) for x in range(ncolors)
-    ]  # pyright: ignore
-    return result
-
-
-def instrument_paint_events(widget):
-    """
-    Recursively wraps the paintEvent method of every QWidget in the widget's hierarchy.
-    The new paintEvent logs the widget's class name before calling the original paintEvent.
-    """
-    if not isinstance(widget, QWidget):
-        return
-
-    if getattr(widget, '_paint_instrumented', False):
-        return
-
-    widget._paint_instrumented = True  # pyright: ignore
-    original_paint_event = widget.paintEvent
-
-    def new_paint_event(event, orig=original_paint_event, widget=widget):
-        start = time.perf_counter()
-        orig(event)
-        elapsed = time.perf_counter() - start
-        print(f"paintEvent for {widget.__class__.__module__}.{widget.__class__.__name__} took {elapsed * 1000:.2f} ms")
-
-    widget.paintEvent = new_paint_event
-
-    # recurse
-    for child in widget.findChildren(QWidget):
-        instrument_paint_events(child)
-
-
 @dataclass
 class _ImageViewConfigBase:
     on_render_reset_viewport: bool = True
@@ -187,7 +144,7 @@ class StatefulImageView(StatefulDisplay):
         if self._config.border_color is not None:
             self.displaypane.imageItem.setBorder(self._config.border_color)
 
-        # instrument_paint_events(self.displaypane)
+        # profile_paint_events(self.displaypane)
 
     def _render_data(self, *args: Any):
         self.displaypane.setImage(
@@ -248,8 +205,7 @@ class StatefulImageViewLightweight(StatefulDisplay):
         gv.setCentralItem(vb)
 
         self._add_widget(gv)
-
-        instrument_paint_events(gv)
+        # profile_paint_events(gv)
 
     def _render_data(self, *args: Any):
         self.ii.setImage(
@@ -391,7 +347,7 @@ class StatefulPlotView2D(StatefulDisplay):
             - 'crosshair': crosshair
         """
 
-        marker: str = "o"   
+        marker: str = "o"
         marker_size: int = 10
 
     @dataclass
@@ -437,7 +393,7 @@ class StatefulPlotView2D(StatefulDisplay):
         self._canvas = cast(PlotItem, _w_graphics.addPlot(title=config.title))  # pyright: ignore
         cmap = pg.colormap.get(config.auto_colors_cmap)
         assert isinstance(cmap, ColorMap), f"'{config.auto_colors_cmap=}', either not valid or not findable."
-        self._default_colors = _colors_from_cmap(cmap, config.auto_colors_nunique)
+        self._default_colors = colors_from_cmap(cmap, config.auto_colors_nunique)
 
         # configure graph appearance
         self._legend = self._canvas.addLegend() if config.legend else None
