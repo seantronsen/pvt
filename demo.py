@@ -20,23 +20,17 @@ import os
 
 os.environ["VIEWER_DEBUG"] = "1"  # remove to disable performance logging
 
+# STANDARD IMPORTS
 from pvt.app import App
 from pvt.context import VisualizerContext
 from pvt.controls import StatefulAnimator, StatefulTrackbar
-from pvt.displays import (
-    StatefulImageView,
-    StatefulImageViewLightweight,
-    StatefulPlotView2D,
-)
-from pvt.qtmods import TrackbarConfig
 from pvt.decorators import use_parameter_cache
-
-
-# STANDARD IMPORTS
+from pvt.displays import StatefulImageView, StatefulImageViewLightweight, StatefulPlotView2D
+from pvt.qtmods import TrackbarConfig
+from pvt.utils import norm_uint8, resize_by_ratio
 import cv2
 import numpy as np
 import sys
-from pvt.utils import norm_uint8, resize_by_ratio
 
 # IMPORTANT: Visualizer Context & Callback Parameter Handling:
 #
