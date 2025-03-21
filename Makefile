@@ -17,10 +17,7 @@ all: environment
 # INSTALL PROJECT AS PACKAGE
 ##################################################
 install-dev:
-	# source "$$(conda info --base)/etc/profile.d/conda.sh" && \
-	# conda activate ${CONDA_ENV_NAME} && \
 	pip install -e .[dev]
-
 
 ##################################################
 # BUILD CONDA ENVIRONMENT

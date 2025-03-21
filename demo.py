@@ -20,26 +20,17 @@ import os
 
 os.environ["VIEWER_DEBUG"] = "1"  # remove to disable performance logging
 
+# STANDARD IMPORTS
 from pvt.app import App
 from pvt.context import VisualizerContext
 from pvt.controls import StatefulAnimator, StatefulTrackbar
-from pvt.displays import (
-    ImageViewConfig,
-    PlotDataLine,
-    PlotDataScatter,
-    PlotView2DConfig,
-    StatefulImageView,
-    StatefulPlotView2D,
-)
-from pvt.qtmods import TrackbarConfig
 from pvt.decorators import use_parameter_cache
-
-
-# STANDARD IMPORTS
+from pvt.displays import StatefulImageView, StatefulImageViewLightweight, StatefulPlotView2D
+from pvt.qtmods import TrackbarConfig
+from pvt.utils import norm_uint8, resize_by_ratio
 import cv2
 import numpy as np
 import sys
-from pvt.utils import norm_uint8, resize_by_ratio
 
 # IMPORTANT: Visualizer Context & Callback Parameter Handling:
 #
@@ -119,8 +110,11 @@ def demo_image_viewer():
     ip_a = StatefulImageView(callback_a, title="resized image")
     ip_b = StatefulImageView(
         callback_b,
-        config=ImageViewConfig(border_color="red", autoRange=False),
         title="small image for perf",
+        config=StatefulImageView.Config(
+            border_color="red",
+            on_render_reset_viewport=False,
+        ),
     )
 
     # IMPORTANT: add all display and control elements to a context so they can communicate
@@ -162,16 +156,36 @@ def demo_static_image_viewer():
 
     app = App(title="Example: Static Images")
     trackbar_sigma = StatefulTrackbar("sigma", TrackbarConfig(0, 100, 2))
-    ip = StatefulImageView(callback, config=ImageViewConfig())
+    ip = StatefulImageView(callback)
 
     # IMPORTANT: add all display and control elements to a context so they can communicate
     # this helper function also creates a mosaic (grid-like) layout of the widgets
-    context = VisualizerContext.create_viewer_from_mosaic(
-        [
-            [ip],
-            [trackbar_sigma],
-        ],
+    context = VisualizerContext.create_viewer_from_mosaic([[ip], [trackbar_sigma]])
+    app.add_panes(context)
+    app.run()
+
+
+def test_rgb_image_render_speed():
+
+    img_test = norm_uint8(cv2.imread("sample-media/checkboard_non_planar.png", cv2.IMREAD_GRAYSCALE))
+    img_test = cv2.applyColorMap(img_test, colormap=cv2.COLORMAP_MAGMA)
+    img_test = cv2.GaussianBlur(img_test, ksize=(17, 17), sigmaX=9, sigmaY=9)
+    img_test = resize_by_ratio(img_test, ratio=30)
+    img_test = np.asarray(cv2.cvtColor(img_test, cv2.COLOR_BGR2RGB), dtype=np.uint8)
+
+    def callback(**_):
+        return img_test
+
+    app = App(title="Test RGB Render Speed")
+    animator = StatefulAnimator(ups=240, auto_start=True, show_ups_info=True)
+    ip = StatefulImageViewLightweight(
+        callback,
+        config=StatefulImageViewLightweight.Config(
+            border_color="red",
+        ),
     )
+
+    context = VisualizerContext.create_viewer_from_mosaic([[ip], [animator]])
     app.add_panes(context)
     app.run()
 
@@ -192,6 +206,8 @@ def demo_static_image_viewer():
 def demo_plot_viewer():
     N_WAVES = 5
     AUTO_COLORS = 4
+    Line = StatefulPlotView2D.Line
+    Scatter = StatefulPlotView2D.Scatter
 
     def _callback_base(nsamples, sigma, omega, phasem, animation_tick, **_):
         cphase = (animation_tick / (2 * np.pi)) * phasem
@@ -202,11 +218,11 @@ def demo_plot_viewer():
 
     def callback_line(nsamples, sigma, omega, phasem, animation_tick, **_):
         result = _callback_base(nsamples, sigma, omega, phasem, animation_tick, **_)
-        return [PlotDataLine(x=np.arange(signal.size), y=signal, name=f"item: {i}") for i, signal in enumerate(result)]
+        return [Line(x=np.arange(signal.size), y=signal, name=f"item: {i}") for i, signal in enumerate(result)]
 
     def callback_scatter(nsamples, sigma, omega, phasem, animation_tick, **_):
         result = _callback_base(nsamples, sigma, omega, phasem, animation_tick, **_)
-        return [PlotDataScatter(x=np.arange(signal.size), y=signal, marker="x") for signal in result]
+        return [Scatter(x=np.arange(signal.size), y=signal, marker="x") for signal in result]
 
     app = App(title="Multiple Plots: An Illustration of Signal Aliasing")
 
@@ -234,7 +250,7 @@ def demo_plot_viewer():
     # under the curve not being shaded.
     pv_a = StatefulPlotView2D(
         callback=callback_line,
-        config=PlotView2DConfig(
+        config=StatefulPlotView2D.Config(
             auto_colors_cmap="plasma",
             auto_colors_nunique=AUTO_COLORS,
             title="Signal Aliasing: Labeled Line Graph",
@@ -246,7 +262,10 @@ def demo_plot_viewer():
     )
     pv_b = StatefulPlotView2D(
         callback=callback_scatter,
-        config=PlotView2DConfig(background_color="white", title="Signal Aliasing: Labeled Scatter Graph"),
+        config=StatefulPlotView2D.Config(
+            background_color="white",
+            title="Signal Aliasing: Labeled Scatter Graph",
+        ),
     )
     # Users can animate any display pane by wrapping the associated widget in
     # an `Animator`. Here, an fps value can be specified to limit the refresh
@@ -289,8 +308,6 @@ def demo_plot_viewer():
 # Example: `python demo.py demo_image_viewer`
 if __name__ == "__main__":
     if len(sys.argv) == 1:
-        # demo_image_viewer()
-        # demo_static_image_viewer()
         demo_plot_viewer()
     else:
         globals()[sys.argv[1]]()

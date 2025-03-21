@@ -1,8 +1,12 @@
+from PySide6 import QtGui
 from PySide6.QtCore import QObject
+from PySide6.QtWidgets import QWidget
 from numpy.typing import NDArray
+from pyqtgraph import ColorMap
 from typing import Any
 import cv2
 import numpy as np
+import time
 
 
 def resize_by_ratio(image: NDArray[Any], ratio: float) -> NDArray[Any]:
@@ -97,3 +101,45 @@ def merge_cached_nodes(cached_list: list[dict[type, list[QObject]]]) -> dict[typ
             merged[cls].extend(instances)
 
     return merged
+
+
+def colors_from_cmap(cmap: ColorMap, ncolors: int):
+    """
+    Return a list of QColor objects from the from the provided colormap.
+
+    :param cmap: ColorMap instance
+    :param ncolors: number of colors to return
+    :return: The list of QColor objects.
+    """
+    result: list[QtGui.QColor] = [
+        cmap.map(x / ncolors, mode=ColorMap.QCOLOR) for x in range(ncolors)
+    ]  # pyright: ignore
+    return result
+
+
+def profile_paint_events(widget):
+    """
+    Recursively wraps the paintEvent method of every QWidget in the widget's
+    hierarchy. The new paintEvent logs the widget's class name before calling
+    the original paintEvent and tracking the render time costs.
+    """
+    if not isinstance(widget, QWidget):
+        return
+
+    if getattr(widget, '_paint_instrumented', False):
+        return
+
+    widget._paint_instrumented = True  # pyright: ignore
+    original_paint_handler = widget.paintEvent
+
+    def new_paint_event(event, original_handler=original_paint_handler, widget=widget):
+        start = time.perf_counter()
+        original_handler(event)
+        elapsed = time.perf_counter() - start
+        print(f"paintEvent for {widget.__class__.__module__}.{widget.__class__.__name__} took {elapsed * 1000:.2f} ms")
+
+    widget.paintEvent = new_paint_event
+
+    # recurse
+    for child in widget.findChildren(QWidget):
+        profile_paint_events(child)
