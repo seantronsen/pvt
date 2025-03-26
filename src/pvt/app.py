@@ -1,7 +1,7 @@
 import signal
 import sys
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QHBoxLayout, QMainWindow, QWidget, QApplication
+from PySide6.QtWidgets import QMainWindow, QWidget, QApplication
 from pyqtgraph import LayoutWidget
 from PySide6.QtWidgets import QSizePolicy
 
@@ -22,17 +22,18 @@ class MainWindow(QMainWindow):
         """
         super().__init__()
         self.setWindowTitle(title)
-        self.panel = LayoutWidget()
-        self.setCentralWidget(self.panel)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.set_window_content(QWidget())
 
-    def addWidget(self, widget: QWidget):
+    def set_window_content(self, widget: QWidget):
         """
-        Add a widget to the layout used by the window.
-        :param widget: Widget to add to the layout.
+        Set the window to display the widget provided. The provided widget
+        should be a composite which encapsulates complicated behaviors within a
+        hierarchy of children.
+
+        :param widget: any QWidget
         """
-        self.panel.addWidget(widget)  # pyright: ignore
-        self.panel.nextRow()  # pyright: ignore
+        self.setCentralWidget(widget)
 
 
 class Skeleton(QApplication):
@@ -64,13 +65,34 @@ class Skeleton(QApplication):
         A component of the timed event check used to "gracefully shutdown"
         (kill) the application if the user sends the interrupt signal.
         """
-        print("received interrupt signal: attempting graceful program termination")
+        print("received interrupt: attempting graceful termination")
         self.quit()
+
+    def resize(self, width: int, height: int):
+        """
+        Resize the application window.
+
+        :param width: width in pixels
+        :param height: height in pixels
+        """
+        self.main_window.resize(width, height)
+
+    def set_window_content(self, widget: QWidget):
+        """
+        Set the window to display the widget provided. The provided widget
+        should be a composite which encapsulates complicated behaviors within a
+        hierarchy of children.
+
+        :param widget: any QWidget
+        """
+        self.main_window.set_window_content(widget)
 
     def run(self) -> None:
         """
         A conveniece function with launches the Qt GUI and displays the window
         simultaneously.
+
+        IMPORTANT: Executing this function will block the main thread.
         """
         self.main_window.show()
         sys.exit(self.exec())
@@ -89,60 +111,4 @@ class App(Skeleton):
         height: int = 720,
     ) -> None:
         super().__init__(title=title)
-
-        # a spot fix for issue #033
-        self.resize(width, height)
-
-    def resize(self, width: int, height: int):
-        """
-        Executing this method with the proper arguments will cause the
-        application window to be resized accordingly. It does nothing more than
-        calling the method with the same name on the main window class, but it
-        makes for less typing.
-
-        :param width: width in pixels
-        :param height: height in pixels
-        """
-        self.main_window.resize(width, height)
-
-    def add_panes(self, *panes: QWidget):
-        """
-        Add the provided pane(s) to the GUI window layout.
-
-        :param panes: A sequence of one or more widgets to add to the display.
-        """
-
-        for x in panes:
-            self.main_window.addWidget(x)
-
-    def add_mosaic(self, mosaic: list[list[QWidget]]):
-        """
-        A convenience method which provides users a simple method for
-        specifying a row/column layout to be displayed in the viewer. Passing
-        in a list of lists, each sub-list becomes a row added to the display as
-        the next bottom-most element. Elements of each sub-list are placed as
-        columns from left to right.
-
-        :param mosaic: A list of lists containing widgets to add to the
-        display.
-        """
-        assert type(mosaic) == list
-        assert len(mosaic) != 0 and type(mosaic[0]) == list
-
-        for row in mosaic:
-            wrapper = QWidget(parent=self.main_window)
-            wrapper.setLayout(QHBoxLayout())
-            for element in row:
-                # todo: skip the wrapper and use `.addLayout`, though from past
-                # experience that tends to not work as advertised. still, try
-                # again. maybe it's fixed finally.
-                wrapper.layout().addWidget(element)
-            self.main_window.addWidget(wrapper)
-
-    def run(self):
-        """
-        Launch the viewer.
-
-        IMPORTANT: Executing this function will block the main thread.
-        """
-        super().run()
+        self.resize(width, height)  # a spot fix for github issue #033

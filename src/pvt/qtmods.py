@@ -1,3 +1,7 @@
+"""
+Users should not need to modify this file, nor should they directly
+reference any of its contents within their code. 
+"""
 from typing import Any
 from PySide6.QtCore import QObject, Qt, Signal, Slot
 from PySide6.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QSizePolicy, QSlider, QVBoxLayout, QWidget

@@ -13,7 +13,7 @@ def configure_state(
     """
     Link controls and data displays to a common exchange (e.g., bus) such that
     none of the parties involved are truly aware of the existence of the
-    others.
+    others. Uses Qt's signal/slot mechanism to implement the desired behavior.
 
     :param displays: a list of widgets which consume state updates
     :param controls: a list of widgets that produce state updates
@@ -48,16 +48,10 @@ def configure_state(
 
 class VisualizerContext(QWidget):
     """
-    A widget wrapping class which serves as the root context of any
-    visualization(s) which depend on a common set of parameters. Although the
-    state specific class serves as the glue, this class instantiates that state
-    by searching through the widget hierarchy to discover which widgets must be
-    linked together (i.e., "Stateful" widgets).
-
-    NOTE: If it's easier to wrap your head around, this class ensures user
-    defined Stateful control and display widgets can talk to each other.
-    Essentially, it's a wrapper that wires everything up for the user
-    automatically.
+    A container widget that serves as the central hub for visualizations
+    sharing common parameters. This class automatically connects user-defined
+    control and display widgets, ensuring they communicate and synchronize
+    seamlessly.
     """
 
     def __init__(self, layout: QLayout, state: VisualizerState | None = None) -> None:
@@ -74,7 +68,7 @@ class VisualizerContext(QWidget):
     @staticmethod
     def create_viewer_with_vertical_layout(panes: list[QWidget], state: VisualizerState | None = None):
         """
-        Add the provided pane(s) to the GUI window layout.
+        Add the provided pane(s) to the GUI window layout, vertically (top down).
 
         :param panes: A sequence of one or more widgets to add to the display.
         """
@@ -93,22 +87,15 @@ class VisualizerContext(QWidget):
         the next bottom-most element. Elements of each sub-list are placed as
         columns from left to right.
 
-        :param mosaic: A list of lists containing widgets to add to the
-        display.
+        :param mosaic: A list of lists of widgets
         """
         assert type(mosaic) == list
         assert len(mosaic) != 0 and type(mosaic[0]) == list
         main_layout = QVBoxLayout()
         for row in mosaic:
-            # todo: skip the wrapper and use `.addLayout`, though from past
-            # experience that tends to not work as advertised. still, try
-            # again. maybe it's fixed finally.
             sub_layout = QHBoxLayout()
-
             for element in row:
                 sub_layout.addWidget(element)
-            wrapper = QWidget()
-            wrapper.setLayout(sub_layout)
-            main_layout.addWidget(wrapper)
+            main_layout.addLayout(sub_layout)
 
         return VisualizerContext(layout=main_layout, state=state)

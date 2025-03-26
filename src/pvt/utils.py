@@ -33,10 +33,7 @@ def resize_by_ratio(image: NDArray[Any], ratio: float) -> NDArray[Any]:
 
 
 def normalize_minmax(data: NDArray[Any]):
-    """
-    Applies min max norm to an NDArray
-    There isn't much else to say.
-    """
+    """Applies min max norm to an NDArray."""
     epsilon = 1e-17
     d = data.astype(np.float32)
     dmin, dmax = d.min(), d.max()
