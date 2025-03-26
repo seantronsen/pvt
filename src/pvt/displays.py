@@ -58,7 +58,6 @@ class StatefulDisplay(QWidget):
     def _add_widget(self, w: QWidget):
         self.layout().addWidget(w)
 
-    # fucking pyright and qt slots...
     @Slot(object)
     def on_viewer_state_changed(self, kwargs_as_dict: dict[str, object]):
         """
@@ -208,11 +207,9 @@ class StatefulImageViewLightweight(StatefulDisplay):
         # profile_paint_events(gv)
 
     def _render_data(self, *args: Any):
-        self.ii.setImage(
-            args[0],
-            autoLevels=False,  # enabling this will make rgb renders extremely slow
-            levels=None,  # assigning levels does the same thing, because it rescales your data to that range
-        )
+        # NOTE: enabling autolevels or setting levels will yield an extreme
+        # degradation in RGB render performance.
+        self.ii.setImage(args[0], autoLevels=False, levels=None)
 
 
 @dataclass
@@ -246,10 +243,14 @@ class _PlotDataBase:
 
 class StatefulPlotView2D(StatefulDisplay):
     """
-    The Base/Abstract class in which all 2D plotting panes are derived. The
-    purpose of this class is merely to provide a basic set up for inheritors
-    and reduce the amount of typing required to add new kinds of 2D plots in
-    the future.
+    A pane which displays plot data with a fast refresh rate. An callback
+    function for updating the display must be provided to the constructor
+    function. See the encapsulated configuration and plot kind classes for
+    feature details.
+
+    NOTE: Each plot item returned by the user defined callback will be
+    overlayed within the same plot display to imitate the behavior of
+    matplotlib.
     """
 
     @dataclass
