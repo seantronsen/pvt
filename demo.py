@@ -111,8 +111,8 @@ def demo_static_image_viewer():
     # new frame computation.
     #
     # There are two tracking options:
-    #   - Inclusive tracking (whitelist)
-    #   - Exclusive tracking (blacklist)
+    #   - Inclusive (whitelist)
+    #   - Exclusive (blacklist)
     #
     # Only one type can be used at a time.
     #
