@@ -14,3 +14,5 @@ typings/
 debug.py
 
 src/pvt.egg-info
+
+build/
