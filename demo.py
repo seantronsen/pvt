@@ -100,7 +100,7 @@ def demo_image_viewer():
     # VisualizerContext so they can communicate. This helper function also
     # automatically arranges them in a mosaic (grid-like) layout.
     context = VisualizerContext.create_viewer_from_mosaic([[ip_a, ip_b], [trackbar_rho, trackbar_sigma]])
-    app.add_panes(context)
+    app.set_window_content(context)
     app.run()
 
 
@@ -136,7 +136,7 @@ def demo_static_image_viewer():
     trackbar_sigma = StatefulTrackbar("sigma", TrackbarConfig(0, 100, 2))
     ip = StatefulImageView(callback)
     context = VisualizerContext.create_viewer_from_mosaic([[ip], [trackbar_sigma]])
-    app.add_panes(context)
+    app.set_window_content(context)
     app.run()
 
 
@@ -222,7 +222,7 @@ def demo_plot_viewer():
             [trackbar_phasem, trackbar_sigma],
         ],
     )
-    app.add_panes(context)
+    app.set_window_content(context)
     app.run()
 
 
@@ -255,7 +255,7 @@ def test_rgb_image_render_speed():
     )
 
     context = VisualizerContext.create_viewer_from_mosaic([[ip], [animator]])
-    app.add_panes(context)
+    app.set_window_content(context)
     app.run()
 
 
