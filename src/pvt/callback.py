@@ -6,12 +6,22 @@ import functools
 
 class Callback:
     """
-    Users should not be creating this class directly. Use one of the decorators
-    provided by this library instead.
+    A wrapper for user-defined callbacks that adds extra features.
+
+    Users should use the provided decorators rather than instantiating this
+    class directly.
     """
 
     @dataclass
     class Config:
+        """
+        Configuration for Callback behavior.
+
+        Attributes:
+            cache_type: Determines the caching strategy.
+            cached_parameters: Names of parameters to cache.
+        """
+
         class CacheType(Enum):
             Fake = 0
 
@@ -30,10 +40,12 @@ class Callback:
 
     def should_run(self, *_, **kwds) -> bool:
         """
-        The holder of the callback should use this method to determine whether
-        the callback should be executed.
+        Determines whether the callback should be executed.
 
-        :return: flag to indicate if the callback needs to run (is in dirty state)
+        On the first call, this method overrides itself to avoid repeated conditional checks.
+        If caching is enabled, it will use the _should_run method for subsequent calls.
+
+        :return: True if the callback should run; otherwise, False.
         """
 
         ################################################################################
@@ -47,10 +59,18 @@ class Callback:
         if self._config.cache_type == Callback.Config.CacheType.Fake:
             self.should_run = self._should_run
 
-        # always compute and render the first frame at the very least
+        # always compute and render the first frame
+        # otherwise a blank display results on startup
         return True
 
     def _should_run(self, *_, **kwds) -> bool:
+        """
+        Checks if any cached parameter has changed. Compares the current
+        keyword arguments with cached values and updates the cache.
+
+        :return: True if at least one parameter value has changed; otherwise,
+            False.
+        """
         is_dirty = False
         for k in self._parameter_cache.keys():
             if self._parameter_cache[k] != kwds[k]:
