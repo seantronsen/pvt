@@ -43,8 +43,6 @@ import sys
 #   - Without **kwargs, every control widget parameter must be explicitly defined.
 #
 # This design lets you focus on essential parameters while the context manages the rest.
-
-
 def demo_image_viewer():
     img_test = cv2.imread("sample-media/checkboard_non_planar.png").astype(np.uint8)
     img_test = norm_uint8(cv2.cvtColor(img_test, cv2.COLOR_BGR2GRAY))
@@ -220,6 +218,51 @@ def demo_plot_viewer():
             [animator],
             [trackbar_n, trackbar_omega],
             [trackbar_phasem, trackbar_sigma],
+        ],
+    )
+    app.set_window_content(context)
+    app.run()
+
+
+def demo_plot_viewer_over_vnc():
+    Line = StatefulPlotView2D.Line
+
+    def callback(nsamples, omega, animation_tick, **_):
+        sigma = 0.05
+        phasem = 0.2
+        cphase = (animation_tick / (2 * np.pi)) * phasem
+        sinusoid = np.sin((np.linspace(0, omega * 2 * np.pi, nsamples) + cphase))
+        noise = np.random.randn(nsamples)
+        result = sinusoid + (noise[:nsamples] * sigma)
+        return [Line(x=np.arange(result.size), y=result)]
+
+    # For Linux hosts that support serving content via VNC, you can specify the
+    # "vnc" platform. This is useful when your callbacks require more compute
+    # than your local system can provide, or when the target host has
+    # specialized hardware (e.g., clusters, GPU accelerators, stream
+    # processors, etc.). It also serves as a workaround when the default
+    # platform (e.g., "xcb" for X Window Server) fails due to missing shared
+    # libraries, but the necessary VNC libraries are available.
+    #
+    # To connect to the VNC server, launch a VNC client and use the connection
+    # address and port (the default is 5900; refer to STDOUT for the active
+    # port). For remote servers, it is often easiest to tunnel the server port
+    # through SSH using the `-L` flag.
+    #
+    # TODO: include a POSIX-compliant SSH tunnel script in the library.
+    app = App(title="Look at me, now through VNC", platform="vnc")
+
+    animator = StatefulAnimator(ups=60, auto_start=True, show_ups_info=True)
+    trackbar_n = StatefulTrackbar("nsamples", config=TrackbarConfig(100, 1000, 100))
+    trackbar_omega = StatefulTrackbar("omega", config=TrackbarConfig(1, 50, init=50))
+
+    pv_a = StatefulPlotView2D(callback=callback)
+
+    context = VisualizerContext.create_viewer_from_mosaic(
+        [
+            [pv_a],
+            [animator],
+            [trackbar_n, trackbar_omega],
         ],
     )
     app.set_window_content(context)
