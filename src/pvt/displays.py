@@ -201,6 +201,7 @@ class StatefulImageViewLightweight(StatefulDisplay):
         gv, vb = GraphicsView(), ViewBox()
         vb.addItem(self.ii)
         vb.setAspectLocked()
+        vb.invertY()  # fix coordinate space, else image is upside down
         gv.setCentralItem(vb)
 
         self._add_widget(gv)
