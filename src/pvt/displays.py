@@ -208,9 +208,27 @@ class StatefulImageViewLightweight(StatefulDisplay):
         # profile_paint_events(gv)
 
     def _render_data(self, *args: Any):
-        # NOTE: enabling autolevels or setting levels will yield an extreme
-        # degradation in RGB render performance.
-        self.ii.setImage(args[0], autoLevels=False, levels=None)
+        self.ii.setImage(
+            args[0],
+            # NOTE: enabling autolevels or setting levels will yield an extreme
+            # degradation in RGB render performance.
+            levels=None,
+            autoLevels=False,
+            # NOTE: enabling auto downsample will cause errors for images where
+            # at least one axis has more than 30K pixels. Not entirely sure
+            # why, but when this is true, `pyqtgraph`'s idea of downsampling is
+            # to average chunks of the image instead of subsampling. Not only
+            # is that slow, but the devs decided not to return the data to the
+            # original dtype after the operation, hence the reason this error
+            # will appear, even if your input image.dtype=np.uint8...
+            #
+            # the real question is: if `pyqtgraph`'s downsampling doesn't kick
+            # in until 2^15 pixels are detected on at least one axis, then what
+            # happens when this is disabled and the size of the image is
+            # increased further? our local testing only went up to 30Kx30Kx3,
+            # but that's still under the limit imposed by their package...
+            autoDownsample=False,
+        )
 
 
 @dataclass
