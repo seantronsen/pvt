@@ -29,7 +29,7 @@ version information.
 ## Installation
 
 1. Clone the repository.
-2. Inside the local repository directory, run `make install-dev` to install pvt.
+2. Inside the local repository directory, run `make install` to install pvt.
 3. Test the installation using the demos: `python demo.py`.
 
 ## Visualization Workflow
