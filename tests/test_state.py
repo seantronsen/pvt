@@ -1,46 +1,91 @@
-from pvt import State
-from pytest import fixture
+from pvt.state import VisualizerControlSignal, VisualizerState
 from copy import deepcopy
+from pytest import fixture
+from pytest_benchmark.fixture import BenchmarkFixture
+from pytestqt.qtbot import QtBot
+from pytest_mock import MockerFixture
+
+
+class MockVisualizerState(VisualizerState):
+
+    @property
+    def storage(self):
+        return self._storage
+
+    def set_storage(self, storage: dict[str, object]):
+        self._storage = storage
 
 
 class TestState:
 
-    init_storage = dict(a=0, b=1, c=2)
+    init_storage: dict[str, object] = dict(a=0, b=1, c=2)
 
     def callback(self, **kwargs):
         return kwargs
 
     @fixture
-    def state(self):
-        return State(callback=self.callback, init=deepcopy(self.init_storage))
+    def state_prepped(self):
+        _state = MockVisualizerState()
+        _state.set_storage(deepcopy(self.init_storage))
+        return _state
 
-    def test_init(self, benchmark):
+    def test_init(self, benchmark: BenchmarkFixture):
         # test
-        assert State(callback=self.callback).storage == {}
-        assert State(callback=self.callback, init=self.init_storage).storage == self.init_storage
+        VisualizerState()
+        mock_state = MockVisualizerState()
+        assert mock_state.storage == {}
+        mock_state.set_storage(storage=self.init_storage)
+        assert mock_state.storage == self.init_storage
 
         # benchmark
-        benchmark(State, callback=self.callback, init=self.init_storage)
+        benchmark(VisualizerState)
 
-    def test_get(self, state):
-        assert state.storage == self.init_storage
-        assert state["a"] == 0
+    def test_modify_state(
+        self,
+        benchmark: BenchmarkFixture,
+        qtbot: QtBot,
+        mocker: MockerFixture,
+        state_prepped: MockVisualizerState,
+    ):
+        # ensure initial state assumptions hold
+        assert state_prepped.storage == self.init_storage
 
-    def test_set(self, state):
-        state["a"] += 1
-        self.init_storage["a"] += 1
-        assert state["a"] == 1
-        assert self.init_storage["a"] == 1
-        assert self.init_storage == state.storage
+        # set up the mockery
+        mock = mocker.Mock()
+        state_prepped.state_changed.connect(mock)
 
-    def test_flush(self, benchmark, mocker):
+        # define modifictions
+        control_signal = VisualizerControlSignal(key="a_modification", value=0)
+        expected_mod_state = deepcopy(self.init_storage)
+        expected_mod_state[control_signal.key] = control_signal.value
+
+        # do the modification
+        with qtbot.waitSignal(state_prepped.state_changed, timeout=1000):
+            state_prepped.modify_state(arg=control_signal)
+
+        # assert changes
+        mock.assert_called_once_with(expected_mod_state)
+
+        # benchmark the routine
+        state_prepped.state_changed.disconnect()
+        benchmark(state_prepped.modify_state, control_signal)
+
+    def test_flush(
+        self,
+        benchmark: BenchmarkFixture,
+        qtbot: QtBot,
+        mocker: MockerFixture,
+        state_prepped: MockVisualizerState,
+    ):
 
         # test
         mock = mocker.Mock()
-        state = State(callback=mock, init=self.init_storage)
-        state.flush()
-        assert mock.call_args[1] == self.init_storage
+        state_prepped.state_changed.connect(mock)
+
+        with qtbot.waitSignal(state_prepped.state_changed, timeout=1000):
+            state_prepped.flush()
+        mock.assert_called_once_with(self.init_storage)
 
         # benchmark
-        state = State(callback=lambda **_: None, init=self.init_storage)
-        benchmark(state.flush)
+        state_prepped.state_changed.disconnect()
+        benchmark(state_prepped.flush)

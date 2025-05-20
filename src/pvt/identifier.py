@@ -1,6 +1,8 @@
 class IdManager(object):
     """
-    Simple singleton class that spits out incremental hexidecimal IDs.
+    Simple singleton class that spits out incremental hexidecimal IDs. This
+    class is primarily used to associate performance logs with specific widgets
+    on the currently displayed window.
     """
 
     counter = 0

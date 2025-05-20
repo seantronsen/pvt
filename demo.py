@@ -1,239 +1,320 @@
 ##################################################
 # FILE: demo.py
-# AUTHOR: SEAN TRONSEN (LANL)
+# AUTHOR: SEAN TRONSEN
 #
 # SUMMARY:
-# The contents of this file are written with the intent to illustrate basic
-# usage of the package utilities. By no means should it be expected to be
-# comprehensive, but it provides a good foundation nonetheless.
+# This file demonstrates basic usage of the package utilities. It provides
+# examples and best practices for using the library's features, though it is
+# not exhaustive.
 #
-# Should the reader have any questions, they are advised to first skim through
-# the source code and read the inline documentation. For any questions that
-# still remain, please get in touch with the author or submit a github issue.
+# For further details, review the inline documentation and source code.
+# If you have questions, contact the author or submit a GitHub issue.
 ##################################################
 ##################################################
 
-# OPTIONAL IMPORTS
+# NOTE: Enable performance logging by setting the environment variable
+# before importing the library (or via the command line).
 import os
 
-
-# NOTE: Performance logging can be enabled with this environment variable.
-# IMPORTANT: It must be set via the command line or prior to library import
-os.environ["VIEWER_PERF_LOG"] = "1"  # remove to disable performance logging
+os.environ["VIEWER_DEBUG"] = "1"  # remove to disable performance logging
 
 
 # STANDARD IMPORTS
+from pvt.app import App
+from pvt.context import VisualizerContext
+from pvt.controls import StatefulAnimator, StatefulTrackbar
+from pvt.decorators import use_parameter_cache
+from pvt.displays import StatefulImageView, StatefulImageViewLightweight, StatefulPlotView2D
+from pvt.qtmods import TrackbarConfig
+from pvt.utils import norm_uint8, resize_by_ratio
 import cv2
 import numpy as np
-from pvt import *
 import sys
-from demo_utils import *
 
-
+# IMPORTANT: Visualizer Context & Callback Parameter Handling
+#
+# The VisualizerContext groups control and display widgets so that only components
+# within the same context communicate, preventing state or refresh conflicts.
+#
+# Callback Parameter Handling:
+#   - Callbacks receive parameters as keyword arguments from control widgets.
+#   - The keys emitted by controls must exactly match the callback's parameter names.
+#   - Use **kwargs in your callback to ignore extra parameters when only a subset is needed.
+#   - Without **kwargs, every control widget parameter must be explicitly defined.
+#
+# This design lets you focus on essential parameters while the context manages the rest.
 def demo_image_viewer():
     img_test = cv2.imread("sample-media/checkboard_non_planar.png").astype(np.uint8)
     img_test = norm_uint8(cv2.cvtColor(img_test, cv2.COLOR_BGR2GRAY))
 
-    # IMPORTANT: Expensive and avoidable computations should be completed prior for
-    # best results. Slow rendering times result from a bottleneck in the code
-    # written into a provided callback function.
+    # IMPORTANT: Precompute any expensive or avoidable computations to improve
+    # performance. Slow rendering is likely due to bottlenecks in your callback
+    # functions. Enable performance logging with VIEWER_DEBUG=1 for additional
+    # insights.
     #
-    # EXAMPLE: Compare the rendering speed for when the resize slider is moved
-    # versus when the sigma parameter is updated (resize performs more
-    # computation, making it slower by comparison).
+    # EXAMPLE: Compare the rendering speeds between the resize and sigma
+    # sliders. (Resize involves more computation and will be slower.)
     img_test_small = img_test.copy()
     img_test = resize_by_ratio(img_test, 10)
     noise_image = np.random.randn(*(img_test.shape)).astype(np.int8)  # pyright: ignore
 
-    # IMPORTANT: Specifying a kwargs parameter allows the function interface to
-    # remain generic which is an important quality for any callbacks associated
-    # with the global application state (e.g. panes or controls added to the
-    # display via the `add_panes` or `add_mosaic` method calls). If this
-    # parameter isn't specified, the callback must have a defined parameter for
-    # each state variable associated with a global control widget or else
-    # Python will raise an exception. If your callback doesn't need all of
-    # these variables, then this kwargs variable specification will save you
-    # some typing.
-
-    def callback_0(rho, sigma, **_):
+    # TODO: Consider redesigning to remove the need for kwargs, though this may
+    # degrade performance.
+    def callback_a(rho, sigma, **_):
         resized = resize_by_ratio(img_test, rho)
         noise_slice = noise_image[: resized.shape[0], : resized.shape[1]]
         result = resized + (noise_slice * sigma)
         return result
 
-    def callback_1(sigma, **_):
+    # NOTE: The default configuration for the decorator whitelists all named
+    # parameters, excluding positional arguments (*args) and **kwargs. In this
+    # library, **kwargs is used to ignore extra parameters not explicitly
+    # defined in the callback. For example, since `rho` is not a named
+    # parameter in callback_b, it is passed in **kwargs.
+    #
+    # This behavior is equivalent to: @use_parameter_cache(whitelist=["sigma"])
+    @use_parameter_cache
+    def callback_b(sigma, **_):
         noise_slice = noise_image[: img_test_small.shape[0], : img_test_small.shape[1]]
         result = img_test_small + (noise_slice * sigma)
         return result
 
-    # define the viewer interface and run the application
-    # happy tuning / visualizing!
-    image_viewer = Viewer(title="A Showcase Example for Rapid Image Display")
-    trackbar_rho = ParameterTrackbar("rho", 0.001, 1, step=0.001, init=0.5)
-    trackbar_sigma = ParameterTrackbar("sigma", 0, 100, 2)
+    # Set up the interface and run the application.
+    # Enjoy tuning and visualizing!
+    app = App(title="Example for Displaying Rapid Image Updates")
 
-    # set to False if panning and zoom should not reset when rendering each new
-    # frame
-    ip = ImagePane(callback_0, autoRange=True)
-    ip2 = ImagePane(callback_1)
+    trackbar_rho = StatefulTrackbar(key="rho", config=TrackbarConfig(start=0.001, stop=1, step=0.001, init=0.5))
+    trackbar_sigma = StatefulTrackbar("sigma", TrackbarConfig(0, 100, 2))
+    ip_a = StatefulImageView(callback_a, title="resized image")
+    ip_b = StatefulImageView(
+        callback_b,
+        title="small image for perf",
+        config=StatefulImageView.Config(
+            border_color="red",
+            on_render_reset_viewport=False,
+        ),
+    )
+    # IMPORTANT: Group all display and control widgets within a
+    # VisualizerContext so they can communicate. This helper function also
+    # automatically arranges them in a mosaic (grid-like) layout.
+    context = VisualizerContext.create_viewer_from_mosaic([[ip_a, ip_b], [trackbar_rho, trackbar_sigma]])
+    app.set_window_content(context)
+    app.run()
 
-    # Users can easily generated a row/column like layout using `add_mosiac`.
-    # For the default vertical layout, use the `add_panes` method call.
-    image_viewer.add_mosaic([[ip, ip2], [trackbar_rho, trackbar_sigma]])
-    image_viewer.run()
 
-
-# An example of how to display static / unchanging content
 def demo_static_image_viewer():
-    img_test = cv2.imread("sample-media/checkboard_non_planar.png").astype(np.uint8)
-    img_test = norm_uint8(cv2.cvtColor(img_test, cv2.COLOR_BGR2GRAY))
 
-    image_viewer = Viewer()
-
-    # For the time being, specifying a "dummy" lambda is the best way to render
-    # static content. The downside being that if the pane is connected to the
-    # global state, the content is redrawn each and every time the state
-    # changes. While the cost is miniscule on the compute side, the same cannot
-    # be said for the rendering side where there is a real cost to repainting
-    # the window unnecessarily. Keep an eye on issue #43 for more information
-    # and changes related to improving the efficiency of static content. For
-    # now, take comfort by realizing the cost for images less than 8K
-    # resolution is still low enough that you shouldn't notice a difference
-    # (though you really should consider shrinking the images at that point
-    # just for faster processing in your own code).
+    # EXAMPLE: This demo illustrates callback optimization using the decorator.
+    # Here, "fake caching" lets you specify which parameters should trigger a
+    # new frame computation.
     #
-    # NOTE: Users can now specify a `border` keyword argument to automatically
-    # draw a border of the specified color around the image. This reduces the
-    # need to do it yourself and considering the scaling / width for arbitrary
-    # resolutions and is particularly useful for when the content being
-    # displayed has the same background color as the panel (which typically
-    # results in making it difficult to determine where the image begins and
-    # ends).
-    ip = ImagePane(lambda **_: img_test, border="red")
-    image_viewer.add_panes(ip)
-    image_viewer.run()
+    # There are two tracking options:
+    #   - Inclusive (whitelist)
+    #   - Exclusive (blacklist)
+    #
+    # Only one type can be used at a time.
+    #
+    # NOTE: This is useful when:
+    #   - a specific paramter should not trigger an update on change
+    #   - a display does not subscribe to all possible callback parameters
+    #   - the context contains an animator, but not all displays require
+    #   updates on every animation tick.
+    #
+    # IMPORTANT: Only the named parameters defined in your callback are used.
+    # Extra parameters passed via **kwargs are automatically ignored.
+    img_test = norm_uint8(cv2.imread("sample-media/checkboard_non_planar.png"))
+
+    # NOTE: With blacklist="all", only one render will ever occur for the
+    # associated display at runtime.
+    @use_parameter_cache(blacklist="all")
+    def callback(**_):
+        return img_test
+
+    app = App(title="Example: Static Image")
+    trackbar_sigma = StatefulTrackbar("sigma", TrackbarConfig(0, 100, 2))
+    ip = StatefulImageView(callback)
+    context = VisualizerContext.create_viewer_from_mosaic([[ip], [trackbar_sigma]])
+    app.set_window_content(context)
+    app.run()
 
 
-# An example to showcase various plotting features
 def demo_plot_viewer():
-    def callback(nsamples, sigma, omega, phasem, animation_tick, **_):
+    N_WAVES = 5
+    AUTO_COLORS = 4
+    Line = StatefulPlotView2D.Line
+    Scatter = StatefulPlotView2D.Scatter
+
+    def _callback_base(nsamples, sigma, omega, phasem, animation_tick, **_):
         cphase = (animation_tick / (2 * np.pi)) * phasem
         sinusoid = np.sin((np.linspace(0, omega * 2 * np.pi, nsamples) + cphase))
         noise = np.random.randn(nsamples)
         result = sinusoid + (noise[:nsamples] * sigma)
-        waves = 5
-        return np.array([result] * waves) + (np.arange(waves).reshape(-1, 1) - ((waves - 1) / 2))
+        return np.array([result] * N_WAVES) + (np.arange(N_WAVES).reshape(-1, 1) - ((N_WAVES - 1) / 2))
 
-    viewer = Viewer(title="Multiple Plots: A Visual Illustration of Signal Aliasing")
-    trackbar_n = ParameterTrackbar("nsamples", 100, 1000, 100)
-    trackbar_omega = ParameterTrackbar("omega", 1, 50, init=50)
-    trackbar_sigma = ParameterTrackbar("sigma", 0, 3, 0.1)
-    trackbar_phasem = ParameterTrackbar("phasem", 0.1, 10, 0.1, init=0.1)
+    def callback_line(nsamples, sigma, omega, phasem, animation_tick, **_):
+        result = _callback_base(nsamples, sigma, omega, phasem, animation_tick, **_)
+        return [Line(x=np.arange(signal.size), y=signal, name=f"item: {i}") for i, signal in enumerate(result)]
 
-    # For any kind of 2D plot made available by this library, users may specify
-    # a color map and the number of unique colors to use from that colormap. If
-    # the number of colors specified is less than the number of curves /
-    # featuers to be plotted, then modulo arithmetic is used to loop over the
-    # available colors.
+    def callback_scatter(nsamples, sigma, omega, phasem, animation_tick, **_):
+        result = _callback_base(nsamples, sigma, omega, phasem, animation_tick, **_)
+        return [Scatter(x=np.arange(signal.size), y=signal, marker="x") for signal in result]
+
+    app = App(title="Multiple Plots: An Illustration of Signal Aliasing")
+
+    trackbar_n = StatefulTrackbar("nsamples", config=TrackbarConfig(100, 1000, 100))
+    trackbar_omega = StatefulTrackbar("omega", config=TrackbarConfig(1, 50, init=50))
+    trackbar_sigma = StatefulTrackbar("sigma", config=TrackbarConfig(0, 3, 0.1))
+    trackbar_phasem = StatefulTrackbar("phasem", config=TrackbarConfig(0.1, 10, 0.1, init=0.1))
+
+    # For 2D plots, you can specify a colormap and the number of unique colors.
+    # If there are more curves than unique colors, modulo arithmetic cycles
+    # through them.
+
+    # NOTE: Refer to PyQtGraph's examples for details on available colormaps.
+    # The available options may differ from other libraries and can include
+    # additional options from Matplotlib (untested) if the package is present
+    # in the runtime environment.
+    pv_a = StatefulPlotView2D(
+        callback=callback_line,
+        config=StatefulPlotView2D.Config(
+            auto_colors_cmap="plasma",
+            auto_colors_nunique=AUTO_COLORS,
+            title="Signal Aliasing: Labeled Line Graph",
+            label_x="Sample Number",
+            label_y="Sample Height",
+            legend=True,
+        ),
+        title="Line Plot Version",
+    )
+    pv_b = StatefulPlotView2D(
+        callback=callback_scatter,
+        config=StatefulPlotView2D.Config(
+            background_color="white",
+            title="Signal Aliasing: Labeled Scatter Graph",
+        ),
+    )
+
+    # To animate display panes within a context, add a `StatefulAnimator` to
+    # the same context. This widget appears as a control bar in the GUI,
+    # allowing you to pause, play, and skip frames forward or backward. A reset
+    # button is provided to reset the `animation_tick` to zero and it also
+    # provides the option to display UPS diagnostic information (e.g., current
+    # framerate and maximum possible framerate).
     #
-    # NOTE: Check out PyQtGraph's examples which detail which colormaps are
-    # available for a specific list of options with gradients displayed
-    # alongside them. The available colormaps differ from other libraries and
-    # only include extras like those from Matplotlib under certain
-    # circumstances (which have yet to be tested).
+    # NOTE: The callback functions must execute quickly to support the desired
+    # `ups` rate (updates per second). They must also include a named
+    # parameter, `animation_tick`, which receives the current tick value from
+    # the animator. This value can be used with modulo arithmetic to cycle
+    # through data sequences or adjust output over time.
+    animator = StatefulAnimator(ups=60, auto_start=True, show_ups_info=True)
+
+    # IMPORTANT: Rendering for multiple animated displays does not occur
+    # simultaneously, at least not yet. Use caution if you are animating many
+    # displays at the same time as the time to update and render each will
+    # stack.
+    context = VisualizerContext.create_viewer_from_mosaic(
+        [
+            [pv_a, pv_b],
+            [animator],
+            [trackbar_n, trackbar_omega],
+            [trackbar_phasem, trackbar_sigma],
+        ],
+    )
+    app.set_window_content(context)
+    app.run()
+
+
+def demo_plot_viewer_over_vnc():
+    Line = StatefulPlotView2D.Line
+
+    def callback(nsamples, omega, animation_tick, **_):
+        sigma = 0.05
+        phasem = 0.2
+        cphase = (animation_tick / (2 * np.pi)) * phasem
+        sinusoid = np.sin((np.linspace(0, omega * 2 * np.pi, nsamples) + cphase))
+        noise = np.random.randn(nsamples)
+        result = sinusoid + (noise[:nsamples] * sigma)
+        return [Line(x=np.arange(result.size), y=result)]
+
+    # For Linux hosts that support serving content via VNC, you can specify the
+    # "vnc" platform. This is useful when your callbacks require more compute
+    # than your local system can provide, or when the target host has
+    # specialized hardware (e.g., clusters, GPU accelerators, stream
+    # processors, etc.). It also serves as a workaround when the default
+    # platform (e.g., "xcb" for X Window Server) fails due to missing shared
+    # libraries, but the necessary VNC libraries are available.
     #
-    # For line plots, users may also specify a line_width argument which sets
-    # the width of any curve in pixels. The final option currently available is
-    # fillLevel, which causes the area under any curve to be shaded between the
-    # curve and this value. The default value is None which results in the area
-    # under the curve not being shaded.
-    pl = Plot2DLinePane(callback, ncolors=3, cmap="plasma", line_width=1, fillLevel=None)  # 0)
-    pl.set_title("Signal Aliasing: Labeled Graph")
-    pl.set_xlabel("Sample Number")
-    pl.set_ylabel("Amplitude")
+    # To connect to the VNC server, launch a VNC client and use the connection
+    # address and port (the default is 5900; refer to STDOUT for the active
+    # port). For remote servers, it is often easiest to tunnel the server port
+    # through SSH using the `-L` flag.
+    #
+    # TODO: include a POSIX-compliant SSH tunnel script in the library.
+    app = App(title="Look at me, now through VNC", platform="vnc")
 
-    # Users can animate any display pane by wrapping the associated widget in
-    # an `Animator`. Here, an fps value can be specified to limit the refresh
-    # rate. Do note that the user specified callback must execute quickly
-    # enough for the desired animation rate to be achievable. In addition, it
-    # must provide a named parameter `animation_tick` which provides the
-    # function the current tick value of the animation timer. This can be
-    # paired up with modulo arithmetic (% operator) to loop over data sequences
-    # or modify the output as "time" moves forward.
-    pl = Animator(fps=60, contents=pl).animation_content
+    animator = StatefulAnimator(ups=60, auto_start=True, show_ups_info=True)
+    trackbar_n = StatefulTrackbar("nsamples", config=TrackbarConfig(100, 1000, 100))
+    trackbar_omega = StatefulTrackbar("omega", config=TrackbarConfig(1, 50, init=50))
 
-    # Scatter panes are another feature provided by the current version of the
-    # library. Like line plots, color maps can be specified here as well. In
-    # addition, the user has be option to specify the size of each point symbol
-    # as well as the kind of symbol drawn.
-    # For a full list of symbols, visit the documentation for PyQtGraph and
-    # review their resouces for scatter plots.
-    ps = Animator(fps=60, contents=Plot2DScatterPane(callback, symbolSize=10, symbol="t", ncolors=2)).animation_content
+    pv_a = StatefulPlotView2D(callback=callback)
 
-    # IMPORTANT: Rendering multiple animations does not occur simultaneously,
-    # at least not yet. Use caution if you are animating many windows at the
-    # same time as the time to update each window will stack. Follow these
-    # issues for updates on the features planned which solve this problem.
-    # - https://github.com/seantronsen/pvt/issues/14
-    # - https://github.com/seantronsen/pvt/issues/22
-
-    viewer.add_mosaic([[pl, ps], [trackbar_n, trackbar_omega], [trackbar_phasem, trackbar_sigma]])
-    viewer.run()
+    context = VisualizerContext.create_viewer_from_mosaic(
+        [
+            [pv_a],
+            [animator],
+            [trackbar_n, trackbar_omega],
+        ],
+    )
+    app.set_window_content(context)
+    app.run()
 
 
-def demo_3d_prototype():
+# TODO: This function is a remnant from our tests for faster RGB rendering and
+# is not yet a full demo. For extremely fast RGB rendering, use the lightweight
+# image view as demonstrated here. Do note that it imposes extra requirements
+# on your callback function.
+#
+# NOTE: The slower performance for RGB images stems from Python's limitations
+# and the current lack of optimized support in Qt for rapid RGB intensity
+# scaling.
+def test_rgb_image_render_speed():
 
-    def callback(animation_tick, sigma, **_):
-        gaussian = cv2.getGaussianKernel(20, sigma=sigma)
-        gaussian = gaussian * gaussian.T  # pyright: ignore
-        gaussian = gaussian / np.sum(gaussian)
-        return gaussian * ((animation_tick % 500) + 1) * 10
-
-    viewer = Viewer("Deprecated 3D prototype. We will soon integrate with PyVista for 3D data display features")
-    animator = Animator(fps=60, contents=Plot3DPane(callback))
-    d3plot = animator.animation_content
-
-    # Users can create their own animation controls or make use of Animation
-    # control bar widget we provide for convenience.
-    control_bar = AnimatorControlBar(animator=animator)
-    t_sigma = ParameterTrackbar("sigma", 0.1, 25, step=0.1, init=5)
-    viewer.add_panes(d3plot, control_bar, t_sigma)
-    viewer.run()
-
-
-# NOTE: both this feature and demo are a work in progress. thus far, pyvista seems
-# like it has a lot that it could offer for this project. however, after doing
-# some performance testing for rather simple scenes, there are some concerns as
-# for whether it could maintain a suitable framerate for more complex scenes.
-# for reference, the pyvista prototype can animate it's demo at a max of around
-# 144 FPS. The PyQtGraph/OpenGL version can peak at well over 6,000 FPS based
-# on the log output.
-def demo_pvt3dplotter_prototype():
-    import pyvista as pv
-
-    viewer = Viewer("demo of pyvista animated noisy sphere mesh")
-
-    # define meshes, must be done prior to defining any callbacks which modify them
-    sphere = pv.Sphere()
+    img_test = norm_uint8(cv2.imread("sample-media/checkboard_non_planar.png", cv2.IMREAD_GRAYSCALE))
+    img_test = cv2.applyColorMap(img_test, colormap=cv2.COLORMAP_MAGMA)
+    img_test = cv2.GaussianBlur(img_test, ksize=(17, 17), sigmaX=9, sigmaY=9)
+    img_test = resize_by_ratio(img_test, ratio=30)
+    img_test = np.asarray(cv2.cvtColor(img_test, cv2.COLOR_BGR2RGB), dtype=np.uint8)
 
     def callback(**_):
-        sigma = 1e-3
-        noise = np.random.normal(loc=0, scale=sigma, size=np.prod(sphere.points.shape))
-        sphere.points += noise.reshape(*sphere.points.shape)
+        return img_test
 
-    plotter = Pvt3DPlotPane(callback=callback)
-    plotter.add_mesh(sphere, cmap="magma")
-    anim = Animator(fps=144, contents=plotter)
-    bar = AnimatorControlBar(animator=anim)
+    app = App(title="Test RGB Render Speed")
+    animator = StatefulAnimator(ups=240, auto_start=True, show_ups_info=True)
+    ip = StatefulImageViewLightweight(
+        callback,
+        config=StatefulImageViewLightweight.Config(
+            border_color="red",
+        ),
+    )
 
-    viewer.add_panes(anim.animation_content, bar)
-    viewer.run()
+    context = VisualizerContext.create_viewer_from_mosaic([[ip], [animator]])
+    app.set_window_content(context)
+    app.run()
 
 
-# For a simpler experience regarding choosing demos to run, pass the CLI call
-# an additional argument with the name of the demo.
+# TODO: Create a demo that demonstrates using
+# use_parameter_cache(blacklist="animation_tick") to ignore animation tick
+# updates for specific displays. This is particularly useful when only one
+# display should animate while others remain static.
+
+################################################################################
+################################################################################
 #
+# To select a specific demo, pass its name as a command line argument.
 # Example: `python demo.py demo_image_viewer`
+#
+################################################################################
+################################################################################
 if __name__ == "__main__":
     if len(sys.argv) == 1:
         demo_plot_viewer()

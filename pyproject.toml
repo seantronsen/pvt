@@ -1,69 +1,50 @@
 [project]
 name = "pvt"
 license = { file = "LICENSE" }
-version = "0.0.4"
+version = "0.0.5"
 authors = [{ name = "Sean Tronsen", email = "sean.tronsen@gmail.com" }]
-description = "functions to re-use."
+description = ""
 readme = "README.md"
-requires-python = ">=3.8"
-classifiers = [
-  "Programming Language :: Python",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: 3.12",
-]
+requires-python = ">=3.12"
+classifiers = ["Programming Language :: Python :: 3.12"]
 
 dependencies = [
-  "numpy==1.*",
-  "opencv-contrib-python-headless==4.9.*",
-  # "pyopengl-accelerate==3.1.*",
-  "pyopengl==3.1.*",
-  "pyqtgraph==0.13.*",
+  "opencv-contrib-python-headless==4.11.*",
+  "numpy==2.*",
+  "numba",
   "pyside6==6.*",
-  "pyvista==0.43.*",
-  "pyvistaqt==0.11.*",
+  "pyqtgraph==0.13.*",
 ]
 
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-[tool.hatch.version]
-path = "src/pvt/__about__.py"
-
-[tool.hatch.envs.default]
-dependencies = ["coverage[toml]>=6.5", "pytest"]
-[tool.hatch.envs.default.scripts]
-test = "pytest {args:tests}"
-test-cov = "coverage run -m pytest {args:tests}"
-cov-report = ["- coverage combine", "coverage report"]
-cov = ["test-cov", "cov-report"]
-
-[tool.hatch.envs.dev]
-dependencies = ["pytest", "pytest-benchmark", "pytest-qt"]
-
-
-[[tool.hatch.envs.all.matrix]]
-python = ["3.8", "3.9"]
+[project.optional-dependencies]
+dev = [
+  "pytest",
+  "pytest-benchmark",
+  "pytest-qt",
+  "pytest-xdist",
+  "pytest-mock",
+  "line_profiler",
+]
 
 
 [tool.black]
-target-version = ["py38"]
+target-version = ["py312"]
 line-length = 120
 skip-string-normalization = true
 
 
-[tool.coverage.run]
-source_pkgs = ["pvt", "tests"]
-branch = true
-parallel = true
-omit = ["src/pvt/__about__.py"]
-
-[tool.coverage.paths]
-pvt = ["src/pvt", "*/pvt/src/pvt"]
-tests = ["tests", "*/pvt/tests"]
-
-[tool.coverage.report]
-exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]
+[tool.pyright]
+include = ["src", "tests"]
+exclude = ["**/node_modules", "**/__pycache__", "**.tar", "**.gz"]
+extraPaths = ["../pyqtgraph"]
+stubPath = "typings"
+defineConstant = { DEBUG = true }
+reportMissingImports = true
+reportMissingTypeStubs = false
+reportImportCycles = true
+reportUnusedImport = true
+typeCheckingMode = "standard"                                      # "off", "basic", "strict"
+useLibraryCodeForTypes = true
+pythonVersion = "3.12"
+pythonPlatform = "Darwin"
+# executionEnvironments = [{ root = "scripts", extraPaths = ["src"] }]

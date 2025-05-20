@@ -1,36 +1,50 @@
-from typing import Callable, Dict, Optional
+from PySide6.QtCore import QObject, Signal, Slot
+from dataclasses import dataclass
 
 
-class State:
+@dataclass
+class VisualizerControlSignal:
     """
-    An abstract collection of state created using simple python dictionaries.
-    Changes in state followed by the flush operation execute a user specifiable
-    callback.
+    A generic container class which encapsulates the state update information
+    emit from a control widget (a producer). Instances of this class are sent
+    to the visualizer state held by the nearest parent context in the
+    hierarchy. The state instance decides whether it's necessary to notify any
+    display widgets about the update.
 
-    Currently links the behaviors between control widgets and data/content
-    display panes.
+    :param key: key name assigned to the control widget which emitted the
+        signal. If the callback the user provides to a display widget has a
+        parameter which shares the same name as this key, it will automatically
+        receive the updated value when the control's state changes (a slider
+        slides).
+    :param value: the new state value
     """
 
-    storage: Dict
-    onUpdate: Callable
+    key: str
+    value: object
 
-    def __init__(
-        self,
-        callback,
-        init: Optional[Dict] = None,
-    ) -> None:
-        self.storage = init if init is not None else {}
-        self.onUpdate = callback
+    def __post_init__(self):
+        if not self.key:
+            raise ValueError("key cannot be empty")
 
-    def __getitem__(self, key):
-        return self.storage.get(key)
 
-    def __setitem__(self, key, value):
-        self.storage[key] = value
+class VisualizerState(QObject):
+    """
+    An collection of state implemented using python dictionaries. Subscribers
+    are automatically notified of any changes in state. 
+
+    Links the state of the control widgets to the data displays. 
+    """
+
+    state_changed = Signal(dict)
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._storage: dict[str, object] = dict()
+
+    @Slot(VisualizerControlSignal)
+    def modify_state(self, arg: VisualizerControlSignal):
+        self._storage[arg.key] = arg.value
+        self.state_changed.emit(self._storage)
 
     def flush(self):
-        """
-        Execute the user specified callback function. Intended use is to flush
-        all state changes to the interface when called.
-        """
-        self.onUpdate(**self.storage)
+        self.state_changed.emit(self._storage)

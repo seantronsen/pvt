@@ -1,124 +1,67 @@
-# pvt -- Python Data Visualizer & Algorithm Tuner
+# pvt – Python Data Visualizer & Algorithm Tuner
 
-A small collection of real-time data viewing utilities, initially created to
-satisfy the goal of enabling algorithmic tuning with rapid feedback.
+`pvt` is a lightweight collection of real-time data visualization tools built
+for rapid algorithm tuning. Its design ensures that user-defined
+computations—not the rendering backend—limit the achievable framerate.
 
-With this viewer, your code is the bottleneck to the rendering pipeline rather
-than the renderer itself (looking at you JupyterLab \w `matplotlib`). In other
-words, this will render as quickly as your code can spit out the data.
+## Early Development
 
-## Early Development Notice
-
-Understand this project is in the early stages of development and while it
-remains quite functional, frequent changes should be expected when tracking the
-`main` branch. For this reason, the developer(s) recommend tracking one of the
-release tags for a more stable experience.
-
-## Installation
-
-1. Review the requirements and suggestions below.
-2. Open a shell and create / activate a fresh python virtual environment.
-3. Clone or submodule this repository.
-4. Navigate to the repository directory.
-5. Run `make install-dev` to install this package into the virtual environment,
-   enabling use in any project.
-6. Mess around with the demo: `python demo.py`.
-7. Mess around with `pyqtgraph`'s demos: `python -c "import pvt; pvt.run_pyqtgraph_examples()"`
-
-## Visualization Workflow
-
-1. Create an application instance (e.g. `VisionViewer`) as a QtApplication
-   instance must exist before instantiating any widgets.
-
-2. Create all control widgets. Provide all instances with a key which will
-   later be used to reference a unique element in the application state.
-   Interacting with the widget will cause any subscribing display panes to be
-   updated. Note that subscription occurs automatically when data and control
-   panes are added to the viewer instance.
-
-3. Create all display panes (e.g. `ImagePane`), passing each a callback
-   function to generate new frames for display. To make use of the application
-   state, the arguments of the callback must share the same names as the key
-   values provided to the control widgets created in step 2. Note the order of
-   defined arguments doesn't matter nor do all possible arguments need to be
-   specified if the function declares a `**kwargs` parameter. If there is no
-   need to update the display, specify a default callback which performs no
-   processing and merely returns the data to be displayed. Detailed examples
-   are provided in the `demo.py` file.
-
-4. Add all panes to the viewer instance and execute the `run` method.
-
-## A Note about the Callback Interface
-
-Instances of the `StatefulPane` class intuitively hold references to a `State`
-object. For the sake of brevity, understand that an indirect chain of callback
-functions is used to communicate changes to the underlying state to the pane
-interface. Those who are more curious are welcome to review the implementation
-details in the source code.
+This project is in early development, so frequent changes are expected on the
+`main` branch. For a more stable experience, use a tagged release.
 
 ## Requirements
 
-- [anaconda3/miniconda3](https://docs.anaconda.com/free/miniconda/index.html)
-- [GNU Make](https://www.gnu.org/software/make/)
+See the `pyproject.toml` file for the current listing of required packages and
+version information.
 
-**Linux Users**
+### Platform Notes
 
-Should work out of the box without any issues.
+- **Linux:** Works out of the box on major distributions.
+- **macOS:** Ensure a Qt installation is available. If your Python Qt bindings
+  lack the required libraries, install libqt6 with:
+  ```bash
+  brew install qt6
+  ```
+- **Windows:** Not directly supported. With minor modifications (typically
+  around Qt installation), it should work. Please report any issues or
+  contribute fixes.
 
-**MacOS Users**
+## Installation
 
-- A Qt installation: MacOS uses cocoa and metal by default (jeers and boos allowed).
+1. Clone the repository.
+2. Inside the local repository directory, run `make install` to install pvt.
+3. Test the installation using the demos: `python demo.py`.
 
-```bash
+## Visualization Workflow
 
-brew install qt
+1. **Initialize:** Create an `App` instance (a QtApplication instance must be
+   created before instantiating any widgets per the laws of `Qt`).
+2. **Define Callbacks:** Write a function that computes your display data.
+   Parameterize it to allow interactivity. If displaying results from mutliple
+   functions, include a `**kwargs` parameter in each definition.
+3. **Add Controls:** Create control widgets (e.g., sliders, toggles) with unique
+   keys that map to callback parameters. These controls update subscribed
+   display panes through the `VisualizerContext`.
+4. **Create Displays:** Set up data displays (e.g., `ImagePane`) that call your
+   callbacks upon widget interaction.
+5. **Start the App:** Add all widgets to the `App` and execute its `run` method.
 
-```
-
-**Windows Users**
-
-Provided this is a Python project, it should be possible to run all of this on
-Windows with minimal changes. It's likely a similar issue to the missing Qt
-installation will be presented on this operating system. Open an issue if you
-run into any trouble or submit a pull request if you rectify the issue on your
-own and want to share the solution with others.
+See `demo.py` for detailed examples.
 
 ## Help & Suggestions
 
-- **Review**: Read through the `pyproject.toml` file to see the package
-  requirements for this project. It's imperative the packages in existing
-  projects are compatible.
-
-- **Qt Incompatibilities**: Depending on packages already within your Python
-  virtual environment, you may run into compatibility issues related to
-  ambiguous references to multiple Qt library versions. To verify the problem,
-  following the debugging steps outlined in this section. Likely culprits are
-  any other packages that come bundled with Qt by default like `matplotlib` and
-  `opencv-contrib-python`. The former rarely presents a problem, but OpenCV's
-  python packages often are the culprit. To resolve the issue, uninstall all
-  things OpenCV in the virtual environment and reinstall the **headless**
-  versions (e.g. `pip install opencv-contrib-python-headless`).
-
-- **`pyopengl-accelerate` compilation failure**: Although this is a helpful
-  package which increases the performance of the OpenGL implementation for
-  Python, there is no hard requirement for it to be installed. If you're
-  working with a version that either has diverged from the main branch or an
-  older version of the codebase, remove the requirement from the
-  `pyproject.toml` file and the installation should proceed without any further
-  errors.
-
-- **Issues and Debugging**: Begin your debugging process by installing this
-  package into a fresh `conda` environment enabled with `python==3.9` as this
-  is the version used for development. From here, test out the implementations
-  provided in `demo.py`. If the demos run appropriate with this set up, an
-  incompatibility exists in your target environment. Based on past experience,
-  this typically occurs from an ambiguous reference to multiple Qt libraries.
-
-- **GitHub Issues**: If all else fails, don't hesitate to browse through
-  current and past GitHub issues to see if anyone else has found the same
-  problem (and potentially a solution). If there's nothing useful to be found,
-  don't hesitate to open a new issue and so we work though the problem
-  together.
+- **Compatibility:** Review `pyproject.toml` for package requirements and ensure
+  compatibility with your environment.
+- **Qt Issues:** If you encounter Qt conflicts (often due to packages like
+  `opencv-contrib-python`), uninstall the conflicting packages and reinstall
+  their headless versions (e.g. `opencv-contrib-python-headless`).
+- **Debugging:** Try a fresh conda environment using the provided
+  `environment.yml` and test with `demo.py`. For simplicity, you can use the
+  Makefile recipe we use internally for convenience by executing
+  `make environment`. If the demo runs correctly, the issue likely lies in your
+  target environment.
+- **Support:** Consult the repository issues for similar problems or open a new
+  issue if needed.
 
 ## Acknowledgements
 
