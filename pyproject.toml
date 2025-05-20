@@ -33,11 +33,6 @@ line-length = 120
 skip-string-normalization = true
 
 
-# [build-system]
-# requires = ["hatchling"]
-# build-backend = "hatchling.build"
-
-
 [tool.pyright]
 include = ["src", "tests"]
 exclude = ["**/node_modules", "**/__pycache__", "**.tar", "**.gz"]
