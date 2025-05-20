@@ -10,14 +10,14 @@ CONDA_ENV_FILE=environment.yml
 ##################################################
 # DESIRABLE TARGET: BUILD PROJECT
 ##################################################
-.PHONY: all environment install-dev
+.PHONY: all environment install
 all: environment
 
 ##################################################
 # INSTALL PROJECT AS PACKAGE
 ##################################################
-install-dev:
-	pip install -e .[dev]
+install-package:
+	pip install -e .
 
 ##################################################
 # BUILD CONDA ENVIRONMENT
@@ -29,7 +29,7 @@ environment: ${CONDA_ENV_FILE}
 	# install development projects / libraries
 	source "$$(conda info --base)/etc/profile.d/conda.sh" && \
 	conda activate ${CONDA_ENV_NAME} && \
-	$(MAKE) install-dev # install project -> simplify imports
+	$(MAKE) install-package # install project -> simplify imports
 
 ##################################################
 ##################################################
@@ -38,7 +38,7 @@ environment: ${CONDA_ENV_FILE}
 ##################################################
 .PHONY: test benchmark
 test:
-	pytest -vvv -n 8 --benchmark-disable 
+	pytest -vvv -n 8 --benchmark-disable
 
 
 # pytest-benchmark is our typical use case, but too many things need to be
