@@ -12,7 +12,7 @@ dependencies = [
   "opencv-contrib-python-headless==4.11.*",
   "numpy==2.*",
   "numba",
-  "pyside6==6.*",
+  "pyside6==6.7.*",
   "pyqtgraph==0.13.*",
 ]
 
