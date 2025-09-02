@@ -5,7 +5,7 @@ version = "0.0.5"
 authors = [{ name = "Sean Tronsen", email = "sean.tronsen@gmail.com" }]
 description = ""
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = "==3.12.*"
 classifiers = ["Programming Language :: Python :: 3.12"]
 
 dependencies = [
