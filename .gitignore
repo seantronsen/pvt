@@ -16,3 +16,7 @@ debug.py
 src/pvt.egg-info
 
 build/
+
+
+**.venv/
+*.lock
