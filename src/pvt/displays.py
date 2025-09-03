@@ -483,3 +483,106 @@ class StatefulPlotView2D(StatefulDisplay):
 
             if self._legend and data.name:
                 self._legend.addItem(self._curves[-1], data.name)
+
+
+class StatefulPV3DPlotBase(StatefulDisplay):
+    """
+    todo: document me
+    use vtk through pyvista to do 3d plots. this class specifically it plot
+    focused, but should still handle most pyvista use cases. it could also use
+    a refactor in a few places.
+
+    depending on how much use this gets, I'll circle back and document it then,
+    when we have more use cases and code (specifically, derived classes)
+    related to it.
+    """
+
+    def __init__(
+        self, callback: Callable[..., object], title: str | None = None
+    ) -> None:
+        super().__init__(callback, title=title)
+
+        # todo: need to add constructor parameters for these
+        self._pv_plotter = BackgroundPlotter(
+            show=False,
+            editor=False,
+            auto_update=False,
+            update_app_icon=False,
+            allow_quit_keypress=False,
+            toolbar=True,
+            menu_bar=False,
+            title=None,
+        )
+
+        layout = cast(QLayout, self.layout())
+        layout.addWidget(self._pv_plotter.default_camera_tool_bar)
+        layout.addWidget(self._pv_plotter)
+
+    def __getattr__(self, attr: str):
+        return getattr(self._pv_plotter, attr)
+
+    def _clear(self):
+        """
+        Remove all actors (objects and meshes) from the PyVista Plotter
+        instance.
+
+        NOTE: This is an in-memory operation. The _render_data call must be
+        executed to repaint the display.
+        """
+        self._pv_plotter.clear_actors()
+
+    # todo: this is a hacky implementation. hacky, because the regular stateful
+    # display class works using a private render call that normally does
+    # repaint setup and teardown. however, keeping that responsibility
+    # innaccessible to subclasses doesn't work in pyvista's case.
+    #
+    # deriving classes during their overriden render call always need to start
+    # by cleaning out the plotter with _clear.
+    # then before termination, they need to use the superclass render call
+    def _render_data(self, *args: Any) -> None:
+        """
+        IMPORTANT: Stateful display derivations must override this method with
+        the logic required for Qt to display any data to be rendered..
+
+        NOTE: It's set up like this because python decorators (see perflog) do
+        not apply to methods overridden in a derived class.
+        """
+
+        self._pv_plotter.update()
+        self._pv_plotter.render()
+
+
+class Stateful3DReconstruction_BinaryImageStack(StatefulPV3DPlotBase):
+    def _render_data(self, *stacks: list[NDArray[np.uint8]]) -> None:
+        """
+        Any preprocessing must occur during the callback phase...
+
+        :param *stacks: only the first stack (image list) is used. the
+            *notation is maintained just for compatibility with the superclass.
+        """
+
+        self._clear()
+        stack_slices: list[NDArray[np.uint8]] = stacks[0]
+        stack_as_volume = np.stack(stack_slices, axis=0)
+        grid = ImageData(
+            dimensions=stack_as_volume.shape,  # (nz, ny, nx)
+            # spacing=(1e0, 1e0, 1e0),  # voxel size / basis vector magnitudes
+            spacing=(2e-1, 1e0, 1e0),
+            origin=(0.0, 0.0, 0.0),
+        )
+
+        # pyvista requires fortran ordering and explicit choice of scalar field
+        grid.point_data["intensity"] = stack_as_volume.flatten(order="F")
+
+        # extract and render isosurface
+        iso_value = 128  # any number in u8 range not in (0,255) is fine.
+        surface = grid.contour([iso_value], scalars="intensity")
+
+        # display
+        # todo: need to add constructor parameters for these
+        plotter = self._pv_plotter
+        plotter.add_mesh(surface, scalars="intensity", cmap="magma_r")
+        plotter.add_axes()
+        plotter.show_grid()
+        plotter.show()
+        super()._render_data()
