@@ -1,12 +1,14 @@
+import time
+from dataclasses import dataclass
+from typing import Any, Callable
+
+import cv2
+import numpy as np
+from numpy.typing import NDArray
+from pyqtgraph import ColorMap
 from PySide6 import QtGui
 from PySide6.QtCore import QObject
 from PySide6.QtWidgets import QWidget
-from numpy.typing import NDArray
-from pyqtgraph import ColorMap
-from typing import Any
-import cv2
-import numpy as np
-import time
 
 
 def resize_by_ratio(image: NDArray[Any], ratio: float) -> NDArray[Any]:
@@ -140,3 +142,21 @@ def profile_paint_events(widget):
     # recurse
     for child in widget.findChildren(QWidget):
         profile_paint_events(child)
+
+
+@dataclass
+class Pipeline[T]:
+    """
+    Simplified chain. Each routine acts on the input data, does its' thing,
+    then sends the result onto the next routine in the list. The final routine
+    returns the result to the original caller.
+    """
+
+    routines: list[Callable[[T], T]]
+
+    def __call__(self, arg: T) -> T:
+        result = arg
+        for f in self.routines:
+            result = f(result)
+
+        return result
