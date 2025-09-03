@@ -62,3 +62,7 @@ benchmark-and-save:
 
 benchmark-compare:
 	pytest tests/controls/ $(benchmark-common-args) --benchmark-compare
+
+
+clean:
+	rm -rfv .venv uv.lock
