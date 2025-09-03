@@ -1,15 +1,27 @@
-from PySide6.QtCore import Slot
-from PySide6.QtWidgets import QLabel, QSizePolicy, QVBoxLayout, QWidget
 from dataclasses import dataclass
+from typing import Any, Callable, cast
+
+import numpy as np
+import pyqtgraph as pg
 from numpy.typing import NDArray
+from pyqtgraph import (
+    GraphicsLayoutWidget,
+    GraphicsView,
+    ImageItem,
+    PlotDataItem,
+    PlotItem,
+    ViewBox,
+)
+from pyqtgraph.colormap import ColorMap
+from PySide6.QtCore import Slot
+from PySide6.QtWidgets import QLabel, QLayout, QSizePolicy, QVBoxLayout, QWidget
+from pyvista import ImageData
+from pyvistaqt import BackgroundPlotter
+
 from pvt.callback import Callback
 from pvt.decorators import perflog
 from pvt.identifier import IdManager
 from pvt.utils import colors_from_cmap
-from pyqtgraph import GraphicsLayoutWidget, GraphicsView, ImageItem, PlotDataItem, PlotItem, ViewBox
-from pyqtgraph.colormap import ColorMap
-from typing import Any, Callable, cast
-import pyqtgraph as pg
 
 
 class StatefulDisplay(QWidget):
